@@ -1,9 +1,12 @@
 #ifndef LIGHTING_ENGINE_H
 #define LIGHTING_ENGINE_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "types.h"
 
-#define LE_MAX_LIGHTS 512
+#define LE_MAX_LIGHTS 1024
 
 enum LEMode {
     LE_MODE_AFFECT_ALL_SHADED_AND_COLORED,
@@ -70,5 +73,9 @@ bool le_get_light_use_surface_normals(s16 id);
 void le_set_light_use_surface_normals(s16 id, bool useSurfaceNormals);
 void le_clear(void);
 void le_shutdown(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // LIGHTING_ENGINE_H

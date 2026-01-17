@@ -894,7 +894,6 @@ static void OPTIMIZE_O3 gfx_sp_vertex(size_t n_vertices, size_t dest_index, cons
             // if lighting engine is enabled and either we want to affect all shaded surfaces or the lighting engine geometry mode is on
             if (le_is_enabled() && ((le_get_mode() != LE_MODE_AFFECT_ONLY_GEOMETRY_MODE) || (rsp.geometry_mode & G_LIGHTING_ENGINE_EXT))) {
                 Color color = { gLEAmbientColor[0], gLEAmbientColor[1], gLEAmbientColor[2] };
-                CTX_BEGIN(CTX_LIGHTING);
 
                 Vec3f vpos    = { v->ob[0], v->ob[1], v->ob[2] };
                 Vec3f vnormal = { nx, ny, nz };
@@ -904,8 +903,6 @@ static void OPTIMIZE_O3 gfx_sp_vertex(size_t n_vertices, size_t dest_index, cons
 
                 le_calculate_lighting_color_with_normal(vpos, vnormal, color, 1.0f);
 
-                CTX_END(CTX_LIGHTING);
-
                 d->color.r *= color[0] / 255.0f;
                 d->color.g *= color[1] / 255.0f;
                 d->color.b *= color[2] / 255.0f;
@@ -913,7 +910,6 @@ static void OPTIMIZE_O3 gfx_sp_vertex(size_t n_vertices, size_t dest_index, cons
         // if lighting engine is enabled and we should affect all vertex colored surfaces or the lighting engine geometry mode is on
         } else if (le_is_enabled() && !(rsp.geometry_mode & G_LIGHT_MAP_EXT) && (affectAllVertexColored || (rsp.geometry_mode & G_LIGHTING_ENGINE_EXT))) {
             Color color = { gLEAmbientColor[0], gLEAmbientColor[1], gLEAmbientColor[2] };
-            CTX_BEGIN(CTX_LIGHTING);
 
             Vec3f vpos = { v->ob[0], v->ob[1], v->ob[2] };
 
@@ -929,8 +925,6 @@ static void OPTIMIZE_O3 gfx_sp_vertex(size_t n_vertices, size_t dest_index, cons
             } else {
                 le_calculate_vertex_lighting((Vtx_t*)v, vpos, color);
             }
-
-            CTX_END(CTX_LIGHTING);
 
             // combine the colors
             if (affectAllVertexColored && !(rsp.geometry_mode & G_LIGHTING_ENGINE_EXT)) {

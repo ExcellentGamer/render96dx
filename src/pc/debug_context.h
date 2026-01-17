@@ -20,7 +20,6 @@ enum DebugContext {
     CTX_RENDER,
     CTX_LEVEL_SCRIPT,
     CTX_HOOK,
-    CTX_LIGHTING,
     CTX_MAX,
     // MUST BE KEPT IN SYNC WITH sDebugContextNames
 };

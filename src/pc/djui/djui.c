@@ -26,7 +26,7 @@ struct DjuiText* gDjuiPauseOptions = NULL;
 struct DjuiText* gDjuiModReload = NULL;
 static struct DjuiText* sDjuiLuaError = NULL;
 static u32 sDjuiLuaErrorTimeout = 0;
-bool gDjuiInMainMenu = true;
+bool gDjuiInMainMenu = false;
 bool gDjuiInPlayerMenu = false;
 bool gDjuiDisabled = false;
 bool gDjuiShuttingDown = false;
@@ -103,6 +103,7 @@ void djui_init(void) {
     djui_base_set_size(&gDjuiPauseOptions->base, 1.0f, 32);
     djui_base_set_location(&gDjuiPauseOptions->base, 0, 16);
     djui_text_set_alignment(gDjuiPauseOptions, DJUI_HALIGN_CENTER, DJUI_VALIGN_CENTER);
+    djui_base_set_visible(&gDjuiPauseOptions->base, true);
 
     gDjuiModReload = djui_text_create(&sDjuiRootBehind->base, DLANG(MISC, L_BUTTON));
     djui_text_set_drop_shadow(gDjuiModReload, 0, 0, 0, 255);
@@ -122,8 +123,6 @@ void djui_init(void) {
     djui_base_set_visible(&sDjuiLuaError->base, false);
     djui_base_set_color(&sDjuiLuaError->base, 255, 0, 0, 255);
 
-    djui_panel_playerlist_create(NULL);
-
     djui_console_create();
 
     djui_fps_display_create();
@@ -134,7 +133,7 @@ void djui_init(void) {
 }
 
 void djui_init_late(void) {
-    djui_panel_main_create(NULL);
+    gDjuiInMainMenu = false;
     if (configLanguage[0] == '\0') {
         gPanelLanguageOnStartup = true;
         djui_panel_language_create(NULL);

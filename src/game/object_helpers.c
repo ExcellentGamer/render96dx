@@ -3154,8 +3154,8 @@ s32 cur_obj_update_dialog(struct MarioState* m, s32 actionArg, s32 dialogFlags, 
             // Patched :(
             // Wait for Mario to be ready to speak, and then enable time stop
             if (mario_ready_to_speak(m) || m->action == ACT_READING_NPC_DIALOG) {
-                //gTimeStopState |= TIME_STOP_ENABLED;
-                //o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
+                set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
+                o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
                 o->oDialogState++;
             } else {
                 break;
@@ -3195,7 +3195,7 @@ s32 cur_obj_update_dialog(struct MarioState* m, s32 actionArg, s32 dialogFlags, 
 
         case DIALOG_UNK1_DISABLE_TIME_STOP:
             if (m->action != ACT_READING_NPC_DIALOG || (dialogFlags & DIALOG_UNK1_FLAG_4)) {
-                gTimeStopState &= ~TIME_STOP_ENABLED;
+                clear_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
                 o->activeFlags &= ~ACTIVE_FLAG_INITIATED_TIME_STOP;
                 dialogResponse = o->oDialogResponse;
                 o->oDialogState = DIALOG_UNK1_ENABLE_TIME_STOP;
@@ -3235,8 +3235,8 @@ s32 cur_obj_update_dialog_with_cutscene(struct MarioState* m, s32 actionArg, s32
         case DIALOG_UNK2_ENABLE_TIME_STOP:
             // Wait for Mario to be ready to speak, and then enable time stop
             if (mario_ready_to_speak(m) || m->action == ACT_READING_NPC_DIALOG) {
-                //gTimeStopState |= TIME_STOP_ENABLED;
-                //o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
+                set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
+                o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
                 o->oDialogState++;
                 o->oDialogResponse = 0;
             } else {
@@ -3279,7 +3279,7 @@ s32 cur_obj_update_dialog_with_cutscene(struct MarioState* m, s32 actionArg, s32
                 dialogResponse = o->oDialogResponse;
                 o->oDialogState = DIALOG_UNK2_ENABLE_TIME_STOP;
             } else if (m->action != ACT_READING_NPC_DIALOG) {
-                gTimeStopState &= ~TIME_STOP_ENABLED;
+                clear_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
                 o->activeFlags &= ~ACTIVE_FLAG_INITIATED_TIME_STOP;
                 dialogResponse = o->oDialogResponse;
                 o->oDialogState = DIALOG_UNK2_ENABLE_TIME_STOP;

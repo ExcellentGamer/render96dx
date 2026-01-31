@@ -22,6 +22,7 @@
 #include "pc/pc_main.h"
 #include "pc/gfx/gfx_pc.h"
 #include "pc/fs/fmem.h"
+#include "data/dynos.c.h"
 #include "game/hardcoded.h"
 #include "game/scroll_targets.h"
 #include "game/camera.h"
@@ -73,6 +74,7 @@ u32 gNetworkStartupTimer = 0;
 u32 sNetworkReconnectTimer = 0;
 u32 sNetworkRehostTimer = 0;
 enum NetworkSystemType sNetworkReconnectType = NS_SOCKET;
+static bool sNetworkRestarting = false;
 
 struct ServerSettings gServerSettings = {
     .playerInteractions = PLAYER_INTERACTIONS_SOLID,
@@ -167,7 +169,7 @@ bool network_init(enum NetworkType inNetworkType, bool reconnecting) {
 
         dynos_behavior_hook_all_custom_behaviors();
 
-        network_player_connected(NPT_LOCAL, 0, configPlayerModel, &configPlayerPalette, configPlayerName, get_local_discord_id());
+        network_player_connected(NPT_LOCAL, 0, configPlayerModel, &configPlayerPalette, "Player", get_local_discord_id());
         extern u8* gOverrideEeprom;
         gOverrideEeprom = NULL;
 
@@ -177,6 +179,11 @@ bool network_init(enum NetworkType inNetworkType, bool reconnecting) {
         }
 
         djui_chat_box_create();
+    } else if (gNetworkType == NT_NONE) {
+        mods_activate(&gLocalMods);
+        smlua_init();
+
+        dynos_behavior_hook_all_custom_behaviors();
     }
 
     configfile_save(configfile_name());
@@ -187,7 +194,7 @@ bool network_init(enum NetworkType inNetworkType, bool reconnecting) {
     }
 #endif
 
-    djui_base_set_visible(&gDjuiModReload->base, network_allow_mod_dev_mode());
+    djui_base_set_visible(&gDjuiModReload->base, configModDevMode);
 
     LOG_INFO("initialized");
 
@@ -630,7 +637,7 @@ void network_update(void) {
     }*/
 
     // Kick the player back to the Main Menu if network init failed
-    if ((gNetworkType == NT_NONE) && !gDjuiInMainMenu) {
+    if (false && (gNetworkType == NT_NONE) && !gDjuiInMainMenu) {
         network_reset_reconnect_and_rehost();
         network_shutdown(true, false, false, false);
     }
@@ -666,6 +673,27 @@ void network_mod_dev_mode_reload(void) {
     LOG_CONSOLE("===================================================");
     LOG_CONSOLE("===================================================");
     LOG_CONSOLE("===================================================");
+}
+
+void network_restart_game(void) {
+    sNetworkRestarting = true;
+    extern bool gDjuiInMainMenu;
+    gDjuiInMainMenu = false;
+
+    dynos_restart_reset();
+    network_shutdown(false, false, false, false);
+    dynos_restart_reset();
+    network_init(NT_NONE, false);
+
+    dynos_gfx_init();
+    enable_queued_dynos_packs();
+
+    gDjuiInMainMenu = false;
+    extern s16 gChangeLevel;
+    extern s16 gChangeLevelTransition;
+    gChangeLevel = gLevelValues.entryLevel;
+    gChangeLevelTransition = -1;
+    sNetworkRestarting = false;
 }
 
 
@@ -734,7 +762,9 @@ void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnect
     mods_clear(&gRemoteMods);
     smlua_shutdown();
     extern s16 gChangeLevel;
-    gChangeLevel = LEVEL_CASTLE_GROUNDS;
+    if (!sNetworkRestarting) {
+        gChangeLevel = LEVEL_CASTLE_GROUNDS;
+    }
     network_player_init();
     gMarioStates[0].cap = 0;
     gMarioStates[0].input = 0;
@@ -787,9 +817,11 @@ void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnect
 
     djui_panel_shutdown();
     extern bool gDjuiInMainMenu;
-    if (!gDjuiInMainMenu) {
-        gDjuiInMainMenu = true;
-        djui_panel_main_create(NULL);
+    if (!sNetworkRestarting) {
+        if (!gDjuiInMainMenu) {
+            gDjuiInMainMenu = true;
+            djui_panel_main_create(NULL);
+        }
     }
     djui_lua_error_clear();
 

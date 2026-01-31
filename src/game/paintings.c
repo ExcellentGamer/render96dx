@@ -19,7 +19,6 @@
 #include "pc/utils/misc.h"
 #include "obj_behaviors.h"
 #include "level_update.h"
-#include "pc/network/network_player.h"
 #include "pc/lua/utils/smlua_gfx_utils.h"
 #include "print.h"
 #include "hardcoded.h"
@@ -462,7 +461,7 @@ struct posStr entered_mario_pos(struct Painting *painting) {
     }
 
     // If no marios entered or went under this frame, default to the painting's position
-    if (mIndex < 0 || !gNetworkPlayers[gMarioStates[mIndex].playerIndex].connected) {
+    if (mIndex < 0 || gMarioStates[mIndex].marioObj == NULL) {
         struct posStr p = {
             painting->posX,
             painting->posY,
@@ -663,9 +662,7 @@ void painting_state(s8 state, struct Painting *painting, UNUSED struct Painting 
     // So they won't create more ripples by bouncing around in the painting
     if (state == PAINTING_ENTERED) {
         s32 mIndex = painting->pitch == 0 ? painting->ripples.enteredMarioIndex : painting->ripples.underMarioIndex;
-        if (mIndex > 0) {
-            gNetworkPlayers[gMarioStates[mIndex].playerIndex].currPositionValid = false;
-        }
+        UNUSED s32 _unused = mIndex;
     }
 }
 
@@ -844,26 +841,12 @@ void painting_update_floors(struct Painting *painting) {
         // If the painting was entered (and not a floor painting) no need to look at everyone else this frame
         if (painting->floorEntered && !floorPainting) { continue; }
         struct MarioState* m = &gMarioStates[i];
-        struct NetworkPlayer* np = &gNetworkPlayers[m->playerIndex];
-        // Skip non connected players
-        if (!np->connected) { continue; }
-        if (m == NULL || m->marioObj == NULL) { continue; }
-
-        bool consider = true;
-        bool valid = true;
-        if (!np->connected) {
-            consider = false;
-        } else if (!np->currPositionValid && i > 0) {
+        if (m == NULL || m->marioObj == NULL || !is_player_active(m) || m->marioObj->header.gfx.animInfo.animID == MARIO_ANIM_A_POSE) {
             painting->ripples.lastFloors[i] = 0;
             painting->ripples.currFloors[i] = 0;
             painting->ripples.wasUnders[i] = 0;
             painting->ripples.isUnders[i] = 0;
-            consider = false;
-            valid = false;
-        } else if (!is_player_active(m)) {
-            consider = false;
-        } else if (m->marioObj->header.gfx.animInfo.animID == MARIO_ANIM_A_POSE) {
-            consider = false;
+            continue;
         }
 
         rippleLeft = 0;
@@ -907,16 +890,6 @@ void painting_update_floors(struct Painting *painting) {
         // at most 1 of these will be nonzero;
         painting->ripples.currFloors[i] = rippleLeft + rippleMiddle + rippleRight + enterLeft + enterMiddle + enterRight;
 
-        // invalid players should have their floor states set to 0 at all times
-        // so that when they return through the painting, it will ripple properly again
-        if (!valid) {
-            painting->ripples.lastFloors[i] = 0;
-            painting->ripples.currFloors[i] = 0;
-        }
-
-        if (!consider) {
-            continue;
-        }
         // floorEntered is true if currFloor is true and lastFloor is false
         // (Mario just entered the floor on this frame)
         s8 entered = (painting->ripples.lastFloors[i] ^ painting->ripples.currFloors[i]) & painting->ripples.currFloors[i];

@@ -86,6 +86,10 @@ static void bhv_koopa_the_quick_on_sent_pre(void) {
 
 void bhv_koopa_the_quick_override_ownership(u8* shouldOverride, u8* shouldOwn) {
     *shouldOverride = TRUE;
+    if (gNetworkType == NT_NONE) {
+        *shouldOwn = TRUE;
+        return;
+    }
     *shouldOwn = (get_network_player_smallest_global() == gNetworkPlayerLocal);
 }
 
@@ -564,11 +568,9 @@ s32 obj_begin_race(s32 noTimer) {
 static void koopa_the_quick_act_wait_before_race(void) {
     koopa_shelled_act_stopped();
 
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-
     if (o->oKoopaTheQuickInitTextboxCooldown != 0) {
         o->oKoopaTheQuickInitTextboxCooldown -= 1;
-    } else if (marioState == &gMarioStates[0] && cur_obj_can_mario_activate_textbox_2(&gMarioStates[0], 400.0f, 400.0f)) {
+    } else if (cur_obj_can_mario_activate_textbox_2(&gMarioStates[0], 400.0f, 400.0f)) {
         //! The next action doesn't execute until next frame, giving mario one
         //  frame where he can jump, and thus no longer be ready to speak.
         //  (On J, he has two frames and doing this enables time stop - see
@@ -586,9 +588,8 @@ u8 koopa_the_quick_act_show_init_text_continue_dialog(void) { return o->oAction 
  * return to the waiting action.
  */
 static void koopa_the_quick_act_show_init_text(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
     s32 response = 0;
-    if (marioState && should_start_or_continue_dialog(marioState, o) && BHV_ARR_CHECK(sKoopaTheQuickProperties, o->oKoopaTheQuickRaceIndex, struct KoopaTheQuickProperties)) {
+    if (BHV_ARR_CHECK(sKoopaTheQuickProperties, o->oKoopaTheQuickRaceIndex, struct KoopaTheQuickProperties)) {
         response = obj_update_race_proposition_dialog(&gMarioStates[0], *sKoopaTheQuickProperties[o->oKoopaTheQuickRaceIndex].initText, koopa_the_quick_act_show_init_text_continue_dialog);
     }
 

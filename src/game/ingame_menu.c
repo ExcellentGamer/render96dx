@@ -31,6 +31,9 @@
 #include "pc/djui/djui_panel.h"
 #include "pc/djui/djui_panel_pause.h"
 #include "pc/utils/misc.h"
+#include "pc/configfile.h"
+#include "pc/mods/mod.h"
+#include "pc/mods/mods.h"
 #include "data/dynos_mgr_builtin_externs.h"
 #include "hud.h"
 #include "pc/lua/smlua_hooks.h"
@@ -3052,12 +3055,14 @@ s16 render_pause_courses_and_castle(void) {
         gDialogTextAlpha += 25;
     }
 
-    if (gDjuiPanelPauseCreated && !gDjuiInPlayerMenu) { shade_screen(); }
-    if (gPlayer1Controller->buttonPressed & R_TRIG) {
-        djui_panel_pause_create(NULL);
-    }
-    if ((gPlayer1Controller->buttonPressed & L_TRIG) && network_allow_mod_dev_mode()) {
-        network_mod_dev_mode_reload();
+    if ((gPlayer1Controller->buttonPressed & L_TRIG) && configModDevMode) {
+        for (int i = 0; i < gLocalMods.entryCount; i++) {
+            struct Mod* mod = gLocalMods.entries[i];
+            if (mod->enabled) {
+                mod_refresh_files(mod);
+            }
+        }
+        djui_lua_error_clear();
     }
 
     return 0;

@@ -14,6 +14,7 @@
 #include "pc/lua/utils/smlua_anim_utils.h"
 #include "pc/djui/djui.h"
 #include "pc/fs/fmem.h"
+#include "pc/configfile.h"
 
 lua_State* gLuaState = NULL;
 u8 gLuaInitializingScript = 0;
@@ -391,7 +392,7 @@ void smlua_update(void) {
     lua_State* L = gLuaState;
     if (L == NULL) { return; }
 
-    if (network_allow_mod_dev_mode()) { smlua_live_reload_update(L); }
+    if (configModDevMode) { smlua_live_reload_update(L); }
 
     audio_sample_destroy_pending_copies();
 

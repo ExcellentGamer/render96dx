@@ -20,13 +20,13 @@
 
 #ifdef DEVELOPMENT
 #define GAME_NAME "sm64coopdx-dev"
-#define WINDOW_NAME "Super Mario 64 Coop Deluxe (DEV)"
+#define WINDOW_NAME "Render96 Deluxe (DEV)"
 #elif !defined(VERSION_US)
 #define GAME_NAME "sm64coopdx-intl"
-#define WINDOW_NAME "Super Mario 64 Coop Deluxe (INTL)"
+#define WINDOW_NAME "Render96 Deluxe (INTL)"
 #else
 #define GAME_NAME "sm64coopdx"
-#define WINDOW_NAME "Super Mario 64 Coop Deluxe"
+#define WINDOW_NAME "Render96 Deluxe"
 #endif
 
 #define MAX_VERSION_LENGTH 128

@@ -26,7 +26,7 @@ void bhv_spawned_star_init(void) {
     // path due to jankiness in oBehParams. Send the spawn event here instead.
     // Only exclamation boxes use bhvSpawnedStar so this check really isn't necessary
     u8 spawnedFromExclamationBox = (o->parentObj != NULL && o->parentObj->behavior == smlua_override_behavior(bhvExclamationBox));
-    if (gNetworkAreaLoaded && spawnedFromExclamationBox) {
+    if (spawnedFromExclamationBox) {
         o->oStarSpawnExtCutsceneFlags = 1;
         o->parentObj = o;
     }
@@ -82,7 +82,7 @@ void bhv_spawned_star_loop(void) {
     if (o->oAction == 0) {
         // All of these are for checking if we spawned the star, If 
         // we didn't. We don't need the time stop.
-        u8 playExclamationBoxCutscene = (is_nearest_mario_state_to_object(gMarioState, o) && o->oStarSpawnExtCutsceneFlags);
+        u8 playExclamationBoxCutscene = (o->oStarSpawnExtCutsceneFlags && (gNetworkType == NT_NONE || is_nearest_mario_state_to_object(gMarioState, o)));
         u8 playGenericSpawnCutscene = (o->parentObj != NULL && o->parentObj == gMarioStates[0].marioObj);
         u8 playCutscene = (playExclamationBoxCutscene || playGenericSpawnCutscene);
         

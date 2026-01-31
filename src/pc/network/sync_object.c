@@ -257,6 +257,7 @@ bool sync_object_is_initialized(u32 syncId) {
 }
 
 bool sync_object_is_owned_locally(u32 syncId) {
+    if (gNetworkType == NT_NONE) { return true; }
     struct SyncObject* so = sync_object_get(syncId);
     if (so == NULL) { return false; }
 
@@ -297,7 +298,7 @@ void sync_object_override_object(u32 syncId, struct Object* o) {
 
 // todo: move this to somewhere more general
 float player_distance(struct MarioState* marioState, struct Object* o) {
-    if (marioState->marioObj == NULL) { return 0; }
+    if (marioState == NULL || marioState->marioObj == NULL) { return 1000000000.0f; }
     f32 mx = marioState->marioObj->header.gfx.pos[0] - o->oPosX;
     f32 my = marioState->marioObj->header.gfx.pos[1] - o->oPosY;
     f32 mz = marioState->marioObj->header.gfx.pos[2] - o->oPosZ;
@@ -310,6 +311,8 @@ float player_distance(struct MarioState* marioState, struct Object* o) {
 bool sync_object_should_own(u32 syncId) {
     struct SyncObject* so = sync_object_get(syncId);
     if (!so) { return false; }
+
+    if (gNetworkType == NT_NONE) { return true; }
 
     // always own objects in credit sequence
     if (gCurrActStarNum == 99) { return true; }

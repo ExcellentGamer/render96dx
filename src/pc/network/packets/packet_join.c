@@ -50,7 +50,9 @@ void network_send_join_request(void) {
 
     packet_write(&p, &configPlayerModel,   sizeof(u8));
     packet_write(&p, &configPlayerPalette, sizeof(struct PlayerPalette));
-    packet_write(&p, &configPlayerName,    sizeof(u8) * MAX_CONFIG_STRING);
+    char playerName[MAX_CONFIG_STRING] = { 0 };
+    snprintf(playerName, MAX_CONFIG_STRING, "%s", "Player");
+    packet_write(&p, &playerName,          sizeof(u8) * MAX_CONFIG_STRING);
 
     network_send_to((gNetworkPlayerServer != NULL) ? gNetworkPlayerServer->localIndex : 0, &p);
     LOG_INFO("sending join request");
@@ -182,7 +184,7 @@ void network_receive_join(struct Packet* p) {
     packet_read(p, eeprom, sizeof(u8) * 512);
 
     network_player_connected(NPT_SERVER, 0, 0, &DEFAULT_MARIO_PALETTE, "Player", "0");
-    network_player_connected(NPT_LOCAL, myGlobalIndex, configPlayerModel, &configPlayerPalette, configPlayerName, get_local_discord_id());
+    network_player_connected(NPT_LOCAL, myGlobalIndex, configPlayerModel, &configPlayerPalette, "Player", get_local_discord_id());
     djui_chat_box_create();
 
     save_file_load_all(TRUE);

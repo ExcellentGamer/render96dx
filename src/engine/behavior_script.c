@@ -1300,7 +1300,7 @@ void cur_obj_update(void) {
     }
 
     // handle network area timer
-    if (gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !network_check_singleplayer_pause()) {
+    if (gNetworkType != NT_NONE && gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !network_check_singleplayer_pause()) {
         // make sure the area is valid
         if (gNetworkPlayerLocal == NULL || !gNetworkPlayerLocal->currAreaSyncValid) {
             goto cur_obj_update_end;

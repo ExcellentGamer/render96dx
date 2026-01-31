@@ -17,6 +17,10 @@ void dynos_update_gfx() {
     return DynOS_UpdateGfx();
 }
 
+void dynos_restart_reset(void) {
+    DynOS_Restart_Reset();
+}
+
 s32 dynos_tex_import(void **output, void *ptr, s32 tile, void *grapi, void **hashmap, void *pool, s32 *poolpos, s32 poolsize) {
     return DynOS_Tex_Import(output, ptr, tile, grapi, hashmap, pool, (u32 *) poolpos, (u32) poolsize);
 }

@@ -128,7 +128,6 @@ extern bool         configDebugError;
 extern bool         configCtxProfiler;
 #endif
 // player settings
-extern char         configPlayerName[MAX_CONFIG_STRING];
 extern unsigned int configPlayerModel;
 extern struct PlayerPalette configPlayerPalette;
 // coop settings

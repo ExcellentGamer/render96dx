@@ -2241,6 +2241,9 @@ void init_single_mario(struct MarioState* m) {
     if (m->marioObj != NULL) {
         vec3f_set(m->marioObj->header.gfx.scale, 1.0f, 1.0f, 1.0f);
         m->marioObj->header.gfx.node.flags |= GRAPH_RENDER_ACTIVE;
+        if (playerIndex == 0) {
+            m->marioObj->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
+        }
     }
 
     m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);

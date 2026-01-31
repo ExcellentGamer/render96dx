@@ -80,18 +80,6 @@ static void on_current_user_update(UNUSED void* data) {
     app.userId = user.id;
     gPcDebug.debugId = app.userId;
 
-    // copy over discord username if we haven't set one yet
-    if (configPlayerName[0] == '\0' && strlen(user.username) > 0) {
-        char* cname = configPlayerName;
-        char* dname = user.username;
-        for (int i = 0; i < MAX_CONFIG_STRING - 1; i++) {
-            if (*dname >= '!' && *dname <= '~') {
-                *cname = *dname;
-                cname++;
-            }
-            dname++;
-        }
-    }
 }
 
 struct IDiscordUserEvents* discord_user_initialize(void) {

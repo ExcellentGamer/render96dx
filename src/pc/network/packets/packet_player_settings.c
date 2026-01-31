@@ -4,9 +4,7 @@
 
 void network_send_player_settings(void) {
     char playerName[MAX_CONFIG_STRING] = { 0 };
-    if (snprintf(playerName, MAX_CONFIG_STRING, "%s", configPlayerName) < 0) {
-        LOG_INFO("truncating player name");
-    }
+    snprintf(playerName, MAX_CONFIG_STRING, "%s", "Player");
 
     struct Packet p = { 0 };
     packet_init(&p, PACKET_PLAYER_SETTINGS, true, PLMT_NONE);

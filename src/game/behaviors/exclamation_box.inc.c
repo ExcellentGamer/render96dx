@@ -55,21 +55,15 @@ void exclamation_box_act_2(void) {
         o->oGraphYOffset = 0.0f;
     }
 
-    u8 isNearest = (nearest_mario_state_to_object(o) == &gMarioStates[0]);
-    if (o->oExclamationBoxForce || isNearest) {
-        if (o->oExclamationBoxForce || (isNearest && cur_obj_was_attacked_or_ground_pounded())) {
-            if (!o->oExclamationBoxForce) {
-                o->oExclamationBoxForce = TRUE;
-                o->oExclamationBoxForce = FALSE;
-            }
-            cur_obj_become_intangible();
-            o->oExclamationBoxUnkFC = 0x4000;
-            o->oVelY = 30.0f;
-            o->oGravity = -8.0f;
-            o->oFloorHeight = o->oPosY;
-            o->oAction = 3;
-            queue_rumble_data_object(o, 5, 80);
-        }
+    if (o->oExclamationBoxForce || cur_obj_was_attacked_or_ground_pounded()) {
+        o->oExclamationBoxForce = FALSE;
+        cur_obj_become_intangible();
+        o->oExclamationBoxUnkFC = 0x4000;
+        o->oVelY = 30.0f;
+        o->oGravity = -8.0f;
+        o->oFloorHeight = o->oPosY;
+        o->oAction = 3;
+        queue_rumble_data_object(o, 5, 80);
     }
     load_object_collision_model();
 }

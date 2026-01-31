@@ -208,6 +208,10 @@ static void djui_panel_menu_refresh(UNUSED struct DjuiBase* base) {
     }
 }
 
+static void djui_panel_menu_restart_game(UNUSED struct DjuiBase* base) {
+    network_restart_game();
+}
+
 void djui_panel_host_mods_create(struct DjuiBase* caller) {
 
     mods_update_selectable();
@@ -233,6 +237,7 @@ void djui_panel_host_mods_create(struct DjuiBase* caller) {
         sModPaginated = paginated;
 
         if (gNetworkType == NT_NONE) {
+            djui_button_create(body, "Restart", DJUI_BUTTON_STYLE_NORMAL, djui_panel_menu_restart_game);
             struct DjuiRect* rect1 = djui_rect_container_create(body, 64);
             {
                 sBackButton = djui_button_left_create(&rect1->base, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_menu_back);
@@ -242,7 +247,7 @@ void djui_panel_host_mods_create(struct DjuiBase* caller) {
             djui_button_create(body, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_menu_back);
         }
 
-        panel->bodySize.value = paginated->base.height.value + 64 + 64;
+        panel->bodySize.value = paginated->base.height.value + 64 + 64 + ((gNetworkType == NT_NONE) ? 64 : 0);
     }
 
     panel->base.destroy = djui_panel_host_mods_destroy;

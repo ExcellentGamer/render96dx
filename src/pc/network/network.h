@@ -128,7 +128,10 @@ bool network_is_reconnecting(void);
 void network_rehost_begin(void);
 bool network_allow_mod_dev_mode(void);
 void network_mod_dev_mode_reload(void);
+void network_restart_game(void);
 void network_update(void);
 void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnecting);
+
+void enable_queued_dynos_packs(void);
 
 #endif

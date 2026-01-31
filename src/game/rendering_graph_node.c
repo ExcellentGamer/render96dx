@@ -728,7 +728,7 @@ static void geo_process_camera(struct GraphNodeCamera *node) {
 
     // compute inverse matrix for lighting engine and fresnel
     Mat4 invCameraMatrix;
-    if (mtxf_inverse_non_affine(invCameraMatrix, gCamera->mtx)) {
+    if (gCamera && mtxf_inverse_non_affine(invCameraMatrix, gCamera->mtx)) {
         Mtx *invMtx = alloc_display_list(sizeof(Mtx));
         mtxf_to_mtx(invMtx, invCameraMatrix);
         gSPMatrix(gDisplayListHead++, invMtx, G_MTX_INVERSE_CAMERA_EXT);

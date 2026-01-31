@@ -794,6 +794,7 @@ void DynOS_UpdateGfx();
 bool DynOS_IsTransitionActive();
 void DynOS_Mod_Update();
 void DynOS_Mod_Shutdown();
+void DynOS_Restart_Reset();
 
 //
 // Gfx

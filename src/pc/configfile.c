@@ -163,7 +163,6 @@ bool         configDebugError                     = false;
 bool         configCtxProfiler                    = false;
 #endif
 // player settings
-char         configPlayerName[MAX_CONFIG_STRING]  = "";
 unsigned int configPlayerModel                    = 0;
 struct PlayerPalette configPlayerPalette          = { { { 0x00, 0x00, 0xff }, { 0xff, 0x00, 0x00 }, { 0xff, 0xff, 0xff }, { 0x72, 0x1c, 0x0e }, { 0x73, 0x06, 0x00 }, { 0xfe, 0xc1, 0x79 }, { 0xff, 0x00, 0x00 }, { 0xff, 0x00, 0x00 } } };
 // coop settings
@@ -315,7 +314,6 @@ static const struct ConfigOption options[] = {
     {.name = "ctx_profiler",                   .type = CONFIG_TYPE_BOOL, .boolValue   = &configCtxProfiler},
 #endif
     // player settings
-    {.name = "coop_player_name",               .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configPlayerName, .maxStringLength = MAX_CONFIG_STRING},
     {.name = "coop_player_model",              .type = CONFIG_TYPE_UINT,   .uintValue   = &configPlayerModel},
     {.name = "coop_player_palette_pants",      .type = CONFIG_TYPE_COLOR,  .colorValue  = &configPlayerPalette.parts[PANTS]},
     {.name = "coop_player_palette_shirt",      .type = CONFIG_TYPE_COLOR,  .colorValue  = &configPlayerPalette.parts[SHIRT]},
@@ -796,12 +794,6 @@ NEXT_OPTION:
     }
     if (gCLIOpts.width != 0) { configWindow.w = gCLIOpts.width; }
     if (gCLIOpts.height != 0) { configWindow.h = gCLIOpts.height; }
-
-    if (gCLIOpts.playerName[0]) { snprintf(configPlayerName, MAX_CONFIG_STRING, "%s", gCLIOpts.playerName); }
-
-    if (!network_player_name_valid(configPlayerName)) {
-        snprintf(configPlayerName, MAX_CONFIG_STRING, "Player");
-    }
 
     for (int i = 0; i < gCLIOpts.enabledModsCount; i++) {
         enable_mod(gCLIOpts.enableMods[i]);

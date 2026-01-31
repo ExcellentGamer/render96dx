@@ -1,7 +1,5 @@
 #include "djui.h"
 #include "djui_panel.h"
-#include "djui_panel_host.h"
-#include "djui_panel_join.h"
 #include "djui_panel_options.h"
 #include "djui_panel_menu.h"
 #include "djui_panel_confirm.h"
@@ -41,16 +39,12 @@ void djui_panel_main_create(struct DjuiBase* caller) {
                 djui_base_set_location(&logo->base, 0, -30);
             }
 
-            struct DjuiButton* button1 = djui_button_create(body, DLANG(MAIN, HOST), DJUI_BUTTON_STYLE_NORMAL, djui_panel_host_create);
+            struct DjuiButton* button1 = djui_button_create(body, DLANG(MAIN, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
             if (!configExCoopTheme) { djui_base_set_location(&button1->base, 0, -30); }
             djui_cursor_input_controlled_center(&button1->base);
 
-            struct DjuiButton* button2 = djui_button_create(body, DLANG(MAIN, JOIN), DJUI_BUTTON_STYLE_NORMAL, djui_panel_join_create);
+            struct DjuiButton* button2 = djui_button_create(body, DLANG(MAIN, QUIT), DJUI_BUTTON_STYLE_BACK, djui_panel_main_quit);
             if (!configExCoopTheme) { djui_base_set_location(&button2->base, 0, -30); }
-            struct DjuiButton* button3 = djui_button_create(body, DLANG(MAIN, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
-            if (!configExCoopTheme) { djui_base_set_location(&button3->base, 0, -30); }
-            struct DjuiButton* button4 = djui_button_create(body, DLANG(MAIN, QUIT), DJUI_BUTTON_STYLE_BACK, djui_panel_main_quit);
-            if (!configExCoopTheme) { djui_base_set_location(&button4->base, 0, -30); }
         }
 
         // these two cannot co-exist for some reason

@@ -538,14 +538,16 @@ void spawn_objects_from_info(UNUSED s32 unused, struct SpawnInfo *spawnInfo) {
                 object->respawnInfo = &spawnInfo->behaviorArg;
 
                 // found a player
-                if (spawnInfo->behaviorArg & ((u32)1 << 31) && object->behavior == bhvMario) {
-                    u16 playerIndex = (spawnInfo->behaviorArg & ~(1 << 31));
-                    object->oBehParams = playerIndex + 1;
-                    gMarioObjects[playerIndex] = object;
-                    if (playerIndex == 0) {
-                        gMarioObject = object;
+                if ((spawnInfo->behaviorArg & ((u32)1 << 31)) && script == bhvMario) {
+                    u16 playerIndex = (u16)(spawnInfo->behaviorArg & ~((u32)1 << 31));
+                    if (playerIndex < MAX_PLAYERS) {
+                        object->oBehParams = playerIndex + 1;
+                        gMarioObjects[playerIndex] = object;
+                        if (playerIndex == 0) {
+                            gMarioObject = object;
+                        }
+                        geo_make_first_child(&object->header.gfx.node);
                     }
-                    geo_make_first_child(&object->header.gfx.node);
                 }
 
                 geo_obj_init_spawninfo(&object->header.gfx, spawnInfo);

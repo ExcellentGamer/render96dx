@@ -9,20 +9,23 @@
 #include "djui_panel_confirm.h"
 #include "djui_panel_mod_menu.h"
 #include "pc/pc_main.h"
-#include "pc/network/network.h"
+#include "pc/configfile.h"
 #include "pc/lua/smlua_hooks.h"
 #include "game/object_helpers.h"
 #include "behavior_table.h"
+#include "game/level_update.h"
+#include "djui_panel_host_mods.h"
 
 bool gDjuiPanelPauseCreated = false;
+
+static void djui_panel_pause_quit(struct DjuiBase* caller);
 
 static void djui_panel_pause_resume(UNUSED struct DjuiBase* caller) {
     djui_panel_shutdown();
 }
 
 void djui_panel_pause_quit_yes(UNUSED struct DjuiBase* caller) {
-    network_reset_reconnect_and_rehost();
-    network_shutdown(true, false, false, false);
+    game_exit();
 }
 
 void djui_panel_pause_disconnect_key_update(int scancode) {
@@ -30,7 +33,7 @@ void djui_panel_pause_disconnect_key_update(int scancode) {
 
     for (int i = 0; i < MAX_BINDS; i++) {
         if (scancode == (int)configKeyDisconnect[i]) {
-            djui_panel_pause_quit_yes(NULL);
+            djui_panel_pause_quit(NULL);
         }
     }
 }
@@ -38,17 +41,10 @@ void djui_panel_pause_disconnect_key_update(int scancode) {
 static void djui_panel_pause_quit(struct DjuiBase* caller) {
     if (gMarioStates[0].action == ACT_PUSHING_DOOR || gMarioStates[0].action == ACT_PULLING_DOOR) { return; }
 
-    if (gNetworkType == NT_SERVER) {
-        djui_panel_confirm_create(caller,
-                                DLANG(PAUSE, QUIT_TITLE),
-                                DLANG(PAUSE, QUIT_HOST),
-                                djui_panel_pause_quit_yes);
-    } else {
-        djui_panel_confirm_create(caller,
-                                DLANG(PAUSE, QUIT_TITLE),
-                                DLANG(PAUSE, QUIT_CLIENT),
-                                djui_panel_pause_quit_yes);
-    }
+    djui_panel_confirm_create(caller,
+                            DLANG(MAIN, QUIT_TITLE),
+                            DLANG(MAIN, QUIT_CONFIRM),
+                            djui_panel_pause_quit_yes);
 }
 
 void djui_panel_pause_create(struct DjuiBase* caller) {
@@ -67,10 +63,6 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
 
         struct DjuiButton* button3 = djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
         defaultBase = &button3->base;
-
-        if (gNetworkType == NT_SERVER) {
-            djui_button_create(body, DLANG(PAUSE, SERVER_SETTINGS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_host_create);
-        }
 
         struct Mod* addedMods[MAX_HOOKED_MOD_MENU_ELEMENTS] = { 0 };
         int modCount = 0;
@@ -104,13 +96,11 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
             djui_button_create(body, DLANG(PAUSE, MOD_MENU), DJUI_BUTTON_STYLE_NORMAL, djui_panel_mod_menu_create);
         }
 
+        djui_button_create(body, "Mods", DJUI_BUTTON_STYLE_NORMAL, djui_panel_host_mods_create);
+
         djui_button_create(body, DLANG(PAUSE, RESUME), DJUI_BUTTON_STYLE_NORMAL, djui_panel_pause_resume);
 
-        if (gNetworkType == NT_SERVER) {
-            djui_button_create(body, DLANG(PAUSE, STOP_HOSTING), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_quit);
-        } else {
-            djui_button_create(body, DLANG(PAUSE, DISCONNECT), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_quit);
-        }
+        djui_button_create(body, DLANG(MAIN, QUIT), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_quit);
     }
 
     djui_panel_add(caller, panel, defaultBase);

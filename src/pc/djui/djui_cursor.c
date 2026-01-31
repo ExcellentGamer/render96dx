@@ -182,6 +182,11 @@ void djui_cursor_interp(void) {
 }
 
 void djui_cursor_update(void) {
+    if (!djui_panel_is_active()) {
+        djui_cursor_set_visible(false);
+        return;
+    }
+
     djui_cursor_update_position();
 
     Gfx *savedDisplayListHead = gDisplayListHead;

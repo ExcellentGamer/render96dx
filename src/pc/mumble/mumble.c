@@ -60,13 +60,13 @@ void mumble_init(void) {
 #endif
 
 	if(lm->uiVersion != 2) {
-		wcsncpy(lm->name, L"SM64 Coop Deluxe", 256);
-		wcsncpy(lm->description, L"SM64 Coop Deluxe support via the Link plugin.", 2048);
+		wcsncpy(lm->name, L"Render96 Deluxe", 256);
+		wcsncpy(lm->description, L"Render96 Deluxe support via the Link plugin.", 2048);
 		lm->uiVersion = 2;
 	}
 
     // not necessary, but we can set it here and forget about it
-    mbstowcs(lm->identity, configPlayerName, 256);
+    mbstowcs(lm->identity, "Player", 256);
 
     lm->context_len = 20;
 }

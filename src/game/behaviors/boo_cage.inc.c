@@ -10,16 +10,26 @@
  * Mario has to enter to enter BBH.
  */
 static struct ObjectHitbox sBooCageHitbox = {
-    /* interactType: */ INTERACT_BBH_ENTRANCE,
-    /* downOffset: */ 0,
-    /* damageOrCoinValue: */ 0,
-    /* health: */ 0,
-    /* numLootCoins: */ 0,
-    /* radius: */ 120,
-    /* height: */ 300,
-    /* hurtboxRadius: */ 0,
-    /* hurtboxHeight: */ 0,
+    .interactType = INTERACT_BBH_ENTRANCE,
+    .downOffset = 0,
+    .damageOrCoinValue = 0,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 120,
+    .height = 300,
+    .hurtboxRadius = 0,
+    .hurtboxHeight = 0,
 };
+
+static void bhv_boo_cage_on_received_post(UNUSED u8 localIndex) {
+    if (o->oAction > BOO_CAGE_ACT_ON_GROUND) {
+        o->oAction = BOO_CAGE_ACT_ON_GROUND;
+    }
+    o->parentObj = NULL;
+}
+
+void bhv_boo_cage_init(void) {
+}
 
 /**
  * Update function for bhvBooCage.
@@ -41,10 +51,13 @@ void bhv_boo_cage_loop(void) {
             // If the cage's parent boo is killed, set the action to BOO_CAGE_ACT_FALLING,
             // give the cage an initial Y velocity of 60 units/frame, and play the puzzle jingle.
             // Otherwise, stay inside the boo.
-            if (o->parentObj->oBooDeathStatus != BOO_DEATH_STATUS_ALIVE) {
+            if (o->parentObj == NULL || o->parentObj->behavior != smlua_override_behavior(bhvBooWithCage) || o->parentObj->oBooDeathStatus != BOO_DEATH_STATUS_ALIVE) {
                 o->oAction++;
                 o->oVelY = 60.0f;
-                play_puzzle_jingle();
+                if (o->parentObj != NULL && o->parentObj->behavior == smlua_override_behavior(bhvBooWithCage)) {
+                    play_puzzle_jingle();
+                }
+                o->parentObj = NULL;
             } else {
                 obj_copy_pos_and_angle(o, o->parentObj);
             }
@@ -86,7 +99,7 @@ void bhv_boo_cage_loop(void) {
             cur_obj_scale(1.0f);
 
             // Set the action to BOO_CAGE_ACT_MARIO_JUMPING_IN when Mario jumps in.
-            if (obj_check_if_collided_with_object(o, gMarioObject)) {
+            if (obj_check_if_collided_with_object(o, gMarioStates[0].marioObj)) {
                 o->oAction++;
             }
 

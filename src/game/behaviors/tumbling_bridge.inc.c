@@ -13,11 +13,21 @@ struct Struct8032F34C sTumblingBridgeParams[] = {
 };
 
 void bhv_tumbling_bridge_platform_loop(void) {
+    if (o->parentObj && gCurrCourseNum == COURSE_LLL) {
+        if (o->parentObj->oIntangibleTimer == -1) {
+            cur_obj_hide();
+            o->oIntangibleTimer = o->parentObj->oIntangibleTimer;
+        } else {
+            cur_obj_unhide();
+            o->oIntangibleTimer = o->parentObj->oIntangibleTimer;
+        }
+    }
     switch (o->oAction) {
         case 0:
-            if (gMarioObject->platform == o) {
+            if ((o->oInteractStatus & INT_STATUS_INTERACTED) || gMarioStates[0].marioObj->platform == o) {
                 o->oAction++;
                 o->oTumblingBridgeUnkF4 = random_sign() * 0x80;
+                o->oInteractStatus &= ~INT_STATUS_INTERACTED;
             }
             break;
         case 1:
@@ -35,14 +45,22 @@ void bhv_tumbling_bridge_platform_loop(void) {
             o->oGravity = -3.0f;
             cur_obj_rotate_face_angle_using_vel();
             cur_obj_move_using_fvel_and_gravity();
-            if (o->oPosY < o->oFloorHeight - 300.0f)
+            if (o->oPosY < o->oFloorHeight - 300.0f) {
                 o->oAction++;
+            }
             break;
         case 3:
             break;
     }
-    if (o->parentObj->oAction == 3)
+    if (o->parentObj && o->parentObj->oAction == 3) {
         obj_mark_for_deletion(o);
+    }
+
+    if (o->parentObj && o->parentObj->oIntangibleTimer != -1) {
+        load_object_collision_model();
+    } else if (gCurrCourseNum != COURSE_LLL) {
+        load_object_collision_model();
+    }
 }
 
 void tumbling_bridge_act_1(void) {
@@ -53,6 +71,7 @@ void tumbling_bridge_act_1(void) {
     s32 relativePlatformZ;
     s32 relativePlatformY = 0;
     s32 relativeInitialPlatformY = 0;
+    if (!BHV_ARR_CHECK(sTumblingBridgeParams, bridgeID, struct Struct8032F34C)) { return; }
 
     for (i = 0; i < sTumblingBridgeParams[bridgeID].numBridgeSections; i++) {
         relativePlatformX = 0;
@@ -74,7 +93,7 @@ void tumbling_bridge_act_1(void) {
         platformObj = spawn_object_relative(
             0, relativePlatformX, relativePlatformY + relativeInitialPlatformY, relativePlatformZ, o,
             sTumblingBridgeParams[bridgeID].model, bhvTumblingBridgePlatform);
-
+        if (platformObj == NULL) { continue; }
         obj_set_collision_data(platformObj, sTumblingBridgeParams[bridgeID].segAddr);
     }
 
@@ -82,10 +101,14 @@ void tumbling_bridge_act_1(void) {
 }
 
 void tumbling_bridge_act_2(void) {
+    struct MarioState* marioState = nearest_possible_mario_state_to_object(o);
+    struct Object* player = marioState ? marioState->marioObj : NULL;
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+
     cur_obj_hide();
     if (cur_obj_has_behavior(bhvLllTumblingBridge))
         cur_obj_unhide();
-    else if (o->oDistanceToMario > 1200.0f) {
+    else if (distanceToPlayer > 1200.0f) {
         o->oAction = 3;
         cur_obj_unhide();
     }
@@ -97,7 +120,11 @@ void tumbling_bridge_act_3(void) {
 }
 
 void tumbling_bridge_act_0(void) {
-    if (cur_obj_has_behavior(bhvLllTumblingBridge) || o->oDistanceToMario < 1000.0f)
+    struct MarioState* marioState = nearest_possible_mario_state_to_object(o);
+    struct Object* player = marioState ? marioState->marioObj : NULL;
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+
+    if (cur_obj_has_behavior(bhvLllTumblingBridge) || distanceToPlayer < 1000.0f)
         o->oAction = 1;
 }
 
@@ -108,5 +135,5 @@ s16 D_8032F38C[] = { -51, 0,     0, -461, 0,   0, -512, 0,   0,    -2611, 0,
                      0,   -2360, 0, 0,    214, 0, 0,    -50, 1945, 1,     0 };
 
 void bhv_tumbling_bridge_loop(void) {
-    cur_obj_call_action_function(sTumblingBridgeActions);
+    CUR_OBJ_CALL_ACTION_FUNCTION(sTumblingBridgeActions);
 }

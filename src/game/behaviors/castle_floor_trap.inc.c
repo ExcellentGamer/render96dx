@@ -1,21 +1,30 @@
 // castle_floor_trap.c.inc
 
 void bhv_floor_trap_in_castle_loop(void) {
-    if (gMarioObject->platform == o)
-        o->parentObj->oInteractStatus |= INT_STATUS_TRAP_TURN;
-    o->oFaceAngleRoll = o->parentObj->oFaceAngleRoll;
+    u8 onPlatform = FALSE;
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (!is_player_active(&gMarioStates[i])) { continue; }
+        onPlatform = onPlatform || (gMarioStates[i].marioObj->platform == o);
+    }
+    if (o->parentObj) {
+        if (onPlatform) {
+            o->parentObj->oInteractStatus |= INT_STATUS_TRAP_TURN;
+        }
+        o->oFaceAngleRoll = o->parentObj->oFaceAngleRoll;
+    }
 }
 
 void bhv_castle_floor_trap_init(void) {
     struct Object *sp2C;
     sp2C = spawn_object_relative(0, -358, 0, 0, o, MODEL_CASTLE_BOWSER_TRAP, bhvFloorTrapInCastle);
     sp2C = spawn_object_relative(0, 358, 0, 0, o, MODEL_CASTLE_BOWSER_TRAP, bhvFloorTrapInCastle);
+    if (sp2C == NULL) { return; }
     sp2C->oMoveAngleYaw += 0x8000;
 }
 
 void bhv_castle_floor_trap_open_detect(void) {
-    if (gMarioStates->action == ACT_SPECIAL_EXIT_AIRBORNE
-        || gMarioStates->action == ACT_SPECIAL_DEATH_EXIT)
+    if (gMarioStates[0].action == ACT_SPECIAL_EXIT_AIRBORNE
+        || gMarioStates[0].action == ACT_SPECIAL_DEATH_EXIT)
         o->oAction = 4; // rotates trapdoor so it looks always open
     else {
         o->oAngleVelRoll = 0x400;
@@ -36,7 +45,10 @@ void bhv_castle_floor_trap_open(void) {
 }
 
 void bhv_castle_floor_trap_close_detect(void) {
-    if (o->oDistanceToMario > 1000.0f)
+    struct Object* player = nearest_player_to_object(o);
+    if (!player) { return; }
+    s32 distanceToPlayer = dist_between_objects(o, player);
+    if (distanceToPlayer > 1000.0f)
         o->oAction = 3; // close trapdoor
 }
 

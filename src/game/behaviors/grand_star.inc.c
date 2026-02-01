@@ -1,42 +1,54 @@
 // grand_star.c.inc
 
-s32 arc_to_goal_pos(Vec3f a0, Vec3f a1, f32 yVel, f32 gravity) {
-    f32 dx = a0[0] - a1[0];
-    f32 dz = a0[2] - a1[2];
+s32 arc_to_goal_pos(Vec3f goal, Vec3f pos, f32 yVel, f32 gravity) {
+    if (!o) { return 0; }
+    f32 dx = goal[0] - pos[0];
+    f32 dz = goal[2] - pos[2];
     f32 planarDist = sqrtf(dx * dx + dz * dz);
-    s32 time;
     o->oMoveAngleYaw = atan2s(dz, dx);
     o->oVelY = yVel;
     o->oGravity = gravity;
-    time = -2.0f / o->oGravity * yVel - 1.0f;
+    s32 time = -2.0f / o->oGravity * yVel - 1.0f;
     o->oForwardVel = planarDist / time;
     return time;
 }
 
 void grand_star_zero_velocity(void) {
+    if (!o) { return; }
     o->oGravity = 0.0f;
     o->oVelY = 0.0f;
     o->oForwardVel = 0.0f;
 }
 
+void bhv_grand_star_init(void) {
+    struct Object *other = cur_obj_nearest_object_with_behavior(bhvGrandStar);
+    if (other == NULL) return; 
+    
+    obj_mark_for_deletion(o);
+    if (gSecondCameraFocus == o) { gSecondCameraFocus = other; }
+}
+
 void bhv_grand_star_loop(void) {
-    UNUSED s32 unused;
-    Vec3f sp28;
-    sp28[0] = sp28[1] = sp28[2] = 0.0f;
+    if (o->activeFlags == ACTIVE_FLAG_DEACTIVATED) { return; }
+    
     if (o->oAction == 0) {
         if (o->oTimer == 0) {
             obj_set_angle(o, 0, 0, 0);
             o->oAngleVelYaw = 0x400;
             cur_obj_play_sound_2(SOUND_GENERAL2_STAR_APPEARS);
         }
-        if (o->oTimer > 70)
+        if (o->oTimer > 70) {
             o->oAction++;
+        }
         spawn_sparkle_particles(3, 200, 80, -60);
     } else if (o->oAction == 1) {
         if (o->oTimer == 0) {
+            Vec3f empty;
+            empty[0] = empty[1] = empty[2] = 0.0f;
+            
             cur_obj_play_sound_2(SOUND_GENERAL_GRAND_STAR);
             cutscene_object(CUTSCENE_STAR_SPAWN, o);
-            o->oGrandStarUnk108 = arc_to_goal_pos(sp28, &o->oPosX, 80.0f, -2.0f);
+            o->oGrandStarUnk108 = arc_to_goal_pos(empty, &o->oPosX, 80.0f, -2.0f);
         }
         cur_obj_move_using_fvel_and_gravity();
         if (o->oSubAction == 0) {
@@ -51,21 +63,37 @@ void bhv_grand_star_loop(void) {
             o->oPosY = o->oHomeY + 200.0f;
             grand_star_zero_velocity();
             gObjCutsceneDone = 1;
-            set_mario_npc_dialog(0);
+            set_mario_npc_dialog(&gMarioStates[0], 0, NULL);
             o->oAction++;
             o->oInteractStatus = 0;
             cur_obj_play_sound_2(SOUND_GENERAL_GRAND_STAR_JUMP);
         }
         spawn_sparkle_particles(3, 200, 80, -60);
-    } else {
+    } else if (o->oAction == 2) {
+        // Make our object tangible.
         cur_obj_become_tangible();
+        // Check for if the jumbo star has been collected.
         if (o->oInteractStatus & INT_STATUS_INTERACTED) {
+            // Make sure we're in the jumbo star cutscene.
+            if (gMarioStates[0].action != ACT_JUMBO_STAR_CUTSCENE) {
+                set_mario_action(&gMarioStates[0], ACT_JUMBO_STAR_CUTSCENE, 0);
+            }
+            // Increment our action, The star despawns next action.
+            o->oAction++;
+        }
+    } else {
+        // The star cutscene has started, Make sure the star is deleted
+        // if it isn't already deactivated.
+        if (o->activeFlags != ACTIVE_FLAG_DEACTIVATED) {
+            // Mark our object for deletion.
             obj_mark_for_deletion(o);
+            // Reset our interactive status.
             o->oInteractStatus = 0;
         }
     }
-    if (o->oAngleVelYaw > 0x400)
+    if (o->oAngleVelYaw > 0x400) {
         o->oAngleVelYaw -= 0x100;
+    }
     o->oFaceAngleYaw += o->oAngleVelYaw;
     cur_obj_scale(2.0f);
     o->oGraphYOffset = 110.0f;

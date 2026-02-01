@@ -19,7 +19,12 @@ void bhv_wf_sliding_platform_init(void) {
             break;
     }
 
-    o->oTimer = random_float() * 100.0f;
+    o->oTimer = position_based_random_float_position() * 100.0f;
+
+    o->areaTimerType = AREA_TIMER_TYPE_LOOP;
+    o->areaTimer = 0;
+    o->areaTimerDuration = 152;
+    o->areaTimerRunOnceCallback = load_object_collision_model;
 }
 
 void bhv_wf_sliding_platform_loop(void) {

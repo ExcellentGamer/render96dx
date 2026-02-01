@@ -1,18 +1,26 @@
 // bowser_key.c.inc
 
 struct ObjectHitbox sBowserKeyHitbox = {
-    /* interactType: */ INTERACT_STAR_OR_KEY,
-    /* downOffset: */ 0,
-    /* damageOrCoinValue: */ 0,
-    /* health: */ 0,
-    /* numLootCoins: */ 0,
-    /* radius: */ 160,
-    /* height: */ 100,
-    /* hurtboxRadius: */ 160,
-    /* hurtboxHeight: */ 100,
+    .interactType = INTERACT_STAR_OR_KEY,
+    .downOffset = 0,
+    .damageOrCoinValue = 0,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 160,
+    .height = 100,
+    .hurtboxRadius = 160,
+    .hurtboxHeight = 100,
 };
 
+void bhv_bowser_key_init(void) {
+    struct Object* other = cur_obj_nearest_object_with_behavior(bhvBowserKey);
+    if (other == NULL) { return; }
+    obj_mark_for_deletion(o);
+    if (gSecondCameraFocus == o) { gSecondCameraFocus = other; }
+}
+
 void bhv_bowser_key_loop(void) {
+    if (o->activeFlags == ACTIVE_FLAG_DEACTIVATED) { return; }
     cur_obj_scale(0.5f);
     if (o->oAngleVelYaw > 0x400)
         o->oAngleVelYaw -= 0x100;

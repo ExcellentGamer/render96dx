@@ -1,9 +1,12 @@
 // breakable_wall.c.inc
 
 void bhv_wf_breakable_wall_loop(void) {
-    if (gMarioStates->action == ACT_SHOT_FROM_CANNON) {
+    if (o->oBreakableWallForce || gMarioStates[0].action == ACT_SHOT_FROM_CANNON) {
         cur_obj_become_tangible();
-        if (obj_check_if_collided_with_object(o, gMarioObject)) {
+        if (o->oBreakableWallForce || obj_check_if_collided_with_object(o, gMarioObject)) {
+            if (!o->oBreakableWallForce) {
+                o->oBreakableWallForce = TRUE;
+            }
             if (cur_obj_has_behavior(bhvWfBreakableWallRight))
                 play_puzzle_jingle();
             create_sound_spawner(SOUND_GENERAL_WALL_EXPLOSION);

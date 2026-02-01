@@ -15,7 +15,8 @@
 static void bird_act_inactive(void) {
     // Start flying if the object is a spawned bird or if it's a spawner bird
     // and Mario is within 2000 units.
-    if (o->oBehParams2ndByte == BIRD_BP_SPAWNED || o->oDistanceToMario < 2000.0f) {
+    struct Object* player = nearest_player_to_object(o);
+    if (o->oBehParams2ndByte == BIRD_BP_SPAWNED || (player && dist_between_objects(o, player) < 2000.0f)) {
         // If the object is a spawner bird, play the sound of birds flying away,
         // and spawn 6 spawned birds (which will start flying on the next frame).
         if (o->oBehParams2ndByte != BIRD_BP_SPAWNED) {
@@ -62,7 +63,7 @@ static void bird_act_fly(void) {
     // A spawned bird's parent is its spawner bird. A spawner bird's parent
     // is itself. In other words, when a group of birds has its spawner bird
     // fly past Y=8000, they will all despawn simultaneously. Otherwise, fly.
-    if (o->parentObj->oPosY > 8000.0f) {
+    if (!o->parentObj || o->parentObj->oPosY > 8000.0f) {
         obj_mark_for_deletion(o);
     } else {
         // If the bird is a spawner bird, fly towards its home; otherwise,

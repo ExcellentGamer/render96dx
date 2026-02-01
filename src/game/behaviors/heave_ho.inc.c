@@ -4,22 +4,33 @@ s16 D_8032F460[][2] = { { 30, 0 }, { 42, 1 }, { 52, 0 },  { 64, 1 },  { 74, 0 },
                         { 86, 1 }, { 96, 0 }, { 108, 1 }, { 118, 0 }, { -1, 0 }, };
 
 void bhv_heave_ho_throw_mario_loop(void) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    if (gMarioStates[0].heldByObj == o->parentObj) { marioState = &gMarioStates[0]; }
+
+    struct Object* player = marioState ? marioState->marioObj : NULL;
     o->oParentRelativePosX = 200.0f;
     o->oParentRelativePosY = -50.0f;
     o->oParentRelativePosZ = 0.0f;
-    o->oMoveAngleYaw = o->parentObj->oMoveAngleYaw;
-    switch (o->parentObj->oHeaveHoUnk88) {
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            cur_obj_play_sound_2(SOUND_OBJ_HEAVEHO_TOSSED);
-            gMarioObject->oInteractStatus |= INT_STATUS_MARIO_UNK2;
-            gMarioStates->forwardVel = -45.0f;
-            gMarioStates->vel[1] = 95.0f;
-            o->parentObj->oHeaveHoUnk88 = 0;
-            break;
+    if (o->parentObj) {
+        o->oMoveAngleYaw = o->parentObj->oMoveAngleYaw;
+        switch (o->parentObj->oHeaveHoUnk88) {
+            case 0:
+                break;
+            case 1:
+                break;
+            case 2:
+                cur_obj_play_sound_2(SOUND_OBJ_HEAVEHO_TOSSED);
+                if (player) {
+                    player->oInteractStatus |= INT_STATUS_MARIO_UNK2;
+                }
+                if (marioState && marioState->action == ACT_GRABBED) {
+                    marioState->forwardVel = -45.0f;
+                    marioState->vel[1] = 95.0f;
+                }
+                o->parentObj->oHeaveHoUnk88 = 0;
+                o->parentObj->usingObj = NULL;
+                break;
+        }
     }
 }
 
@@ -27,7 +38,7 @@ void heave_ho_act_1(void) {
     s32 sp1C = 0;
     o->oForwardVel = 0.0f;
     cur_obj_reverse_animation();
-    while (1) {
+    while (TRUE) {
         if (D_8032F460[sp1C][0] == -1) {
             o->oAction = 2;
             break;
@@ -41,10 +52,13 @@ void heave_ho_act_1(void) {
 }
 
 void heave_ho_act_2(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+
     UNUSED s32 unused;
     s16 angleVel;
     if (1000.0f < cur_obj_lateral_dist_from_mario_to_home())
-        o->oAngleToMario = cur_obj_angle_to_home();
+        angleToPlayer = cur_obj_angle_to_home();
     if (o->oTimer > 150) {
         o->oHeaveHoUnkF4 = (302 - o->oTimer) / 152.0f;
         if (o->oHeaveHoUnkF4 < 0.1) {
@@ -56,7 +70,7 @@ void heave_ho_act_2(void) {
     cur_obj_init_animation_with_accel_and_sound(0, o->oHeaveHoUnkF4);
     o->oForwardVel = o->oHeaveHoUnkF4 * 10.0f;
     angleVel = o->oHeaveHoUnkF4 * 0x400;
-    o->oMoveAngleYaw = approach_s16_symmetric(o->oMoveAngleYaw, o->oAngleToMario, angleVel);
+    o->oMoveAngleYaw = approach_s16_symmetric(o->oMoveAngleYaw, angleToPlayer, angleVel);
 }
 
 void heave_ho_act_3(void) {
@@ -72,11 +86,7 @@ void heave_ho_act_3(void) {
 }
 
 void heave_ho_act_0(void) {
-#ifndef NODRAWINGDISTANCE
-    if (find_water_level(o->oPosX, o->oPosZ) < o->oPosY && o->oDistanceToMario < 4000.0f) {
-#else
     if (find_water_level(o->oPosX, o->oPosZ) < (o->oPosY - 50.0f)) {
-#endif
         cur_obj_set_pos_to_home();
         cur_obj_become_tangible();
         cur_obj_unhide();
@@ -91,7 +101,7 @@ void (*sHeaveHoActions[])(void) = { heave_ho_act_0, heave_ho_act_1, heave_ho_act
 
 void heave_ho_move(void) {
     cur_obj_update_floor_and_walls();
-    cur_obj_call_action_function(sHeaveHoActions);
+    CUR_OBJ_CALL_ACTION_FUNCTION(sHeaveHoActions);
     cur_obj_move_standard(-78);
     if (o->oMoveFlags & OBJ_MOVE_MASK_IN_WATER)
         o->oGraphYOffset = -15.0f;
@@ -105,7 +115,19 @@ void heave_ho_move(void) {
         o->oInteractStatus = 0;
         o->oHeaveHoUnk88 = 1;
         o->oAction = 3;
+        o->usingObj = nearest_player_to_object(o);
     }
+}
+
+void bhv_heave_ho_override_ownership(u8* shouldOverride, u8* shouldOwn) {
+    *shouldOverride = (gMarioStates[0].heldByObj == o);
+    if (*shouldOverride) {
+        *shouldOwn = true;
+    }
+}
+
+u8 bhv_heave_ho_ignore_if_true(void) {
+    return (gMarioStates[0].heldByObj == o);
 }
 
 void bhv_heave_ho_loop(void) {

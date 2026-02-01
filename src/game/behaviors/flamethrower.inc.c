@@ -20,9 +20,9 @@ void bhv_flamethrower_flame_loop(void) {
             o->oVelY = 0;
             o->oPosY = o->oFloorHeight + 25.0f * size;
         }
-        sp18 = o->parentObj->oFlameThowerFlameUnk110 / 1.2;
+        sp18 = o->parentObj ? o->parentObj->oFlameThowerFlameUnk110 / 1.2 : 0;
     } else
-        sp18 = o->parentObj->oFlameThowerFlameUnk110;
+        sp18 = o->parentObj ? o->parentObj->oFlameThowerFlameUnk110 : 0;
     cur_obj_scale(size);
     if (o->oBehParams2ndByte == 4)
         o->oPosY += o->oForwardVel; // weird?
@@ -34,15 +34,21 @@ void bhv_flamethrower_flame_loop(void) {
 }
 
 void bhv_flamethrower_loop(void) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    struct Object* player = marioState ? marioState->marioObj : NULL;
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+
     struct Object *flame;
     f32 flameVel;
     s32 sp34;
     s32 model;
     UNUSED u8 pad[8];
     if (o->oAction == 0) {
-        if (gCurrLevelNum != LEVEL_BBH || gMarioOnMerryGoRound == 1)
-            if (o->oDistanceToMario < 2000.0f)
+        if (gCurrLevelNum != LEVEL_BBH || gMarioOnMerryGoRound == TRUE) {
+            if (marioState && marioState->playerIndex == 0 && distanceToPlayer < 2000.0f) {
                 o->oAction++;
+            }
+        }
     } else if (o->oAction == 1) {
         model = MODEL_RED_FLAME;
         flameVel = 95.0f;
@@ -59,7 +65,7 @@ void bhv_flamethrower_loop(void) {
             o->oAction++;
         o->oFlameThowerUnk110 = sp34;
         flame = spawn_object_relative(o->oBehParams2ndByte, 0, 0, 0, o, model, bhvFlamethrowerFlame);
-        flame->oForwardVel = flameVel;
+        if (flame != NULL) { flame->oForwardVel = flameVel; }
         cur_obj_play_sound_1(SOUND_AIR_BLOW_FIRE);
     } else if (o->oTimer > 60)
         o->oAction = 0;

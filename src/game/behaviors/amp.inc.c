@@ -6,15 +6,15 @@
  */
 
 static struct ObjectHitbox sAmpHitbox = {
-    /* interactType:      */ INTERACT_SHOCK,
-    /* downOffset:        */ 40,
-    /* damageOrCoinValue: */ 1,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 40,
-    /* height:            */ 50,
-    /* hurtboxRadius:     */ 50,
-    /* hurtboxHeight:     */ 60,
+    .interactType = INTERACT_SHOCK,
+    .downOffset = 40,
+    .damageOrCoinValue = 1,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 40,
+    .height = 50,
+    .hurtboxRadius = 50,
+    .hurtboxHeight = 60,
 };
 
 /**
@@ -47,15 +47,9 @@ static void check_amp_attack(void) {
     obj_set_hitbox(o, &sAmpHitbox);
 
     if (o->oInteractStatus & INT_STATUS_INTERACTED) {
-        // Unnecessary if statement, maybe caused by a macro for
-        //     if (o->oInteractStatus & INT_STATUS_INTERACTED)
-        //         o->oAction = X;
-        // ?
-        if (o->oInteractStatus & INT_STATUS_INTERACTED) {
-            // This function is used for both normal amps and homing amps,
-            // AMP_ACT_ATTACK_COOLDOWN == HOMING_AMP_ACT_ATTACK_COOLDOWN
-            o->oAction = AMP_ACT_ATTACK_COOLDOWN;
-        }
+        // This function is used for both normal amps and homing amps,
+        // AMP_ACT_ATTACK_COOLDOWN == HOMING_AMP_ACT_ATTACK_COOLDOWN
+        o->oAction = AMP_ACT_ATTACK_COOLDOWN;
 
         // Clear interact status
         o->oInteractStatus = 0;
@@ -70,8 +64,11 @@ static void homing_amp_appear_loop(void) {
     // In Lakitu and Mario cam, it is usually very close to the current camera position.
     // In Fixed cam, it is the point behind Mario the camera will go to when transitioning
     // to Lakitu cam. Homing amps will point themselves towards this point when appearing.
-    f32 relativeTargetX = gLakituState.goalPos[0] - o->oPosX;
-    f32 relativeTargetZ = gLakituState.goalPos[2] - o->oPosZ;
+    struct Object* player = nearest_player_to_object(o);
+    f32 relativeTargetX = player ? player->oPosX - o->oPosX : 10000;
+    f32 relativeTargetZ = player ? player->oPosZ - o->oPosZ : 10000;
+    //f32 relativeTargetX = gLakituState.goalPos[0] - o->oPosX;
+    //f32 relativeTargetZ = gLakituState.goalPos[2] - o->oPosZ;
     s16 targetYaw = atan2s(relativeTargetZ, relativeTargetX);
 
     o->oMoveAngleYaw = approach_s16_symmetric(o->oMoveAngleYaw, targetYaw, 0x1000);
@@ -99,9 +96,16 @@ static void homing_amp_appear_loop(void) {
  * Chase Mario.
  */
 static void homing_amp_chase_loop(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+
+    if (!player) {
+        o->oHomingAmpLockedOn = FALSE;
+    }
+
     // Lock on to Mario if he ever goes within 11.25 degrees of the amp's line of sight
-    if ((o->oAngleToMario - 0x400 < o->oMoveAngleYaw)
-        && (o->oMoveAngleYaw < o->oAngleToMario + 0x400)) {
+    if ((angleToPlayer - 0x400 < o->oMoveAngleYaw)
+        && (o->oMoveAngleYaw < angleToPlayer + 0x400)) {
         o->oHomingAmpLockedOn = TRUE;
         o->oTimer = 0;
     }
@@ -115,10 +119,10 @@ static void homing_amp_chase_loop(void) {
         // Mario's head. Mario's graphics' Y + 150 is around the top of his head.
         // Note that the average Y will slowly go down to approach his head if the amp
         // is above his head, but if the amp is below it will instantly snap up.
-        if (o->oHomingAmpAvgY > gMarioObject->header.gfx.pos[1] + 150.0f) {
+        if (o->oHomingAmpAvgY > player->header.gfx.pos[1] + 150.0f) {
             o->oHomingAmpAvgY -= 10.0f;
         } else {
-            o->oHomingAmpAvgY = gMarioObject->header.gfx.pos[1] + 150.0f;
+            o->oHomingAmpAvgY = player->header.gfx.pos[1] + 150.0f;
         }
 
         if (o->oTimer >= 31) {
@@ -129,13 +133,15 @@ static void homing_amp_chase_loop(void) {
         // while curving towards him.
         o->oForwardVel = 10.0f;
 
-        obj_turn_toward_object(o, gMarioObject, 16, 0x400);
+        if (player) {
+            obj_turn_toward_object(o, player, 16, 0x400);
 
-        // The amp's average Y will approach Mario's graphical Y position + 250
-        // at a rate of 10 units per frame. Interestingly, this is different from
-        // the + 150 used while chasing him. Could this be a typo?
-        if (o->oHomingAmpAvgY < gMarioObject->header.gfx.pos[1] + 250.0f) {
-            o->oHomingAmpAvgY += 10.0f;
+            // The amp's average Y will approach Mario's graphical Y position + 250
+            // at a rate of 10 units per frame. Interestingly, this is different from
+            // the + 150 used while chasing him. Could this be a typo?
+            if (o->oHomingAmpAvgY < player->header.gfx.pos[1] + 250.0f) {
+                o->oHomingAmpAvgY += 10.0f;
+            }
         }
     }
 
@@ -146,7 +152,7 @@ static void homing_amp_chase_loop(void) {
     check_amp_attack();
 
     // Give up if Mario goes further than 1500 units from the amp's original position
-    if (is_point_within_radius_of_mario(o->oHomeX, o->oHomeY, o->oHomeZ, 1500) == FALSE) {
+    if (!is_point_within_radius_of_mario(o->oHomeX, o->oHomeY, o->oHomeZ, 1500)) {
         o->oAction = HOMING_AMP_ACT_GIVE_UP;
     }
 }
@@ -178,7 +184,7 @@ static void homing_amp_give_up_loop(void) {
  */
 static void amp_attack_cooldown_loop(void) {
     // Turn intangible and wait for 90 frames before chasing Mario again after hitting him.
-    o->header.gfx.unk38.animFrame += 2;
+    o->header.gfx.animInfo.animFrame += 2;
     o->oForwardVel = 0;
 
     cur_obj_become_intangible();
@@ -270,14 +276,18 @@ void bhv_circling_amp_init(void) {
  * Fixed amps are a sub-species of circling amps, with circle radius 0.
  */
 static void fixed_circling_amp_idle_loop(void) {
-    // Turn towards Mario, in both yaw and pitch.
-    f32 xToMario = gMarioObject->header.gfx.pos[0] - o->oPosX;
-    f32 yToMario = gMarioObject->header.gfx.pos[1] + 120.0f - o->oPosY;
-    f32 zToMario = gMarioObject->header.gfx.pos[2] - o->oPosZ;
-    s16 vAngleToMario = atan2s(sqrtf(xToMario * xToMario + zToMario * zToMario), -yToMario);
+    struct Object* player = nearest_player_to_object(o);
 
-    obj_turn_toward_object(o, gMarioObject, 19, 0x1000);
-    o->oFaceAnglePitch = approach_s16_symmetric(o->oFaceAnglePitch, vAngleToMario, 0x1000);
+    // Turn towards Mario, in both yaw and pitch.
+    if (player) {
+        f32 xToMario = player->header.gfx.pos[0] - o->oPosX;
+        f32 yToMario = player->header.gfx.pos[1] + 120.0f - o->oPosY;
+        f32 zToMario = player->header.gfx.pos[2] - o->oPosZ;
+        s16 vAngleToMario = atan2s(sqrtf(xToMario * xToMario + zToMario * zToMario), -yToMario);
+
+        obj_turn_toward_object(o, player, 19, 0x1000);
+        o->oFaceAnglePitch = approach_s16_symmetric(o->oFaceAnglePitch, vAngleToMario, 0x1000);
+    }
 
     // Oscillate 40 units up and down.
     // Interestingly, 0x458 (1112 in decimal) is a magic number with no apparent significance.

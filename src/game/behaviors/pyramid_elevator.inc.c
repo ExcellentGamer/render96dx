@@ -10,11 +10,9 @@
  * moves.
  */
 void bhv_pyramid_elevator_init(void) {
-    s32 i;
-    struct Object *ball;
-
-    for (i = 0; i < 10; i++) {
-        ball = spawn_object(o, MODEL_TRAJECTORY_MARKER_BALL, bhvPyramidElevatorTrajectoryMarkerBall);
+    for (s32 i = 0; i < 10; i++) {
+        struct Object *ball = spawn_object(o, MODEL_TRAJECTORY_MARKER_BALL, bhvPyramidElevatorTrajectoryMarkerBall);
+        if (ball == NULL) { continue; }
         ball->oPosY = 4600 - i * 460;
     }
 }
@@ -26,8 +24,9 @@ void bhv_pyramid_elevator_loop(void) {
          * transition to the starting state.
          */
         case PYRAMID_ELEVATOR_IDLE:
-            if (gMarioObject->platform == o)
+            if (cur_obj_is_any_player_on_platform()) {
                 o->oAction = PYRAMID_ELEVATOR_START_MOVING;
+            }
             break;
 
         /**
@@ -36,8 +35,9 @@ void bhv_pyramid_elevator_loop(void) {
          */
         case PYRAMID_ELEVATOR_START_MOVING:
             o->oPosY = o->oHomeY - sins(o->oTimer * 0x1000) * 10.0f;
-            if (o->oTimer == 8)
+            if (o->oTimer == 8) {
                 o->oAction = PYRAMID_ELEVATOR_CONSTANT_VELOCITY;
+            }
             break;
 
         /**
@@ -49,7 +49,7 @@ void bhv_pyramid_elevator_loop(void) {
             o->oPosY += o->oVelY;
             if (o->oPosY < 128.0f) {
                 o->oPosY = 128.0f;
-                o->oAction = PYRAMID_ELEVATOR_AT_BOTTOM;
+                o->oAction = PYRAMID_ELEVATOR_END_MOVING;
             }
             break;
 
@@ -57,12 +57,20 @@ void bhv_pyramid_elevator_loop(void) {
          * Use a sine wave to stop the elevator's movement with a small jolt.
          * Then, remain at the bottom of the track.
          */
-        case PYRAMID_ELEVATOR_AT_BOTTOM:
+        case PYRAMID_ELEVATOR_END_MOVING:
             o->oPosY = sins(o->oTimer * 0x1000) * 10.0f + 128.0f;
             if (o->oTimer >= 8) {
-                o->oVelY = 0;
-                o->oPosY = 128.0f;
+                o->oAction = PYRAMID_ELEVATOR_AT_BOTTOM;
             }
+            break;
+        
+        /**
+         * The elevator is now at the bottom and finished it's moving
+         * We will no longer move from this point.
+         */
+        case PYRAMID_ELEVATOR_AT_BOTTOM:
+            o->oVelY = 0;
+            o->oPosY = 128.0f;
             break;
     }
 }
@@ -72,10 +80,8 @@ void bhv_pyramid_elevator_loop(void) {
  * Otherwise, set their scale.
  */
 void bhv_pyramid_elevator_trajectory_marker_ball_loop(void) {
-    struct Object *elevator;
-
     cur_obj_scale(0.15f);
-    elevator = cur_obj_nearest_object_with_behavior(bhvPyramidElevator);
+    struct Object *elevator = cur_obj_nearest_object_with_behavior(bhvPyramidElevator);
 
     if (elevator != NULL) {
         if (elevator->oAction != PYRAMID_ELEVATOR_IDLE) {

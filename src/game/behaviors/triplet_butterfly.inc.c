@@ -5,15 +5,15 @@ struct TripletButterflyActivationData {
 };
 
 static struct ObjectHitbox sTripletButterflyExplodeHitbox = {
-    /* interactType:      */ INTERACT_MR_BLIZZARD,
-    /* downOffset:        */ 50,
-    /* damageOrCoinValue: */ 2,
-    /* health:            */ 1,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 100,
-    /* height:            */ 50,
-    /* hurtboxRadius:     */ 100,
-    /* hurtboxHeight:     */ 50,
+    .interactType = INTERACT_MR_BLIZZARD,
+    .downOffset = 50,
+    .damageOrCoinValue = 2,
+    .health = 1,
+    .numLootCoins = 0,
+    .radius = 100,
+    .height = 50,
+    .hurtboxRadius = 100,
+    .hurtboxHeight = 50,
 };
 
 static struct TripletButterflyActivationData sTripletButterflyActivationData[] = {
@@ -36,10 +36,12 @@ static void triplet_butterfly_act_init(void) {
         }
 
         //! TODO: Describe this glitch
-        if (o->parentObj->oTripletButterflySelectedButterfly == o->oBehParams2ndByte) {
-            o->oTripletButterflyType = TRIPLET_BUTTERFLY_TYPE_SPAWN_1UP;
-        } else if (o->parentObj->oBehParams2ndByte & TRIPLET_BUTTERFLY_BP_NO_BOMBS) {
-            o->oTripletButterflyType = TRIPLET_BUTTERFLY_TYPE_NORMAL;
+        if (o->parentObj) {
+            if (o->parentObj->oTripletButterflySelectedButterfly == o->oBehParams2ndByte) {
+                o->oTripletButterflyType = TRIPLET_BUTTERFLY_TYPE_SPAWN_1UP;
+            } else if (o->parentObj->oBehParams2ndByte & TRIPLET_BUTTERFLY_BP_NO_BOMBS) {
+                o->oTripletButterflyType = TRIPLET_BUTTERFLY_TYPE_NORMAL;
+            }
         }
         // Default butterfly type is TRIPLET_BUTTERFLY_TYPE_EXPLODES
 
@@ -54,42 +56,35 @@ static void triplet_butterfly_act_init(void) {
 }
 
 static void triplet_butterfly_act_wander(void) {
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario > 1500.0f) {
-        obj_mark_for_deletion(o);
+    approach_f32_ptr(&o->oTripletButterflySpeed, 8.0f, 0.5f);
+    if (o->oTimer < 60) {
+        o->oTripletButterflyTargetYaw = cur_obj_angle_to_home();
     } else {
-#endif
-        approach_f32_ptr(&o->oTripletButterflySpeed, 8.0f, 0.5f);
-        if (o->oTimer < 60) {
-            o->oTripletButterflyTargetYaw = cur_obj_angle_to_home();
-        } else {
-            o->oTripletButterflyTargetYaw = (s32) o->oTripletButterflyBaseYaw;
+        o->oTripletButterflyTargetYaw = (s32) o->oTripletButterflyBaseYaw;
 
-            if (o->oTimer > 110 && o->oDistanceToMario < 200.0f
-                && o->oTripletButterflyType > TRIPLET_BUTTERFLY_TYPE_NORMAL) {
-                o->oAction = TRIPLET_BUTTERFLY_ACT_ACTIVATE;
-                o->oTripletButterflySpeed = 0.0f;
-            }
+        if (o->oTimer > 110 && o->oDistanceToMario < 200.0f
+            && o->oTripletButterflyType > TRIPLET_BUTTERFLY_TYPE_NORMAL) {
+            o->oAction = TRIPLET_BUTTERFLY_ACT_ACTIVATE;
+            o->oTripletButterflySpeed = 0.0f;
         }
-
-        if (o->oHomeY < o->oFloorHeight) {
-            o->oHomeY = o->oFloorHeight;
-        }
-
-        if (o->oPosY < o->oHomeY + random_linear_offset(50, 50)) {
-            o->oTripletButterflyTargetPitch = -0x2000;
-        } else {
-            o->oTripletButterflyTargetPitch = 0x2000;
-        }
-
-        obj_move_pitch_approach(o->oTripletButterflyTargetPitch, 400);
-        cur_obj_rotate_yaw_toward(o->oTripletButterflyTargetYaw, random_linear_offset(400, 800));
-#ifndef NODRAWINGDISTANCE
     }
-#endif
+
+    if (o->oHomeY < o->oFloorHeight) {
+        o->oHomeY = o->oFloorHeight;
+    }
+
+    if (o->oPosY < o->oHomeY + random_linear_offset(50, 50)) {
+        o->oTripletButterflyTargetPitch = -0x2000;
+    } else {
+        o->oTripletButterflyTargetPitch = 0x2000;
+    }
+
+    obj_move_pitch_approach(o->oTripletButterflyTargetPitch, 400);
+    cur_obj_rotate_yaw_toward(o->oTripletButterflyTargetYaw, random_linear_offset(400, 800));
 }
 
 static void triplet_butterfly_act_activate(void) {
+    if (!BHV_ARR_CHECK(sTripletButterflyActivationData, o->oTripletButterflyType, struct TripletButterflyActivationData)) { return; }
     if (o->oTimer > 20) {
         if (o->oTripletButterflyModel == 0) {
             spawn_object_relative_with_scale(0, 0, -40, 0, 1.5f, o, MODEL_SMOKE, bhvWhitePuffSmoke2);
@@ -98,8 +93,7 @@ static void triplet_butterfly_act_activate(void) {
             obj_set_billboard(o);
             o->oTripletButterflyScale = 0.0f;
             o->oHomeY = o->oPosY;
-        } else if (o->oTripletButterflyScale
-                   >= sTripletButterflyActivationData[o->oTripletButterflyType].scale) {
+        } else if (o->oTripletButterflyScale >= sTripletButterflyActivationData[o->oTripletButterflyType].scale) {
             if (o->oTripletButterflyType != TRIPLET_BUTTERFLY_TYPE_EXPLODES) {
                 spawn_object(o, o->oTripletButterflyModel,
                              sTripletButterflyActivationData[o->oTripletButterflyType].behavior);
@@ -110,8 +104,7 @@ static void triplet_butterfly_act_activate(void) {
             }
         }
 
-        o->oTripletButterflyScale +=
-            sTripletButterflyActivationData[o->oTripletButterflyType].scale / 30.0f;
+        o->oTripletButterflyScale += sTripletButterflyActivationData[o->oTripletButterflyType].scale / 30.0f;
         if (o->oTripletButterflyType == TRIPLET_BUTTERFLY_TYPE_EXPLODES) {
             o->oGraphYOffset = 250.0f * o->oTripletButterflyScale;
             o->oPosY = o->oHomeY - o->oGraphYOffset;
@@ -143,7 +136,7 @@ static void triplet_butterfly_act_explode(void) {
 
         approach_f32_ptr(&o->oTripletButterflySpeed, 20.0f, 1.0f);
         cur_obj_rotate_yaw_toward(o->oAngleToMario, 800);
-        obj_turn_pitch_toward_mario(-100.0f, 800);
+        obj_turn_pitch_toward_mario(&gMarioStates[0], -100.0f, 800);
     }
 }
 

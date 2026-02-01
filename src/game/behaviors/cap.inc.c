@@ -1,15 +1,15 @@
 // cap.c.inc
 
 static struct ObjectHitbox sCapHitbox = {
-    /* interactType:      */ INTERACT_CAP,
-    /* downOffset:        */ 0,
-    /* damageOrCoinValue: */ 0,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 80,
-    /* height:            */ 80,
-    /* hurtboxRadius:     */ 90,
-    /* hurtboxHeight:     */ 90,
+    .interactType = INTERACT_CAP,
+    .downOffset = 0,
+    .damageOrCoinValue = 0,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 80,
+    .height = 80,
+    .hurtboxRadius = 90,
+    .hurtboxHeight = 90,
 };
 
 s32 cap_set_hitbox(void) {
@@ -193,28 +193,24 @@ void bhv_normal_cap_init(void) {
     o->oFriction = 0.89f;
     o->oBuoyancy = 0.9f;
     o->oOpacity = 0xFF;
-
-    save_file_set_cap_pos(o->oPosX, o->oPosY, o->oPosZ);
 }
 
 void normal_cap_set_save_flags(void) {
+    if (o->oBehParams - 1 != 0) { return; }
+
     save_file_clear_flags(SAVE_FLAG_CAP_ON_GROUND);
 
     switch (gCurrCourseNum) {
-        case COURSE_SSL:
-            save_file_set_flags(SAVE_FLAG_CAP_ON_KLEPTO);
-            break;
-
         case COURSE_SL:
-            save_file_set_flags(SAVE_FLAG_CAP_ON_MR_BLIZZARD);
+            gMarioStates[0].cap = SAVE_FLAG_CAP_ON_MR_BLIZZARD;
             break;
 
         case COURSE_TTM:
-            save_file_set_flags(SAVE_FLAG_CAP_ON_UKIKI);
+            gMarioStates[0].cap = SAVE_FLAG_CAP_ON_UKIKI;
             break;
 
         default:
-            save_file_set_flags(SAVE_FLAG_CAP_ON_KLEPTO);
+            gMarioStates[0].cap = SAVE_FLAG_CAP_ON_KLEPTO;
             break;
     }
 }
@@ -251,14 +247,13 @@ void bhv_normal_cap_loop(void) {
             break;
     }
 
-    if ((s32) o->oForwardVel != 0)
-        save_file_set_cap_pos(o->oPosX, o->oPosY, o->oPosZ);
-
     if (o->activeFlags == ACTIVE_FLAG_DEACTIVATED)
         normal_cap_set_save_flags();
 
     if (cap_set_hitbox() == 1)
         save_file_clear_flags(SAVE_FLAG_CAP_ON_GROUND);
+
+    obj_set_model(o, gMarioStates[0].character->capModelId);
 }
 
 void bhv_vanish_cap_init(void) {

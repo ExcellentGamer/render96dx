@@ -1,15 +1,22 @@
 // tower_platform.c.inc
 
 void bhv_wf_solid_tower_platform_loop(void) {
-    if (o->parentObj->oAction == 3)
-        obj_mark_for_deletion(o);
+    if (!o->parentObj) { return; }
+    if (o->parentObj->oAction == 1) {
+        cur_obj_become_tangible();
+        o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
+    } else if (o->parentObj->oAction > 1) {
+        cur_obj_become_intangible();
+        o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
+    }
 }
 
 void bhv_wf_elevator_tower_platform_loop(void) {
     switch (o->oAction) {
         case 0:
-            if (gMarioObject->platform == o)
+            if (gMarioObject && gMarioObject->platform == o) {
                 o->oAction++;
+            }
             break;
         case 1:
             cur_obj_play_sound_1(SOUND_ENV_ELEVATOR1);
@@ -30,16 +37,25 @@ void bhv_wf_elevator_tower_platform_loop(void) {
                 o->oPosY -= 5.0f;
             break;
     }
-    if (o->parentObj->oAction == 3)
-        obj_mark_for_deletion(o);
+
+    if (o->parentObj) {
+        if (o->parentObj->oAction == 1) {
+            cur_obj_become_tangible();
+            o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
+        } else if (o->parentObj->oAction > 1) {
+            cur_obj_become_intangible();
+            o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
+        }
+    }
 }
 
 void bhv_wf_sliding_tower_platform_loop(void) {
     s32 sp24 = o->oPlatformUnk110 / o->oPlatformUnk10C;
     switch (o->oAction) {
         case 0:
-            if (o->oTimer > sp24)
+            if (o->oTimer > sp24) {
                 o->oAction++;
+            }
             o->oForwardVel = -o->oPlatformUnk10C;
             break;
         case 1:
@@ -51,21 +67,43 @@ void bhv_wf_sliding_tower_platform_loop(void) {
     cur_obj_compute_vel_xz();
     o->oPosX += o->oVelX;
     o->oPosZ += o->oVelZ;
-    if (o->parentObj->oAction == 3)
-        obj_mark_for_deletion(o);
+
+    if (o->parentObj) {
+        if (o->parentObj->oAction == 1) {
+            cur_obj_become_tangible();
+            o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
+        } else if (o->parentObj->oAction > 1) {
+            cur_obj_become_intangible();
+            o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
+        }
+    }
 }
 
 void spawn_and_init_wf_platforms(s16 a, const BehaviorScript *bhv) {
     s16 yaw;
     struct Object *platform = spawn_object(o, a, bhv);
     yaw = o->oPlatformSpawnerUnkF4 * o->oPlatformSpawnerUnkFC + o->oPlatformSpawnerUnkF8;
-    platform->oMoveAngleYaw = yaw;
-    platform->oPosX += o->oPlatformSpawnerUnk100 * sins(yaw);
-    platform->oPosY += 100 * o->oPlatformSpawnerUnkF4;
-    platform->oPosZ += o->oPlatformSpawnerUnk100 * coss(yaw);
-    platform->oPlatformUnk110 = o->oPlatformSpawnerUnk104;
-    platform->oPlatformUnk10C = o->oPlatformSpawnerUnk108;
+    if (platform != NULL) {
+        platform->oMoveAngleYaw = yaw;
+        platform->oPosX += o->oPlatformSpawnerUnk100 * sins(yaw);
+        platform->oPosY += 100 * o->oPlatformSpawnerUnkF4;
+        platform->oPosZ += o->oPlatformSpawnerUnk100 * coss(yaw);
+        platform->oPlatformUnk110 = o->oPlatformSpawnerUnk104;
+        platform->oPlatformUnk10C = o->oPlatformSpawnerUnk108;
+    }
     o->oPlatformSpawnerUnkF4++;
+
+    if (platform != NULL) {
+        if (bhv == smlua_override_behavior(bhvWfSolidTowerPlatform) || bhv == smlua_override_behavior(bhvWfSlidingTowerPlatform)) {
+            u32 loopTime = 1 + (platform->oPlatformUnk110 / platform->oPlatformUnk10C);
+            loopTime *= 2;
+            loopTime += 1;
+            platform->areaTimerType = AREA_TIMER_TYPE_LOOP;
+            platform->areaTimer = 0;
+            platform->areaTimerDuration = loopTime;
+            platform->areaTimerRunOnceCallback = load_object_collision_model;
+        }
+    }
 }
 
 void spawn_wf_platform_group(void) {
@@ -86,23 +124,31 @@ void spawn_wf_platform_group(void) {
     spawn_and_init_wf_platforms(MODEL_WF_TOWER_SQUARE_PLATORM_ELEVATOR, bhvWfElevatorTowerPlatform);
 }
 
+void bhv_tower_platform_group_init(void) {
+    spawn_wf_platform_group();
+}
+
 void bhv_tower_platform_group_loop(void) {
-    f32 marioY = gMarioObject->oPosY;
-    o->oDistanceToMario = dist_between_objects(o, gMarioObject);
+
+    u8 anyPlayerInRange = FALSE;
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (!is_player_active(&gMarioStates[i])) { continue; }
+        if (gMarioStates[i].marioObj->oPosY > o->oHomeY - 1000.0f) { anyPlayerInRange = TRUE; }
+    }
+
     switch (o->oAction) {
         case 0:
-            if (marioY > o->oHomeY - 1000.0f)
-                o->oAction++;
+            if (anyPlayerInRange) { o->oAction++; }
             break;
         case 1:
-            spawn_wf_platform_group();
-            o->oAction++;
+            if (!anyPlayerInRange) { o->oAction++; }
             break;
         case 2:
-            if (marioY < o->oHomeY - 1000.0f)
-                o->oAction++;
-            break;
         case 3:
+        case 4:
+            o->oAction++;
+            break;
+        case 5:
             o->oAction = 0;
             break;
     }

@@ -13,14 +13,13 @@ void bhv_bowser_shock_wave_loop(void) {
         o->oOpacity -= 5;
     if (o->oOpacity <= 0)
         obj_mark_for_deletion(o);
-    if (o->oTimer < sp1E && mario_is_in_air_action() == 0) {
+    if (o->oTimer < sp1E && mario_is_in_air_action(&gMarioStates[0]) == 0) {
         sp2C = o->oBowserShockWaveUnkF4 * D_8032F420[0];
         sp28 = o->oBowserShockWaveUnkF4 * D_8032F420[1];
         sp24 = o->oBowserShockWaveUnkF4 * D_8032F420[2];
         sp20 = o->oBowserShockWaveUnkF4 * D_8032F420[3];
         if ((sp2C < o->oDistanceToMario && o->oDistanceToMario < sp28)
             || (sp24 < o->oDistanceToMario && o->oDistanceToMario < sp20))
-            gMarioObject->oInteractStatus |=
-                0x10; // This is interact_coin, but the name sounds wrong in this behiavor
+            gMarioStates[0].marioObj->oInteractStatus |= INT_STATUS_HIT_BY_SHOCKWAVE;
     }
 }

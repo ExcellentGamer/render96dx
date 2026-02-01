@@ -4,12 +4,14 @@ void hexagonal_ring_spawn_flames(void) {
     struct Object *sp1C;
     f32 size;
     sp1C = spawn_object(o, MODEL_RED_FLAME, bhvVolcanoFlames);
-    sp1C->oPosY += 550.0f;
-    sp1C->oMoveAngleYaw = random_u16() << 0x10 >> 0x10;
-    sp1C->oForwardVel = random_float() * 40.0f + 20.0f;
-    sp1C->oVelY = random_float() * 50.0f + 10.0f;
-    size = random_float() * 6.0 + 3.0;
-    obj_scale_xyz(sp1C, size, size, size);
+    if (sp1C != NULL) {
+        sp1C->oPosY += 550.0f;
+        sp1C->oMoveAngleYaw = random_u16() << 0x10 >> 0x10;
+        sp1C->oForwardVel = random_float() * 40.0f + 20.0f;
+        sp1C->oVelY = random_float() * 50.0f + 10.0f;
+        size = random_float() * 6.0 + 3.0;
+        obj_scale_xyz(sp1C, size, size, size);
+    }
     if (random_float() < 0.1)
         cur_obj_play_sound_2(SOUND_GENERAL_VOLCANO_EXPLOSION);
 }
@@ -20,7 +22,7 @@ void bhv_lll_rotating_hexagonal_ring_loop(void) {
     o->oDrawingDistance = 8000.0f;
     switch (o->oAction) {
         case 0:
-            if (gMarioObject->platform == o)
+            if (cur_obj_is_any_player_on_platform())
                 o->oAction++;
             o->oAngleVelYaw = 0x100;
             break;
@@ -30,7 +32,7 @@ void bhv_lll_rotating_hexagonal_ring_loop(void) {
                 o->oAction++;
             break;
         case 2:
-            if (gMarioObject->platform != o)
+            if (cur_obj_is_any_player_on_platform())
                 o->oAction++;
             if (o->oTimer > 128)
                 o->oAction++;

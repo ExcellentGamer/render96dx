@@ -4,15 +4,15 @@ struct Struct80331C38 {
 };
 
 struct ObjectHitbox sSkeeterHitbox = {
-    /* interactType:      */ INTERACT_BOUNCE_TOP,
-    /* downOffset:        */ 20,
-    /* damageOrCoinValue: */ 2,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 3,
-    /* radius:            */ 180,
-    /* height:            */ 100,
-    /* hurtboxRadius:     */ 150,
-    /* hurtboxHeight:     */ 90,
+    .interactType = INTERACT_BOUNCE_TOP,
+    .downOffset = 20,
+    .damageOrCoinValue = 2,
+    .health = 0,
+    .numLootCoins = 3,
+    .radius = 180,
+    .height = 100,
+    .hurtboxRadius = 150,
+    .hurtboxHeight = 90,
 };
 
 struct Struct80331C38 D_80331C38[] = {
@@ -61,6 +61,9 @@ static void skeeter_act_idle(void) {
 }
 
 static void skeeter_act_lunge(void) {
+    s32 distanceToPlayer = o->oDistanceToMario;
+    s32 angleToPlayer = o->oAngleToMario;
+
     if (!(o->oMoveFlags & OBJ_MOVE_AT_WATER_SURFACE)) {
         o->oAction = SKEETER_ACT_IDLE;
     } else {
@@ -76,8 +79,8 @@ static void skeeter_act_lunge(void) {
         if (obj_forward_vel_approach(0.0f, 0.8f) && cur_obj_check_if_at_animation_end()) {
             o->oMoveAngleYaw = o->oFaceAngleYaw;
 
-            if (o->oDistanceToMario >= 25000.0f) {
-                o->oSkeeterTargetAngle = o->oAngleToMario;
+            if (distanceToPlayer >= 25000.0f) {
+                o->oSkeeterTargetAngle = angleToPlayer;
             } else {
                 o->oSkeeterTargetAngle = obj_random_fixed_turn(random_u16() % 0x2000);
             }
@@ -90,6 +93,9 @@ static void skeeter_act_lunge(void) {
 }
 
 static void skeeter_act_walk(void) {
+    s32 distanceToPlayer = o->oDistanceToMario;
+    s32 angleToPlayer = o->oAngleToMario;
+
     f32 sp24;
 
     if (!(o->oMoveFlags & OBJ_MOVE_MASK_ON_GROUND)) {
@@ -104,14 +110,14 @@ static void skeeter_act_walk(void) {
         if (o->oSkeeterUnkF8 != 0) {
             o->oSkeeterUnkF8 = obj_resolve_collisions_and_turn(o->oSkeeterTargetAngle, 0x400);
         } else {
-            if (o->oDistanceToMario >= 25000.0f) {
-                o->oSkeeterTargetAngle = o->oAngleToMario;
+            if (distanceToPlayer >= 25000.0f) {
+                o->oSkeeterTargetAngle = angleToPlayer;
                 o->oSkeeterWaitTime = random_linear_offset(20, 30);
             }
 
             if ((o->oSkeeterUnkF8 = obj_bounce_off_walls_edges_objects(&o->oSkeeterTargetAngle)) == 0) {
-                if (o->oDistanceToMario < 500.0f) {
-                    o->oSkeeterTargetAngle = o->oAngleToMario;
+                if (distanceToPlayer < 500.0f) {
+                    o->oSkeeterTargetAngle = angleToPlayer;
                     o->oSkeeterUnkFC = 20.0f;
                 } else {
                     o->oSkeeterUnkFC = 10.0f;
@@ -136,7 +142,13 @@ static void skeeter_act_walk(void) {
 
 void bhv_skeeter_update(void) {
     o->oDeathSound = SOUND_OBJ_SNUFIT_SKEETER_DEATH;
-    treat_far_home_as_mario(1000.0f);
+
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+    treat_far_home_as_mario(1000.0f, &distanceToPlayer, &angleToPlayer);
+    o->oDistanceToMario = distanceToPlayer;
+    o->oAngleToMario = angleToPlayer;
 
     cur_obj_update_floor_and_walls();
 
@@ -153,6 +165,12 @@ void bhv_skeeter_update(void) {
     }
 
     obj_check_attacks(&sSkeeterHitbox, o->oAction);
+    // HACK: when water level suddenly changes, the skeeter can disappear into the floor
+    f32 waterLevel = find_water_level(o->oPosX, o->oPosZ);
+    if (fabs(o->oSkeeterLastWaterY - waterLevel) > 100) {
+        o->oMoveFlags = OBJ_MOVE_IN_AIR;
+    }
+    o->oSkeeterLastWaterY = waterLevel;
     cur_obj_move_standard(-78);
 }
 

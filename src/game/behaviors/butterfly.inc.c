@@ -4,7 +4,7 @@ void bhv_butterfly_init(void) {
     cur_obj_init_animation(1);
 
     o->oButterflyYPhase = random_float() * 100.0f;
-    o->header.gfx.unk38.animFrame = random_float() * 7.0f;
+    o->header.gfx.animInfo.animFrame = random_float() * 7.0f;
     o->oHomeX = o->oPosX;
     o->oHomeY = o->oPosY;
     o->oHomeZ = o->oPosZ;
@@ -42,15 +42,17 @@ void butterfly_step(s32 speed) {
 }
 
 void butterfly_calculate_angle(void) {
-    gMarioObject->oPosX += 5 * o->oButterflyYPhase / 4;
-    gMarioObject->oPosZ += 5 * o->oButterflyYPhase / 4;
-    obj_turn_toward_object(o, gMarioObject, 16, 0x300);
-    gMarioObject->oPosX -= 5 * o->oButterflyYPhase / 4;
-    gMarioObject->oPosZ -= 5 * o->oButterflyYPhase / 4;
+    struct Object* player = nearest_player_to_object(o);
+    if (!player) { return; }
+    player->oPosX += 5 * o->oButterflyYPhase / 4;
+    player->oPosZ += 5 * o->oButterflyYPhase / 4;
+    obj_turn_toward_object(o, player, 16, 0x300);
+    player->oPosX -= 5 * o->oButterflyYPhase / 4;
+    player->oPosZ -= 5 * o->oButterflyYPhase / 4;
 
-    gMarioObject->oPosY += (5 * o->oButterflyYPhase + 0x100) / 4;
-    obj_turn_toward_object(o, gMarioObject, 15, 0x500);
-    gMarioObject->oPosY -= (5 * o->oButterflyYPhase + 0x100) / 4;
+    player->oPosY += (5 * o->oButterflyYPhase + 0x100) / 4;
+    obj_turn_toward_object(o, player, 15, 0x500);
+    player->oPosY -= (5 * o->oButterflyYPhase + 0x100) / 4;
 }
 
 void butterfly_act_rest(void) {
@@ -58,7 +60,10 @@ void butterfly_act_rest(void) {
         cur_obj_init_animation(0);
 
         o->oAction = BUTTERFLY_ACT_FOLLOW_MARIO;
-        o->oMoveAngleYaw = gMarioObject->header.gfx.angle[1];
+        struct Object* player = nearest_player_to_object(o);
+        if (player) {
+            o->oMoveAngleYaw = player->header.gfx.angle[1];
+        }
     }
 }
 

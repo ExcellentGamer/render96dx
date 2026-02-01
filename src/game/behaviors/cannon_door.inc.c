@@ -1,19 +1,21 @@
 // cannon.c.inc
+static void bhv_cannon_closed_init_non_spawn(void) {
+    if (save_file_is_cannon_unlocked(gCurrSaveFileNum - 1, gCurrCourseNum) == 1) {
+        o->oAction = CANNON_TRAP_DOOR_ACT_OPEN;
+        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
+    }
+}
 
 void bhv_cannon_closed_init(void) {
-    struct Object *cannon;
-
-    if (save_file_is_cannon_unlocked() == 1) {
-        // If the cannon is open, spawn a cannon and despawn the object.
-        cannon = spawn_object(o, MODEL_CANNON_BASE, bhvCannon);
+    struct Object* cannon = spawn_object(o, MODEL_CANNON_BASE, bhvCannon);
+    if (cannon != NULL) {
+        cannon->parentObj = cannon;
         cannon->oBehParams2ndByte = o->oBehParams2ndByte;
         cannon->oPosX = o->oHomeX;
         cannon->oPosY = o->oHomeY;
         cannon->oPosZ = o->oHomeZ;
-
-        o->oAction = CANNON_TRAP_DOOR_ACT_OPEN;
-        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
     }
+    bhv_cannon_closed_init_non_spawn();
 }
 
 void cannon_door_act_opening(void) {
@@ -26,7 +28,7 @@ void cannon_door_act_opening(void) {
         o->oVelX = 0;
     } else {
         if (o->oTimer == 80) {
-            bhv_cannon_closed_init();
+            bhv_cannon_closed_init_non_spawn();
             return;
         }
 
@@ -43,7 +45,7 @@ void bhv_cannon_closed_loop(void) {
             o->oVelY = 0;
             o->oDrawingDistance = 4000.0f;
 
-            if (save_file_is_cannon_unlocked() == 1)
+            if (save_file_is_cannon_unlocked(gCurrSaveFileNum - 1, gCurrCourseNum) == 1)
                 o->oAction = CANNON_TRAP_DOOR_ACT_CAM_ZOOM;
             break;
 

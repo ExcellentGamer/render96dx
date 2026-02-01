@@ -21,7 +21,7 @@ void bhv_ukiki_cage_star_loop(void) {
             if (o->oTimer == 0) {
                 if (bit_shift_left(1)
                     & save_file_get_star_flags(gCurrSaveFileNum - 1, gCurrCourseNum - 1)) {
-                        cur_obj_set_model(MODEL_TRANSPARENT_STAR);
+                        cur_obj_set_model(smlua_model_util_load(E_MODEL_TRANSPARENT_STAR));
                     }
             }
 
@@ -29,7 +29,7 @@ void bhv_ukiki_cage_star_loop(void) {
             obj_copy_behavior_params(o, o->parentObj);
 
             // When they cage hides itself, spawn particles and the star.
-            if (o->parentObj->oAction == UKIKI_CAGE_ACT_HIDE) {
+            if (o->parentObj && o->parentObj->oAction == UKIKI_CAGE_ACT_HIDE) {
                 o->oAction++;
             }
             break;
@@ -37,7 +37,8 @@ void bhv_ukiki_cage_star_loop(void) {
             obj_mark_for_deletion(o);
             spawn_mist_particles();
             spawn_triangle_break_particles(20, 138, 0.7, 3);
-            spawn_default_star(2500.0f, -1200.0f, 1300.0f);
+            f32* starPos = gLevelValues.starPositions.UkikiCageStarPos;
+            spawn_default_star(starPos[0], starPos[1], starPos[2]);
             break;
     }
 
@@ -102,5 +103,5 @@ void (*sUkikiCageActions[])(void) = {
  * Main behavior loop for the cage. Only calls the relevant action.
  */
 void bhv_ukiki_cage_loop(void) {
-    cur_obj_call_action_function(sUkikiCageActions);
+    CUR_OBJ_CALL_ACTION_FUNCTION(sUkikiCageActions);
 }

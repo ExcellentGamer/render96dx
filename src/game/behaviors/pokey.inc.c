@@ -11,15 +11,15 @@
  * Hitbox for a single pokey body part.
  */
 static struct ObjectHitbox sPokeyBodyPartHitbox = {
-    /* interactType:      */ INTERACT_BOUNCE_TOP,
-    /* downOffset:        */ 10,
-    /* damageOrCoinValue: */ 2,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 40,
-    /* height:            */ 20,
-    /* hurtboxRadius:     */ 20,
-    /* hurtboxHeight:     */ 20,
+    .interactType = INTERACT_BOUNCE_TOP,
+    .downOffset = 10,
+    .damageOrCoinValue = 2,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 40,
+    .height = 20,
+    .hurtboxRadius = 20,
+    .hurtboxHeight = 20,
 };
 
 /**
@@ -44,6 +44,15 @@ void bhv_pokey_body_part_update(void) {
 
     s16 offsetAngle;
     f32 baseHeight;
+
+    if (o->parentObj == NULL || o->parentObj->behavior != smlua_override_behavior(bhvPokey) || o->parentObj->activeFlags == ACTIVE_FLAG_DEACTIVATED) {
+        if (o->oBehParams2ndByte == 0) {
+            obj_die_if_health_non_positive();
+        } else {
+            obj_mark_for_deletion(o);
+        }
+        return;
+    }
 
     if (obj_update_standard_actions(3.0f)) {
         if (o->parentObj->oAction == POKEY_ACT_UNLOAD_PARTS) {
@@ -142,6 +151,21 @@ void bhv_pokey_body_part_update(void) {
     o->oGraphYOffset = o->header.gfx.scale[1] * 22.0f;
 }
 
+static u32 pokeyCacheAliveBodyPartFlags = 0;
+static s32 pokeyCacheNumAliveBodyParts = 0;
+
+static void pokey_on_received_pre(UNUSED u8 localIndex) {
+    pokeyCacheAliveBodyPartFlags = o->oPokeyAliveBodyPartFlags;
+    pokeyCacheNumAliveBodyParts = o->oPokeyNumAliveBodyParts;
+}
+
+static void pokey_on_received_post(UNUSED u8 localIndex) {
+    if (o->oPokeyNumAliveBodyParts > pokeyCacheNumAliveBodyParts) {
+        o->oPokeyAliveBodyPartFlags = pokeyCacheAliveBodyPartFlags;
+        o->oPokeyNumAliveBodyParts = pokeyCacheNumAliveBodyParts;
+    }
+}
+
 /**
  * When mario gets within range, spawn the 5 body parts and enter the wander
  * action.
@@ -151,30 +175,24 @@ static void pokey_act_uninitialized(void) {
     s32 i;
     s16 partModel;
 
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario < 2000.0f) {
-#endif
-        partModel = MODEL_POKEY_HEAD;
+    partModel = MODEL_POKEY_HEAD;
 
-        for (i = 0; i < 5; i++) {
-            // Spawn body parts at y offsets 480, 360, 240, 120, 0
-            // behavior param 0 = head, 4 = lowest body part
-            bodyPart = spawn_object_relative(i, 0, -i * 120 + 480, 0, o, partModel, bhvPokeyBodyPart);
+    for (i = 0; i < 5; i++) {
+        // Spawn body parts at y offsets 480, 360, 240, 120, 0
+        // behavior param 0 = head, 4 = lowest body part
+        bodyPart = spawn_object_relative(i, 0, -i * 120 + 480, 0, o, partModel, bhvPokeyBodyPart);
 
-            if (bodyPart != NULL) {
-                obj_scale(bodyPart, 3.0f);
-            }
-
-            partModel = MODEL_POKEY_BODY_PART;
+        if (bodyPart != NULL) {
+            obj_scale(bodyPart, 3.0f);
         }
 
-        o->oPokeyAliveBodyPartFlags = 0x1F;
-        o->oPokeyNumAliveBodyParts = 5;
-        o->oPokeyBottomBodyPartSize = 1.0f;
-        o->oAction = POKEY_ACT_WANDER;
-#ifndef NODRAWINGDISTANCE
+        partModel = MODEL_POKEY_BODY_PART;
     }
-#endif
+
+    o->oPokeyAliveBodyPartFlags = 0x1F;
+    o->oPokeyNumAliveBodyParts = 5;
+    o->oPokeyBottomBodyPartSize = 1.0f;
+    o->oAction = POKEY_ACT_WANDER;
 }
 
 /**
@@ -184,18 +202,17 @@ static void pokey_act_uninitialized(void) {
  * if mario gets too close, then shy away from him.
  */
 static void pokey_act_wander(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+
     s32 targetAngleOffset;
     struct Object *bodyPart;
 
     if (o->oPokeyNumAliveBodyParts == 0) {
         obj_mark_for_deletion(o);
-#ifndef NODRAWINGDISTANCE
-    } else if (o->oDistanceToMario > 2500.0f) {
-        o->oAction = POKEY_ACT_UNLOAD_PARTS;
-        o->oForwardVel = 0.0f;
-#endif
     } else {
-        treat_far_home_as_mario(1000.0f);
+        treat_far_home_as_mario(1000.0f, &distanceToPlayer, &angleToPlayer);
         cur_obj_update_floor_and_walls();
 
         if (o->oPokeyHeadWasKilled) {
@@ -233,15 +250,15 @@ static void pokey_act_wander(void) {
                     obj_resolve_collisions_and_turn(o->oPokeyTargetYaw, 0x200);
             } else {
                 // If far from home, turn back toward home
-                if (o->oDistanceToMario >= 25000.0f) {
-                    o->oPokeyTargetYaw = o->oAngleToMario;
+                if (distanceToPlayer >= 25000.0f) {
+                    o->oPokeyTargetYaw = angleToPlayer;
                 }
 
                 if (!(o->oPokeyTurningAwayFromWall =
                           obj_bounce_off_walls_edges_objects(&o->oPokeyTargetYaw))) {
                     if (o->oPokeyChangeTargetTimer != 0) {
                         o->oPokeyChangeTargetTimer -= 1;
-                    } else if (o->oDistanceToMario > 2000.0f) {
+                    } else if (distanceToPlayer > 2000.0f) {
                         o->oPokeyTargetYaw = obj_random_fixed_turn(0x2000);
                         o->oPokeyChangeTargetTimer = random_linear_offset(30, 50);
                     } else {
@@ -251,7 +268,7 @@ static void pokey_act_wander(void) {
 
                         // targetAngleOffset is 0 when distance to mario is >= 1838.4
                         // and 0x4000 when distance to mario is <= 200
-                        targetAngleOffset = (s32)(0x4000 - (o->oDistanceToMario - 200.0f) * 10.0f);
+                        targetAngleOffset = (s32)(0x4000 - (distanceToPlayer - 200.0f) * 10.0f);
                         if (targetAngleOffset < 0) {
                             targetAngleOffset = 0;
                         } else if (targetAngleOffset > 0x4000) {
@@ -260,7 +277,7 @@ static void pokey_act_wander(void) {
 
                         // If we need to rotate CCW to get to mario, then negate
                         // the target angle offset
-                        if ((s16)(o->oAngleToMario - o->oMoveAngleYaw) > 0) {
+                        if ((s16)(angleToPlayer - o->oMoveAngleYaw) > 0) {
                             targetAngleOffset = -targetAngleOffset;
                         }
 
@@ -268,7 +285,7 @@ static void pokey_act_wander(void) {
                         // toward him directly. When mario is close,
                         // targetAngleOffset is 0x4000, so he turns 90 degrees
                         // away from mario
-                        o->oPokeyTargetYaw = o->oAngleToMario + targetAngleOffset;
+                        o->oPokeyTargetYaw = angleToPlayer + targetAngleOffset;
                     }
                 }
 

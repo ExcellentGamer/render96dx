@@ -1,35 +1,61 @@
 struct RacingPenguinData {
-    s16 text;
-    f32 radius;
-    f32 height;
+    enum DialogId* text;
+    f32* radius;
+    f32* height;
 };
 
 static struct RacingPenguinData sRacingPenguinData[] = {
-    { DIALOG_055, 200.0f, 200.0f },
-    { DIALOG_164, 350.0f, 250.0f },
+    { &gBehaviorValues.dialogs.RacingPenguinStartDialog, &gBehaviorValues.RacingPenguinRadius, &gBehaviorValues.RacingPenguinHeight },
+    { &gBehaviorValues.dialogs.RacingPenguinBigStartDialog, &gBehaviorValues.RacingPenguinBigRadius, &gBehaviorValues.RacingPenguinBigHeight },
 };
 
+void bhv_racing_penguin_run_once(void) {
+    cur_obj_align_gfx_with_floor();
+    if (BHV_ARR_CHECK(sRacingPenguinData, o->oBehParams2ndByte, struct RacingPenguinData)) {
+        cur_obj_push_mario_away_from_cylinder(
+            *sRacingPenguinData[o->oBehParams2ndByte].radius,
+            *sRacingPenguinData[o->oBehParams2ndByte].height);
+    }
+}
+
 void bhv_racing_penguin_init(void) {
-    if (gMarioState->numStars == 120) {
+    if (gMarioStates[0].numStars == 120) {
         cur_obj_scale(8.0f);
         o->header.gfx.scale[1] = 5.0f;
         o->oBehParams2ndByte = 1;
     }
+
+    struct Object* objFinishLine = cur_obj_nearest_object_with_behavior(bhvPenguinRaceFinishLine);
+    if (objFinishLine) { objFinishLine->parentObj = o; }
+
+    struct Object* objShortcutCheck = cur_obj_nearest_object_with_behavior(bhvPenguinRaceShortcutCheck);
+    if (objShortcutCheck) { objShortcutCheck->parentObj = o; }
+
+    o->areaTimerType = AREA_TIMER_TYPE_MAXIMUM;
+    o->areaTimer = 0;
+    o->areaTimerDuration = 60;
+    o->areaTimerRunOnceCallback = bhv_racing_penguin_run_once;
 }
 
 static void racing_penguin_act_wait_for_mario(void) {
-    if (o->oTimer > o->oRacingPenguinInitTextCooldown && o->oPosY - gMarioObject->oPosY <= 0.0f
-        && cur_obj_can_mario_activate_textbox_2(400.0f, 400.0f)) {
+    struct Object* player = nearest_player_to_object(o);
+    if (!player) { return; }
+    if (o->oTimer > o->oRacingPenguinInitTextCooldown && o->oPosY - player->oPosY <= 0.0f
+        && cur_obj_can_mario_activate_textbox_2(&gMarioStates[0], 400.0f, 400.0f)) {
         o->oAction = RACING_PENGUIN_ACT_SHOW_INIT_TEXT;
     }
 }
 
-static void racing_penguin_act_show_init_text(void) {
-    s32 response;
-    struct Object *child;
+u8 racing_penguin_act_show_init_text_continue_dialog(void) { return o->oAction == RACING_PENGUIN_ACT_SHOW_INIT_TEXT; }
 
-    response = obj_update_race_proposition_dialog(sRacingPenguinData[o->oBehParams2ndByte].text);
+static void racing_penguin_act_show_init_text(void) {
+    if (!gMarioStates[0].visibleToEnemies) { return; }
+    if (!BHV_ARR_CHECK(sRacingPenguinData, o->oBehParams2ndByte, struct RacingPenguinData)) { return; }
+    s32 response = obj_update_race_proposition_dialog(&gMarioStates[0], *sRacingPenguinData[o->oBehParams2ndByte].text, racing_penguin_act_show_init_text_continue_dialog);
+
     if (response == 1) {
+        struct Object *child;
+
         child = cur_obj_nearest_object_with_behavior(bhvPenguinRaceFinishLine);
         child->parentObj = o;
 
@@ -37,12 +63,11 @@ static void racing_penguin_act_show_init_text(void) {
         child->parentObj = o;
 
         o->oPathedStartWaypoint = o->oPathedPrevWaypoint =
-            segmented_to_virtual(ccm_seg7_trajectory_penguin_race);
+            segmented_to_virtual(gBehaviorValues.trajectories.RacingPenguinTrajectory);
         o->oPathedPrevWaypointFlags = 0;
 
         o->oAction = RACING_PENGUIN_ACT_PREPARE_FOR_RACE;
         o->oVelY = 60.0f;
-        ;
     } else if (response == 2) {
         o->oAction = RACING_PENGUIN_ACT_WAIT_FOR_MARIO;
         o->oRacingPenguinInitTextCooldown = 60;
@@ -62,11 +87,25 @@ static void racing_penguin_act_race(void) {
     f32 targetSpeed;
     f32 minSpeed;
 
+    // prevent segfault / error state
+    if (o->oPathedStartWaypoint == NULL) {
+        struct Object* child = NULL;
+        child = cur_obj_nearest_object_with_behavior(bhvPenguinRaceFinishLine);
+        if (child) { child->parentObj = o; }
+
+        child = cur_obj_nearest_object_with_behavior(bhvPenguinRaceShortcutCheck);
+        if (child) { child->parentObj = o; }
+
+        o->oPathedStartWaypoint = o->oPathedPrevWaypoint = segmented_to_virtual(gBehaviorValues.trajectories.RacingPenguinTrajectory);
+        o->oPathedPrevWaypointFlags = 0;
+    }
+
     if (cur_obj_follow_path(0) == PATH_REACHED_END) {
         o->oRacingPenguinReachedBottom = TRUE;
         o->oAction = RACING_PENGUIN_ACT_FINISH_RACE;
     } else {
-        targetSpeed = o->oPosY - gMarioObject->oPosY;
+        struct Object* player = nearest_player_to_object(o);
+        targetSpeed = player ? (o->oPosY - player->oPosY) : o->oPosY;
         minSpeed = 70.0f;
 
         cur_obj_play_sound_1(SOUND_AIR_ROUGH_SLIDE);
@@ -93,13 +132,23 @@ static void racing_penguin_act_race(void) {
         }
     }
 
-    if (mario_is_in_air_action()) {
-        if (o->oTimer > 60) {
+    // Removed the in-air shortcut check due to inconsistent detection and the
+    // fact that one player can fall off while the other player completes the
+    // race.
+    /*u8 isInAir = FALSE;
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (!is_player_active(&gMarioStates[i])) { continue; }
+        isInAir = isInAir || mario_is_in_air_action(&gMarioStates[i]);
+    }
+
+    if (isInAir) {
+        if (o->oTimer > 60 && !o->oRacingPenguinMarioCheated) {
             o->oRacingPenguinMarioCheated = TRUE;
+            network_send_object(o);
         }
     } else {
         o->oTimer = 0;
-    }
+    }*/
 }
 
 static void racing_penguin_act_finish_race(void) {
@@ -114,6 +163,8 @@ static void racing_penguin_act_finish_race(void) {
     }
 }
 
+u8 racing_penguin_act_show_final_text_continue_dialog(void) { return o->oAction == RACING_PENGUIN_ACT_SHOW_FINAL_TEXT && o->oRacingPenguinFinalTextbox > 0; }
+
 static void racing_penguin_act_show_final_text(void) {
     s32 textResult;
 
@@ -122,16 +173,16 @@ static void racing_penguin_act_show_final_text(void) {
             cur_obj_init_animation_with_sound(3);
             o->oForwardVel = 0.0f;
 
-            if (cur_obj_can_mario_activate_textbox_2(400.0f, 400.0f)) {
+            if (cur_obj_can_mario_activate_textbox_2(&gMarioStates[0], 400.0f, 400.0f)) {
                 if (o->oRacingPenguinMarioWon) {
                     if (o->oRacingPenguinMarioCheated) {
-                        o->oRacingPenguinFinalTextbox = DIALOG_132;
+                        o->oRacingPenguinFinalTextbox = gBehaviorValues.dialogs.RacingPenguinCheatDialog;
                         o->oRacingPenguinMarioWon = FALSE;
                     } else {
-                        o->oRacingPenguinFinalTextbox = DIALOG_056;
+                        o->oRacingPenguinFinalTextbox = gBehaviorValues.dialogs.RacingPenguinWinDialog;
                     }
                 } else {
-                    o->oRacingPenguinFinalTextbox = DIALOG_037;
+                    o->oRacingPenguinFinalTextbox = gBehaviorValues.dialogs.RacingPenguinLostDialog;
                 }
             }
         } else {
@@ -144,15 +195,17 @@ static void racing_penguin_act_show_final_text(void) {
             o->oForwardVel = 4.0f;
         }
     } else if (o->oRacingPenguinFinalTextbox > 0) {
-        if ((textResult = cur_obj_update_dialog_with_cutscene(2, 1, CUTSCENE_DIALOG, o->oRacingPenguinFinalTextbox)) != 0) {
+        if ((textResult = cur_obj_update_dialog_with_cutscene(&gMarioStates[0], 2, 1, CUTSCENE_DIALOG, o->oRacingPenguinFinalTextbox, racing_penguin_act_show_final_text_continue_dialog)) != 0) {
             o->oRacingPenguinFinalTextbox = -1;
             o->oTimer = 0;
         }
     } else if (o->oRacingPenguinMarioWon) {
+
+    f32* starPos = gLevelValues.starPositions.RacingPenguinStarPos;
 #ifdef VERSION_JP
-        spawn_default_star(-7339.0f, -5700.0f, -6774.0f);
+        spawn_default_star(starPos[0], starPos[1], starPos[2]);
 #else
-        cur_obj_spawn_star_at_y_offset(-7339.0f, -5700.0f, -6774.0f, 200.0f);
+        cur_obj_spawn_star_at_y_offset(starPos[0], starPos[1], starPos[2], 200.0f);
 #endif
         o->oRacingPenguinMarioWon = FALSE;
     }
@@ -183,22 +236,27 @@ void bhv_racing_penguin_update(void) {
     }
 
     cur_obj_move_standard(78);
-    cur_obj_align_gfx_with_floor();
-    cur_obj_push_mario_away_from_cylinder(sRacingPenguinData[o->oBehParams2ndByte].radius,
-                                      sRacingPenguinData[o->oBehParams2ndByte].height);
 }
 
 void bhv_penguin_race_finish_line_update(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    if (!o->parentObj) {
+        return;
+    }
+
     if (o->parentObj->oRacingPenguinReachedBottom
-        || (o->oDistanceToMario < 1000.0f && gMarioObject->oPosZ - o->oPosZ < 0.0f)) {
-        if (!o->parentObj->oRacingPenguinReachedBottom) {
+        || (player && distanceToPlayer < 1000.0f && player->oPosZ - o->oPosZ < 0.0f)) {
+        if (!o->parentObj->oRacingPenguinReachedBottom && !o->parentObj->oRacingPenguinMarioWon) {
             o->parentObj->oRacingPenguinMarioWon = TRUE;
         }
     }
 }
 
 void bhv_penguin_race_shortcut_check_update(void) {
-    if (o->oDistanceToMario < 500.0f) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    if (distanceToPlayer < 500.0f && o->parentObj && !o->parentObj->oRacingPenguinMarioCheated) {
         o->parentObj->oRacingPenguinMarioCheated = TRUE;
     }
 }

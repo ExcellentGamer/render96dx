@@ -3,7 +3,7 @@
 void bhv_bubble_cannon_barrel_loop(void) {
     struct Object *val04;
 
-    if (o->parentObj->oAction == 2) {
+    if (!o->parentObj || o->parentObj->oAction == 2) {
         obj_mark_for_deletion(o);
     } else {
         o->oMoveAngleYaw = o->parentObj->oFaceAngleYaw;
@@ -38,27 +38,15 @@ void bhv_bubble_cannon_barrel_loop(void) {
 }
 
 void water_bomb_cannon_act_0(void) {
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario < 2000.0f) {
-#endif
-        spawn_object(o, MODEL_CANNON_BARREL, bhvCannonBarrelBubbles);
-        cur_obj_unhide();
+    spawn_object(o, MODEL_CANNON_BARREL, bhvCannonBarrelBubbles);
+    cur_obj_unhide();
 
-        o->oAction = 1;
-        o->oMoveAnglePitch = o->oWaterCannonUnkFC = 0x1C00;
-#ifndef NODRAWINGDISTANCE
-    }
-#endif
+    o->oAction = 1;
+    o->oMoveAnglePitch = o->oWaterCannonUnkFC = 0x1C00;
 }
 
 void water_bomb_cannon_act_1(void) {
-#ifndef NODRAWINGDISTANCE
-    if (o->oDistanceToMario > 2500.0f) {
-        o->oAction = 2;
-    } else if (o->oBehParams2ndByte == 0) {
-#else
     if (o->oBehParams2ndByte == 0) {
-#endif
         if (o->oWaterCannonUnkF4 != 0) {
             o->oWaterCannonUnkF4 -= 1;
         } else {

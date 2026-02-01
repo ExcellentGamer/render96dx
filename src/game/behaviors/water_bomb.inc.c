@@ -13,15 +13,15 @@
  * bombs that are shot from cannons are intangible.
  */
 static struct ObjectHitbox sWaterBombHitbox = {
-    /* interactType:      */ INTERACT_MR_BLIZZARD,
-    /* downOffset:        */ 25,
-    /* damageOrCoinValue: */ 1,
-    /* health:            */ 99,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 80,
-    /* height:            */ 50,
-    /* hurtboxRadius:     */ 60,
-    /* hurtboxHeight:     */ 50,
+    .interactType = INTERACT_MR_BLIZZARD,
+    .downOffset = 25,
+    .damageOrCoinValue = 1,
+    .health = 99,
+    .numLootCoins = 0,
+    .radius = 80,
+    .height = 50,
+    .hurtboxRadius = 60,
+    .hurtboxHeight = 50,
 };
 
 /**
@@ -29,33 +29,42 @@ static struct ObjectHitbox sWaterBombHitbox = {
  * Spawn water bombs targeting mario when he comes in range.
  */
 void bhv_water_bomb_spawner_update(void) {
-    f32 latDistToMario;
+    f32 latDistToMario = 9999;
     f32 spawnerRadius;
+    struct MarioState* marioState = NULL;
+    struct Object* player = NULL;
+
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (!is_player_active(&gMarioStates[i])) { continue; }
+        if (!gMarioStates[0].visibleToEnemies) { continue; }
+        f32 latDist = lateral_dist_between_objects(o, gMarioStates[i].marioObj);
+        if (latDist < latDistToMario) {
+            latDistToMario = latDist;
+            player = gMarioStates[i].marioObj;
+            marioState = &gMarioStates[i];
+        }
+    }
+    if (!player) { return; }
 
     spawnerRadius = 50 * (u16)(o->oBehParams >> 16) + 200.0f;
-    latDistToMario = lateral_dist_between_objects(o, gMarioObject);
 
     // When mario is in range and a water bomb isn't already active
-    if (!o->oWaterBombSpawnerBombActive && latDistToMario < spawnerRadius
-        && gMarioObject->oPosY - o->oPosY < 1000.0f) {
+    if (!o->oWaterBombSpawnerBombActive && latDistToMario < spawnerRadius && player->oPosY - o->oPosY < 1000.0f) {
         if (o->oWaterBombSpawnerTimeToSpawn != 0) {
             o->oWaterBombSpawnerTimeToSpawn -= 1;
         } else {
-            struct Object *waterBomb =
-                spawn_object_relative(0, 0, 2000, 0, o, MODEL_WATER_BOMB, bhvWaterBomb);
+            // this branch only runs for one player at a time
+
+            struct Object *waterBomb = spawn_object_relative(0, 0, 2000, 0, o, MODEL_WATER_BOMB, bhvWaterBomb);
 
             if (waterBomb != NULL) {
                 // Drop farther ahead of mario when he is moving faster
-                f32 waterBombDistToMario = 28.0f * gMarioStates[0].forwardVel + 100.0f;
+                f32 waterBombDistToMario = 28.0f * marioState->forwardVel + 100.0f;
 
                 waterBomb->oAction = WATER_BOMB_ACT_INIT;
 
-                waterBomb->oPosX =
-                    gMarioObject->oPosX + waterBombDistToMario * sins(gMarioObject->oMoveAngleYaw);
-                waterBomb->oPosZ =
-                    gMarioObject->oPosZ + waterBombDistToMario * coss(gMarioObject->oMoveAngleYaw);
-
-                spawn_object(waterBomb, MODEL_WATER_BOMB_SHADOW, bhvWaterBombShadow);
+                waterBomb->oPosX = player->oPosX + waterBombDistToMario * sins(player->oMoveAngleYaw);
+                waterBomb->oPosZ = player->oPosZ + waterBombDistToMario * coss(player->oMoveAngleYaw);
 
                 o->oWaterBombSpawnerBombActive = TRUE;
                 o->oWaterBombSpawnerTimeToSpawn = random_linear_offset(0, 50);
@@ -128,7 +137,9 @@ static void water_bomb_act_drop(void) {
             set_camera_shake_from_point(SHAKE_POS_SMALL, o->oPosX, o->oPosY, o->oPosZ);
 
             // Move toward mario
-            o->oMoveAngleYaw = o->oAngleToMario;
+            struct Object* player = nearest_player_to_object(o);
+            s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+            o->oMoveAngleYaw = angleToPlayer;
             o->oForwardVel = 10.0f;
             o->oWaterBombStretchSpeed = -40.0f;
         }
@@ -167,7 +178,9 @@ static void water_bomb_act_drop(void) {
  */
 static void water_bomb_act_explode(void) {
     water_bomb_spawn_explode_particles(25, 60, 10);
-    o->parentObj->oWaterBombSpawnerBombActive = FALSE;
+    if (o->parentObj) {
+        o->parentObj->oWaterBombSpawnerBombActive = FALSE;
+    }
     obj_mark_for_deletion(o);
 }
 
@@ -239,7 +252,7 @@ void bhv_water_bomb_update(void) {
  * Despawn when the parent water bomb does.
  */
 void bhv_water_bomb_shadow_update(void) {
-    if (o->parentObj->oAction == WATER_BOMB_ACT_EXPLODE) {
+    if (!o->parentObj || o->parentObj->oAction == WATER_BOMB_ACT_EXPLODE) {
         obj_mark_for_deletion(o);
     } else {
         // TODO: What is happening here

@@ -7,18 +7,18 @@
 
 /**
  * Hitbox for spiny both while thrown and walking. The interaction type is
- * changed to INTERACT_UNKNOWN_08 while walking.
+ * changed to INTERACT_SPINY_WALKING while walking.
  */
 static struct ObjectHitbox sSpinyHitbox = {
-    /* interactType:      */ INTERACT_MR_BLIZZARD,
-    /* downOffset:        */ 0,
-    /* damageOrCoinValue: */ 2,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 80,
-    /* height:            */ 50,
-    /* hurtboxRadius:     */ 40,
-    /* hurtboxHeight:     */ 40,
+    .interactType = INTERACT_MR_BLIZZARD,
+    .downOffset = 0,
+    .damageOrCoinValue = 2,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 80,
+    .height = 50,
+    .hurtboxRadius = 40,
+    .hurtboxHeight = 40,
 };
 
 /**
@@ -33,12 +33,58 @@ static u8 sSpinyWalkAttackHandlers[] = {
     /* ATTACK_FROM_BELOW:            */ ATTACK_HANDLER_KNOCKBACK,
 };
 
+#if 0
+static u32 spinyAnimCache = 0;
+
+static void spiny_to_anim_cache(void) {
+    if (o->oAnimations == &spiny_egg_seg5_anims_050157E4) {
+        spinyAnimCache = 0;
+    } else if (o->oAnimations == &spiny_seg5_anims_05016EAC) {
+        spinyAnimCache = 1;
+    }
+}
+
+static void spiny_from_anim_cache(void) {
+    struct AnimationTable* anim = NULL;
+    switch (spinyAnimCache) {
+        case 0:
+            anim = (struct AnimationTable*)&spiny_egg_seg5_anims_050157E4;
+            break;
+        case 1:
+            anim = (struct AnimationTable*)&spiny_seg5_anims_05016EAC;
+            break;
+        default:
+            break;
+    }
+
+    if (anim != o->oAnimations) {
+        obj_init_animation_with_sound(o, anim, 0);
+    }
+}
+
+static void bhv_spiny_on_received_post(UNUSED u8 localIndex) {
+    spiny_from_anim_cache();
+}
+
+static void bhv_spiny_on_sent_pre(void) {
+    spiny_to_anim_cache();
+}
+#endif
+
 /**
  * If the spiny was spawned by lakitu and mario is far away, despawn.
  */
 static s32 spiny_check_active(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+
+    if (o->parentObj == NULL || o->parentObj->behavior != smlua_override_behavior(bhvEnemyLakitu)) {
+        obj_mark_for_deletion(o);
+        return FALSE;
+    }
+
     if (o->parentObj != o) {
-        if (o->oDistanceToMario > 2500.0f) {
+        if (distanceToPlayer > 2500.0f) {
             //! It's possible for the lakitu to despawn while the spiny still
             //  references it. This line allows us to decrement the 0x1B field
             //  in an object that loads into the lakitu's former slot.
@@ -46,7 +92,7 @@ static s32 spiny_check_active(void) {
             //  behave similar to a regular goomba.
             //  It can also be used on a bob-omb respawner to change its model
             //  to a butterfly or fish.
-            o->parentObj->oEnemyLakituNumSpinies -= 1;
+            //o->parentObj->oEnemyLakituNumSpinies -= 1;
             obj_mark_for_deletion(o);
             return FALSE;
         }
@@ -63,6 +109,7 @@ static void spiny_act_walk(void) {
         cur_obj_update_floor_and_walls();
 
         o->oGraphYOffset = -17.0f;
+        o->oFaceAnglePitch = 0;
         cur_obj_init_animation_with_sound(0);
 
         if (o->oMoveFlags & OBJ_MOVE_MASK_ON_GROUND) {
@@ -113,7 +160,7 @@ static void spiny_act_walk(void) {
             // Don't allow mario to punch the spiny two frames in a row?
             o->oInteractType = INTERACT_MR_BLIZZARD;
         } else {
-            o->oInteractType = INTERACT_UNKNOWN_08;
+            o->oInteractType = INTERACT_SPINY_WALKING;
         }
     }
 }
@@ -130,7 +177,7 @@ static void spiny_act_held_by_lakitu(void) {
     o->oParentRelativePosY = 35.0f;
     o->oParentRelativePosZ = -100.0f;
 
-    if (o->parentObj->prevObj == NULL) {
+    if (o->parentObj != NULL && o->parentObj->prevObj == NULL) {
         o->oAction = SPINY_ACT_THROWN_BY_LAKITU;
         o->oMoveAngleYaw = o->parentObj->oFaceAngleYaw;
 
@@ -157,8 +204,8 @@ static void spiny_act_thrown_by_lakitu(void) {
 
         if (o->oMoveFlags & OBJ_MOVE_LANDED) {
             cur_obj_play_sound_2(SOUND_OBJ_SPINY_UNK59);
-            cur_obj_set_model(MODEL_SPINY);
-            obj_init_animation_with_sound(o, spiny_seg5_anims_05016EAC, 0);
+            cur_obj_set_model(smlua_model_util_load(E_MODEL_SPINY));
+            obj_init_animation_with_sound(o, (struct AnimationTable*)&spiny_seg5_anims_05016EAC, 0);
             o->oGraphYOffset = -17.0f;
 
             o->oFaceAnglePitch = 0;
@@ -171,7 +218,7 @@ static void spiny_act_thrown_by_lakitu(void) {
 
         if (obj_check_attacks(&sSpinyHitbox, o->oAction)) {
             if (o->parentObj != o) {
-                o->parentObj->oEnemyLakituNumSpinies -= 1;
+                //o->parentObj->oEnemyLakituNumSpinies -= 1;
             }
         }
     }
@@ -182,6 +229,7 @@ static void spiny_act_thrown_by_lakitu(void) {
  */
 void bhv_spiny_update(void) {
     // PARTIAL_UPDATE
+    obj_set_hitbox(o, &sSpinyHitbox);
 
     switch (o->oAction) {
         case SPINY_ACT_WALK:

@@ -1,18 +1,18 @@
 // bowling_ball.c.inc
 
 static struct ObjectHitbox sBowlingBallHitbox = {
-    /* interactType:      */ INTERACT_DAMAGE,
-    /* downOffset:        */ 0,
-    /* damageOrCoinValue: */ 2,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 100,
-    /* height:            */ 150,
-    /* hurtboxRadius:     */ 0,
-    /* hurtboxHeight:     */ 0,
+    .interactType = INTERACT_DAMAGE,
+    .downOffset = 0,
+    .damageOrCoinValue = 2,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 100,
+    .height = 150,
+    .hurtboxRadius = 0,
+    .hurtboxHeight = 0,
 };
 
-static Trajectory sThiHugeMetalBallTraj[] = {
+Trajectory sThiHugeMetalBallTraj[] = {
     TRAJECTORY_POS(0, /*pos*/ -4786,   101, -2166),
     TRAJECTORY_POS(1, /*pos*/ -5000,    81, -2753),
     TRAJECTORY_POS(2, /*pos*/ -5040,    33, -3846),
@@ -26,7 +26,7 @@ static Trajectory sThiHugeMetalBallTraj[] = {
     TRAJECTORY_END(),
 };
 
-static Trajectory sThiTinyMetalBallTraj[] = {
+Trajectory sThiTinyMetalBallTraj[] = {
     TRAJECTORY_POS(0, /*pos*/ -1476,    29,  -680),
     TRAJECTORY_POS(1, /*pos*/ -1492,    14, -1072),
     TRAJECTORY_POS(2, /*pos*/ -1500,     3, -1331),
@@ -55,35 +55,34 @@ void bowling_ball_set_hitbox(void) {
 void bowling_ball_set_waypoints(void) {
     switch (o->oBehParams2ndByte) {
         case BBALL_BP_STYPE_BOB_UPPER:
-            o->oPathedStartWaypoint = segmented_to_virtual(bob_seg7_metal_ball_path0);
+            o->oPathedStartWaypoint = segmented_to_virtual(gBehaviorValues.trajectories.BowlingBallBobTrajectory);
             break;
 
         case BBALL_BP_STYPE_TTM:
-            o->oPathedStartWaypoint = segmented_to_virtual(ttm_seg7_trajectory_070170A0);
+            o->oPathedStartWaypoint = segmented_to_virtual(gBehaviorValues.trajectories.BowlingBallTtmTrajectory);
             break;
 
         case BBALL_BP_STYPE_BOB_LOWER:
-            o->oPathedStartWaypoint = segmented_to_virtual(bob_seg7_metal_ball_path1);
+            o->oPathedStartWaypoint = segmented_to_virtual(gBehaviorValues.trajectories.BowlingBallBob2Trajectory);
             break;
 
         case BBALL_BP_STYPE_THI_LARGE:
-            o->oPathedStartWaypoint = (struct Waypoint *) sThiHugeMetalBallTraj;
+            o->oPathedStartWaypoint = segmented_to_virtual(gBehaviorValues.trajectories.BowlingBallThiLargeTrajectory);
             break;
 
         case BBALL_BP_STYPE_THI_SMALL:
-            o->oPathedStartWaypoint = (struct Waypoint *) sThiTinyMetalBallTraj;
+            o->oPathedStartWaypoint = segmented_to_virtual(gBehaviorValues.trajectories.BowlingBallThiSmallTrajectory);
             break;
     }
 }
 
 void bhv_bowling_ball_roll_loop(void) {
     s16 collisionFlags;
-    s32 sp18;
+    s32 sp18 = 0;
 
     bowling_ball_set_waypoints();
     collisionFlags = object_step();
 
-    //! Uninitialzed parameter, but the parameter is unused in the called function
     sp18 = cur_obj_follow_path(sp18);
 
     o->oBowlingBallTargetYaw = o->oPathedTargetYaw;
@@ -108,34 +107,33 @@ void bhv_bowling_ball_roll_loop(void) {
 }
 
 void bhv_bowling_ball_initializeLoop(void) {
-    s32 sp1c;
+    s32 sp1c = 0;
 
     bowling_ball_set_waypoints();
 
-    //! Uninitialzed parameter, but the parameter is unused in the called function
     sp1c = cur_obj_follow_path(sp1c);
 
     o->oMoveAngleYaw = o->oPathedTargetYaw;
 
     switch (o->oBehParams2ndByte) {
         case BBALL_BP_STYPE_BOB_UPPER:
-            o->oForwardVel = 20.0f;
+            o->oForwardVel = gBehaviorValues.BowlingBallBobSpeed;
             break;
 
         case BBALL_BP_STYPE_TTM:
-            o->oForwardVel = 10.0f;
+            o->oForwardVel = gBehaviorValues.BowlingBallTtmSpeed;
             break;
 
         case BBALL_BP_STYPE_BOB_LOWER:
-            o->oForwardVel = 20.0f;
+            o->oForwardVel = gBehaviorValues.BowlingBallBob2Speed;
             break;
 
         case BBALL_BP_STYPE_THI_LARGE:
-            o->oForwardVel = 25.0f;
+            o->oForwardVel = gBehaviorValues.BowlingBallThiLargeSpeed;
             break;
 
         case BBALL_BP_STYPE_THI_SMALL:
-            o->oForwardVel = 10.0f;
+            o->oForwardVel = gBehaviorValues.BowlingBallThiSmallSpeed;
             cur_obj_scale(0.3f);
             o->oGraphYOffset = 39.0f;
             break;
@@ -185,16 +183,22 @@ void bhv_generic_bowling_ball_spawner_loop(void) {
     if (o->oTimer == 256)
         o->oTimer = 0;
 
+    struct Object* player = nearest_player_to_object(o);
+    if (!player) { return; }
+
     if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 1000)
-        || (o->oPosY < gMarioObject->header.gfx.pos[1]))
+        || (o->oPosY < player->header.gfx.pos[1]))
         return;
 
     if ((o->oTimer & o->oBBallSpawnerPeriodMinus1) == 0) /* Modulus */
     {
         if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, o->oBBallSpawnerMaxSpawnDist)) {
             if ((s32)(random_float() * o->oBBallSpawnerSpawnOdds) == 0) {
+                // this branch only runs for one player at a time
                 bowlingBall = spawn_object(o, MODEL_BOWLING_BALL, bhvBowlingBall);
-                bowlingBall->oBehParams2ndByte = o->oBehParams2ndByte;
+                if (bowlingBall != NULL) {
+                    bowlingBall->oBehParams2ndByte = o->oBehParams2ndByte;
+                }
             }
         }
     }
@@ -202,19 +206,24 @@ void bhv_generic_bowling_ball_spawner_loop(void) {
 
 void bhv_thi_bowling_ball_spawner_loop(void) {
     struct Object *bowlingBall;
+    struct Object* player = nearest_player_to_object(o);
+    if (!player) { return; }
 
     if (o->oTimer == 256)
         o->oTimer = 0;
 
     if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 800)
-        || (o->oPosY < gMarioObject->header.gfx.pos[1]))
+        || (o->oPosY < player->header.gfx.pos[1]))
         return;
 
     if ((o->oTimer % 64) == 0) {
         if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 12000)) {
             if ((s32)(random_float() * 1.5) == 0) {
+                // this branch only runs for one player at a time
                 bowlingBall = spawn_object(o, MODEL_BOWLING_BALL, bhvBowlingBall);
-                bowlingBall->oBehParams2ndByte = o->oBehParams2ndByte;
+                if (bowlingBall != NULL) {
+                    bowlingBall->oBehParams2ndByte = o->oBehParams2ndByte;
+                }
             }
         }
     }
@@ -231,7 +240,7 @@ void bhv_bob_pit_bowling_ball_loop(void) {
     UNUSED s16 collisionFlags = object_step();
 
     find_floor_height_and_data(o->oPosX, o->oPosY, o->oPosZ, &sp1c);
-    if ((sp1c->normalX == 0) && (sp1c->normalZ == 0))
+    if (sp1c && (sp1c->normalX == 0) && (sp1c->normalZ == 0))
         o->oForwardVel = 28.0f;
 
     bowling_ball_set_hitbox();
@@ -252,7 +261,6 @@ void bhv_free_bowling_ball_init(void) {
 }
 
 void bhv_free_bowling_ball_roll_loop(void) {
-    s16 collisionFlags = object_step();
     bowling_ball_set_hitbox();
 
     if (o->oForwardVel > 10.0f) {
@@ -260,8 +268,9 @@ void bhv_free_bowling_ball_roll_loop(void) {
         cur_obj_play_sound_1(SOUND_ENV_UNKNOWN2);
     }
 
-    if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) && !(collisionFlags & OBJ_COL_FLAGS_LANDED))
-        cur_obj_play_sound_2(SOUND_GENERAL_QUIET_POUND1_LOWPRIO);
+    // warning: 'and' of mutually exclusive equal-tests is always 0
+    /*if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) && !(collisionFlags & OBJ_COL_FLAGS_LANDED))
+        cur_obj_play_sound_2(SOUND_GENERAL_QUIET_POUND1_LOWPRIO);*/
 
     if (!is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 6000)) {
         o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;

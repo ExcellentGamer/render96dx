@@ -16,6 +16,7 @@ void bhv_ground_sand_init(void) {
 
 void spawn_smoke_with_velocity(void) {
     struct Object *smoke = spawn_object_with_scale(o, MODEL_SMOKE, bhvWhitePuffSmoke2, 1.0f);
+    if (smoke == NULL) { return; }
     smoke->oForwardVel = D_8032F3F4[0];
     smoke->oVelY = D_8032F3F4[1];
     smoke->oGravity = D_8032F3F4[2];
@@ -24,7 +25,9 @@ void spawn_smoke_with_velocity(void) {
 
 // TODO Fix name
 void clear_particle_flags(u32 flags) {
-    o->parentObj->oActiveParticleFlags &= flags ^ -1; // Clear the flags given (could just be ~flags)
+    if (o && o->parentObj) {
+        o->parentObj->oActiveParticleFlags &= flags ^ -1; // Clear the flags given (could just be ~flags)
+    }
 }
 
 void bhv_ground_snow_init(void) {

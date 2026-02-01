@@ -6,27 +6,27 @@
  */
 
 struct ObjectHitbox sSnufitHitbox = {
-    /* interactType:      */ INTERACT_HIT_FROM_BELOW,
-    /* downOffset:        */ 0,
-    /* damageOrCoinValue: */ 2,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 2,
-    /* radius:            */ 100,
-    /* height:            */ 60,
-    /* hurtboxRadius:     */ 70,
-    /* hurtboxHeight:     */ 50,
+    .interactType = INTERACT_HIT_FROM_BELOW,
+    .downOffset = 0,
+    .damageOrCoinValue = 2,
+    .health = 0,
+    .numLootCoins = 2,
+    .radius = 100,
+    .height = 60,
+    .hurtboxRadius = 70,
+    .hurtboxHeight = 50,
 };
 
 struct ObjectHitbox sSnufitBulletHitbox = {
-    /* interactType:      */ INTERACT_SNUFIT_BULLET,
-    /* downOffset:        */ 50,
-    /* damageOrCoinValue: */ 1,
-    /* health:            */ 0,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 100,
-    /* height:            */ 50,
-    /* hurtboxRadius:     */ 100,
-    /* hurtboxHeight:     */ 50,
+    .interactType = INTERACT_SNUFIT_BULLET,
+    .downOffset = 50,
+    .damageOrCoinValue = 1,
+    .health = 0,
+    .numLootCoins = 0,
+    .radius = 100,
+    .height = 50,
+    .hurtboxRadius = 100,
+    .hurtboxHeight = 50,
 };
 
 /**
@@ -71,12 +71,14 @@ Gfx *geo_snufit_scale_body(s32 callContext, struct GraphNode *node, UNUSED Mat4 
  * then prepares to shoot after a period.
  */
 void snufit_act_idle(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
     s32 marioDist;
 
     // This line would could cause a crash in certain PU situations,
     // if the game would not have already crashed.
-    marioDist = (s32)(o->oDistanceToMario / 10.0f);
-    if (o->oTimer > marioDist && o->oDistanceToMario < 800.0f) {
+    marioDist = (s32)(distanceToPlayer / 10.0f);
+    if (o->oTimer > marioDist && distanceToPlayer < 800.0f) {
         
         // Controls an alternating scaling factor in a cos.
         o->oSnufitBodyScalePeriod
@@ -107,7 +109,7 @@ void snufit_act_shoot(void) {
     } else if (o->oSnufitBullets < 3 && o->oTimer >= 3) {
         o->oSnufitBullets += 1;
         cur_obj_play_sound_2(SOUND_OBJ_SNUFIT_SHOOT);
-        spawn_object_relative(0, 0, -20, 40, o, MODEL_BOWLING_BALL, bhvSnufitBalls);
+
         o->oSnufitRecoil = -30;
         o->oTimer = 0;
     }
@@ -118,13 +120,20 @@ void snufit_act_shoot(void) {
  * and the action brain of the object.
  */
 void bhv_snufit_loop(void) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    struct Object* player = marioState ? marioState->marioObj : NULL;
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+
     // Only update if Mario is in the current room.
     if (!(o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM)) {
         o->oDeathSound = SOUND_OBJ_SNUFIT_SKEETER_DEATH;
         
         // Face Mario if he is within range.
-        if (o->oDistanceToMario < 800.0f) {
-            obj_turn_pitch_toward_mario(120.0f, 2000);
+        if (distanceToPlayer < 800.0f) {
+            if (marioState) {
+                obj_turn_pitch_toward_mario(marioState, 120.0f, 2000);
+            }
 
             if ((s16) o->oMoveAnglePitch > 0x2000) {
                 o->oMoveAnglePitch = 0x2000;
@@ -132,7 +141,7 @@ void bhv_snufit_loop(void) {
                 o->oMoveAnglePitch = -0x2000;
             }
 
-            cur_obj_rotate_yaw_toward(o->oAngleToMario, 2000);
+            cur_obj_rotate_yaw_toward(angleToPlayer, 2000);
         } else {
             obj_move_pitch_approach(0, 0x200);
             o->oMoveAngleYaw += 200;
@@ -179,11 +188,7 @@ void bhv_snufit_loop(void) {
  */
 void bhv_snufit_balls_loop(void) {
     // If far from Mario or in a different room, despawn.
-    if ((o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM)
-#ifndef NODRAWINGDISTANCE
-        || (o->oTimer != 0 && o->oDistanceToMario > 1500.0f)
-#endif
-            ){
+    if (o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM) {
         obj_mark_for_deletion(o);
     }
 

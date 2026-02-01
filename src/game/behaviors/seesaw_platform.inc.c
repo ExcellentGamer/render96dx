@@ -16,7 +16,9 @@ static void const *sSeesawPlatformCollisionModels[] = {
  * Init function for bhvSeesawPlatform.
  */
 void bhv_seesaw_platform_init(void) {
-    o->collisionData = segmented_to_virtual(sSeesawPlatformCollisionModels[o->oBehParams2ndByte]);
+    if (BHV_ARR_CHECK(sSeesawPlatformCollisionModels, o->oBehParams2ndByte, void const*)) {
+        o->collisionData = segmented_to_virtual(sSeesawPlatformCollisionModels[o->oBehParams2ndByte]);
+    }
 
     // The S-shaped seesaw platform in BitS is large, so increase its collision
     // distance
@@ -29,17 +31,36 @@ void bhv_seesaw_platform_init(void) {
  * Update function for bhvSeesawPlatform.
  */
 void bhv_seesaw_platform_update(void) {
-    UNUSED s32 startPitch = o->oFaceAnglePitch;
     o->oFaceAnglePitch += (s32) o->oSeesawPlatformPitchVel;
 
     if (absf(o->oSeesawPlatformPitchVel) > 10.0f) {
         cur_obj_play_sound_1(SOUND_ENV_BOAT_ROCKING1);
     }
 
-    if (gMarioObject->platform == o) {
+    f32 x = 0;
+    f32 y = 0;
+    f32 z = 0;
+    u8 playersTouched = 0;
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (!is_player_active(&gMarioStates[i])) { continue; }
+        if (gMarioStates[i].marioObj->platform == o) {
+            x += gMarioStates[i].marioObj->oPosX;
+            y += gMarioStates[i].marioObj->oPosY;
+            z += gMarioStates[i].marioObj->oPosZ;
+            playersTouched++;
+        }
+    }
+
+    if (playersTouched > 0) {
+        x /= (f32)playersTouched;
+        y /= (f32)playersTouched;
+        z /= (f32)playersTouched;
+
+        s32 distanceToPlayer = dist_between_object_and_point(o, x, y, z);
+        s32 angleToPlayer = obj_angle_to_point(o, x, z);
+
         // Rotate toward mario
-        f32 rotation = o->oDistanceToMario * coss(o->oAngleToMario - o->oMoveAngleYaw);
-        UNUSED s32 unused;
+        f32 rotation = distanceToPlayer * coss(angleToPlayer - o->oMoveAngleYaw);
 
         // Deceleration is faster than acceleration
         if (o->oSeesawPlatformPitchVel * rotation < 0) {

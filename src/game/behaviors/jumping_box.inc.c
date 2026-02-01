@@ -1,15 +1,15 @@
 // jumping_box.c.inc
 
 struct ObjectHitbox sJumpingBoxHitbox = {
-    /* interactType: */ INTERACT_GRABBABLE,
-    /* downOffset: */ 20,
-    /* damageOrCoinValue: */ 0,
-    /* health: */ 1,
-    /* numLootCoins: */ 5,
-    /* radius: */ 150,
-    /* height: */ 250,
-    /* hurtboxRadius: */ 150,
-    /* hurtboxHeight: */ 250,
+    .interactType = INTERACT_GRABBABLE,
+    .downOffset = 20,
+    .damageOrCoinValue = 0,
+    .health = 1,
+    .numLootCoins = 5,
+    .radius = 150,
+    .height = 250,
+    .hurtboxRadius = 150,
+    .hurtboxHeight = 250,
 };
 
 void jumping_box_act_0(void) {
@@ -36,12 +36,12 @@ void jumping_box_act_1(void) {
 void (*sJumpingBoxActions[])(void) = { jumping_box_act_0, jumping_box_act_1 };
 
 void jumping_box_free_update(void) {
-    cur_obj_set_model(MODEL_BREAKABLE_BOX);
+    cur_obj_set_model(smlua_model_util_load(E_MODEL_BREAKABLE_BOX));
     cur_obj_scale(0.5f);
     obj_set_hitbox(o, &sJumpingBoxHitbox);
     cur_obj_update_floor_and_walls();
     cur_obj_move_standard(78);
-    cur_obj_call_action_function(sJumpingBoxActions);
+    CUR_OBJ_CALL_ACTION_FUNCTION(sJumpingBoxActions);
 }
 
 void bhv_jumping_box_loop(void) {
@@ -50,8 +50,10 @@ void bhv_jumping_box_loop(void) {
             jumping_box_free_update();
             break;
         case HELD_HELD:
-            obj_copy_pos(o, gMarioObject);
-            cur_obj_set_model(MODEL_BREAKABLE_BOX_SMALL);
+            if (o->heldByPlayerIndex < MAX_PLAYERS) {
+                obj_copy_pos(o, gMarioStates[o->heldByPlayerIndex].marioObj);
+            }
+            cur_obj_set_model(smlua_model_util_load(E_MODEL_BREAKABLE_BOX_SMALL));
             cur_obj_unrender_and_reset_state(-1, 0);
             break;
         case HELD_THROWN:

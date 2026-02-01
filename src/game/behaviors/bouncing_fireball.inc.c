@@ -28,19 +28,24 @@ void bhv_bouncing_fireball_flame_loop(void) {
 }
 
 void bhv_bouncing_fireball_loop(void) {
+    struct Object* player = nearest_player_to_object(o);
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+
     struct Object *sp2C;
     f32 sp28;
     switch (o->oAction) {
         case 0:
-            if (o->oDistanceToMario < 2000.0f)
+            if (distanceToPlayer < 2000.0f)
                 o->oAction = 1;
             break;
         case 1:
             sp2C = spawn_object(o, MODEL_RED_FLAME, bhvBouncingFireballFlame);
             sp28 = (10 - o->oTimer) * 0.5;
-            obj_scale_xyz(sp2C, sp28, sp28, sp28);
-            if (o->oTimer == 0)
-                obj_become_tangible(sp2C);
+            if (sp2C != NULL) {
+                obj_scale_xyz(sp2C, sp28, sp28, sp28);
+                if (o->oTimer == 0)
+                    obj_become_tangible(sp2C);
+            }
             if (o->oTimer > 10)
                 o->oAction++;
             break;

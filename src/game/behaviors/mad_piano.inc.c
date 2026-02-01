@@ -1,22 +1,26 @@
 
 static struct ObjectHitbox sMadPianoHitbox = {
-    /* interactType:      */ INTERACT_MR_BLIZZARD,
-    /* downOffset:        */ 0,
-    /* damageOrCoinValue: */ 3,
-    /* health:            */ 99,
-    /* numLootCoins:      */ 0,
-    /* radius:            */ 200,
-    /* height:            */ 150,
-    /* hurtboxRadius:     */ 200,
-    /* hurtboxHeight:     */ 150,
+    .interactType = INTERACT_MR_BLIZZARD,
+    .downOffset = 0,
+    .damageOrCoinValue = 3,
+    .health = 99,
+    .numLootCoins = 0,
+    .radius = 200,
+    .height = 150,
+    .hurtboxRadius = 200,
+    .hurtboxHeight = 150,
 };
 
 static void mad_piano_act_wait(void) {
     cur_obj_init_animation_with_sound(0);
 
-    if (o->oDistanceToMario < 500.0f) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    struct Object* player = marioState ? marioState->marioObj : NULL;
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+
+    if (distanceToPlayer < 500.0f) {
         if (o->oTimer > 20) {
-            if (gMarioStates[0].forwardVel > 10.0f) {
+            if (marioState && marioState->forwardVel > 10.0f) {
                 o->oAction = MAD_PIANO_ACT_ATTACK;
                 cur_obj_become_tangible();
             }
@@ -33,7 +37,12 @@ static void mad_piano_act_attack(void) {
     cur_obj_init_animation_with_sound(1);
     cur_obj_play_sound_at_anim_range(0, 0, SOUND_OBJ_MAD_PIANO_CHOMPING);
 
-    if (o->oDistanceToMario < 500.0f) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    struct Object* player = marioState ? marioState->marioObj : NULL;
+    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
+
+    if (distanceToPlayer < 500.0f) {
         o->oTimer = 0;
     }
 
@@ -52,7 +61,7 @@ static void mad_piano_act_attack(void) {
             o->oPosZ = o->oHomeZ + dz * distToHome;
         }
 
-        cur_obj_rotate_yaw_toward(o->oAngleToMario, 400);
+        cur_obj_rotate_yaw_toward(angleToPlayer, 400);
         o->oForwardVel = 5.0f;
     }
 

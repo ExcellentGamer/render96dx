@@ -7,6 +7,15 @@
  */
 
 void bhv_purple_switch_loop(void) {
+    u8 anyPlayerOnPlatform = FALSE;
+    for (s32 i = 0; i < MAX_PLAYERS; i++) {
+        if (!is_player_active(&gMarioStates[i])) { continue; }
+        if (gMarioStates[i].marioObj && gMarioStates[i].marioObj->platform == o) {
+            anyPlayerOnPlatform = TRUE;
+            break;
+        }
+    }
+
     UNUSED s32 unused;
     switch (o->oAction) {
         /**
@@ -14,9 +23,9 @@ void bhv_purple_switch_loop(void) {
          * switch's middle section, transition to the pressed state.
          */
         case PURPLE_SWITCH_IDLE:
-            cur_obj_set_model(MODEL_PURPLE_SWITCH);
+            cur_obj_set_model(smlua_model_util_load(E_MODEL_PURPLE_SWITCH));
             cur_obj_scale(1.5f);
-            if (gMarioObject->platform == o && !(gMarioStates->action & MARIO_UNKNOWN_13)) {
+            if (gMarioObject && gMarioObject->platform == o && !(gMarioStates[0].action & MARIO_UNKNOWN_13)) {
                 if (lateral_dist_between_objects(o, gMarioObject) < 127.5) {
                     o->oAction = PURPLE_SWITCH_PRESSED;
                 }
@@ -28,11 +37,11 @@ void bhv_purple_switch_loop(void) {
          */
         case PURPLE_SWITCH_PRESSED:
             cur_obj_scale_over_time(2, 3, 1.5f, 0.2f);
-            if (o->oTimer == 3) {
+            if (o->oTimer >= 3) {
                 cur_obj_play_sound_2(SOUND_GENERAL2_PURPLE_SWITCH);
                 o->oAction = PURPLE_SWITCH_TICKING;
                 cur_obj_shake_screen(SHAKE_POS_SMALL);
-                queue_rumble_data(5, 80);
+                queue_rumble_data_object(o, 5, 80);
             }
             break;
         /**
@@ -41,13 +50,13 @@ void bhv_purple_switch_loop(void) {
          */
         case PURPLE_SWITCH_TICKING:
             if (o->oBehParams2ndByte != 0) {
-                if (o->oBehParams2ndByte == 1 && gMarioObject->platform != o) {
+                if (o->oBehParams2ndByte == 1 && !anyPlayerOnPlatform) {
                     o->oAction++;
                 } else {
                     if (o->oTimer < 360) {
-                        play_sound(SOUND_GENERAL2_SWITCH_TICK_FAST, gDefaultSoundArgs);
+                        play_sound(SOUND_GENERAL2_SWITCH_TICK_FAST, gGlobalSoundSource);
                     } else {
-                        play_sound(SOUND_GENERAL2_SWITCH_TICK_SLOW, gDefaultSoundArgs);
+                        play_sound(SOUND_GENERAL2_SWITCH_TICK_SLOW, gGlobalSoundSource);
                     }
                     if (o->oTimer > 400) {
                         o->oAction = PURPLE_SWITCH_WAIT_FOR_MARIO_TO_GET_OFF;
@@ -71,7 +80,7 @@ void bhv_purple_switch_loop(void) {
          * unpressed state.
          */
         case PURPLE_SWITCH_WAIT_FOR_MARIO_TO_GET_OFF:
-            if (!cur_obj_is_mario_on_platform()) {
+            if (!anyPlayerOnPlatform) {
                 o->oAction = PURPLE_SWITCH_UNPRESSED;
             }
             break;

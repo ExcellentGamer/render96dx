@@ -51,7 +51,7 @@ void bhv_water_splash_spawn_droplets(void) {
     if (o->oTimer == 0)
         o->oPosY = find_water_level(o->oPosX, o->oPosZ);
 
-    if (o->oPosY > -10000.0f) // Make sure it is not at the default water level
+    if (o->oPosY > gLevelValues.floorLowerLimitMisc) // Make sure it is not at the default water level
         for (i = 0; i < 3; i++)
             spawn_water_droplet(o, &sWaterSplashDropletParams);
 }
@@ -74,20 +74,34 @@ void bhv_water_droplet_loop(void) {
     if (o->oVelY < 0.0f) {
         if (waterLevel > o->oPosY) {
             // Create the smaller splash
-            try_to_spawn_object(0, 1.0f, o, MODEL_SMALL_WATER_SPLASH, bhvWaterDropletSplash);
+            struct Object* small = try_to_spawn_object(0, 1.0f, o, MODEL_SMALL_WATER_SPLASH, bhvWaterDropletSplash);
+
+            if (small != NULL) {
+                // immediately update render position
+                small->parentObj = NULL;
+                small->header.gfx.pos[0] = o->oPosX;
+                small->header.gfx.pos[1] = o->oPosY;
+                small->header.gfx.pos[2] = o->oPosZ;
+            }
+
             obj_mark_for_deletion(o);
         } else if (o->oTimer > 20)
             obj_mark_for_deletion(o);
     }
-    if (waterLevel < -10000.0f)
+    if (waterLevel < gLevelValues.floorLowerLimitMisc)
         obj_mark_for_deletion(o);
 }
 
 void bhv_idle_water_wave_loop(void) {
-    obj_copy_pos(o, gMarioObject);
-    o->oPosY = gMarioStates->waterLevel + 5;
-    if (!(gMarioObject->oMarioParticleFlags & ACTIVE_PARTICLE_IDLE_WATER_WAVE)) {
-        gMarioObject->oActiveParticleFlags &= (u16)~ACTIVE_PARTICLE_IDLE_WATER_WAVE;
+    if (o->parentObj == NULL || o->parentObj->behavior != bhvMario) {
+        obj_mark_for_deletion(o);
+        return;
+    }
+    obj_copy_pos(o, o->parentObj);
+    u8 index = o->parentObj->oBehParams - 1;
+    if (index < MAX_PLAYERS) { o->oPosY = gMarioStates[index].waterLevel + 5; }
+    if (!(o->parentObj->oMarioParticleFlags & ACTIVE_PARTICLE_IDLE_WATER_WAVE)) {
+        o->parentObj->oActiveParticleFlags &= (u16)~ACTIVE_PARTICLE_IDLE_WATER_WAVE;
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
     }
 }
@@ -108,7 +122,9 @@ void bhv_shallow_water_splash_init(void) {
     if ((random_u16() & 0xFF) <= 0) // Strange
     {
         fishObj = spawn_water_droplet(o, &sWaterDropletFishParams);
-        obj_init_animation_with_sound(fishObj, blue_fish_seg3_anims_0301C2B0, 0);
+        if (fishObj != NULL) {
+            obj_init_animation_with_sound(fishObj, &blue_fish_seg3_anims_0301C2B0, 0);
+        }
     }
 }
 

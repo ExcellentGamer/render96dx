@@ -28,16 +28,24 @@ void bhv_piranha_plant_waking_bubbles_loop(void) {
  */
 void bhv_piranha_plant_bubble_loop(void) {
     struct Object *parent = o->parentObj; // the Piranha Plant
+    if (parent == NULL) { return; }
     f32 scale = 0;
     s32 i;
-    s32 frame = parent->header.gfx.unk38.animFrame;
+    s32 frame = parent->header.gfx.animInfo.animFrame;
+    if (frame < 0) {
+        frame = 0;
+    }
     // TODO: rename lastFrame if it is inaccurate
-    s32 lastFrame = parent->header.gfx.unk38.curAnim->unk08 - 2;
+    if (parent->header.gfx.animInfo.curAnim == NULL) { return; }
+    s32 lastFrame = parent->header.gfx.animInfo.curAnim->loopEnd - 2;
     s32 UNUSED unused;
     f32 doneShrinkingFrame; // the first frame after shrinking is done
     f32 beginGrowingFrame;  // the frame just before growing begins
 
     cur_obj_set_pos_relative(parent, 0, 72.0f, 180.0f);
+
+    struct Object* parentPlayer = nearest_player_to_object(parent);
+    s32 distanceToParentPlayer = parentPlayer ? dist_between_objects(parent, parentPlayer) : 10000;
 
     switch (o->oAction) {
         case PIRANHA_PLANT_BUBBLE_ACT_IDLE:
@@ -50,7 +58,7 @@ void bhv_piranha_plant_bubble_loop(void) {
             break;
 
         case PIRANHA_PLANT_BUBBLE_ACT_GROW_SHRINK_LOOP:
-            if (parent->oDistanceToMario < parent->oDrawingDistance) {
+            if (distanceToParentPlayer < parent->oDrawingDistance) {
                 cur_obj_enable_rendering();
 
                 if (parent->oAction == PIRANHA_PLANT_ACT_SLEEPING) {

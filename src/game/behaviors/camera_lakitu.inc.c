@@ -41,7 +41,8 @@ void bhv_camera_lakitu_init(void) {
 }
 
 static u8 camera_lakitu_intro_act_trigger_cutscene_continue_dialog(void) {
-    return (o->oAction == CAMERA_LAKITU_INTRO_ACT_TRIGGER_CUTSCENE);
+    // Keep dialog locked as long as lakitu hasn't finished the sequence
+    return (o->oAction < CAMERA_LAKITU_INTRO_ACT_UNK2 || o->oAction == CAMERA_LAKITU_INTRO_ACT_UNK2) && !o->oCameraLakituFinishedDialog;
 }
 
 /**
@@ -58,14 +59,21 @@ static void camera_lakitu_intro_act_trigger_cutscene(void) {
     if (player->oPosX > -544.0f && player->oPosX < 545.0f && player->oPosY > 800.0f
         && player->oPosZ > -2000.0f && player->oPosZ < -177.0f)
     {
-        if (should_start_or_continue_dialog(marioState, o) && set_mario_npc_dialog(&gMarioStates[0], 2, camera_lakitu_intro_act_trigger_cutscene_continue_dialog) == 1) {
-            o->oAction = CAMERA_LAKITU_INTRO_ACT_SPAWN_CLOUD;
+        s32 dialogState = set_mario_npc_dialog(&gMarioStates[0], 2, camera_lakitu_intro_act_trigger_cutscene_continue_dialog);
+        if (should_start_or_continue_dialog(marioState, o) && (dialogState == 1 || dialogState == 2)) {
+            if (dialogState == 2) {
+                o->oAction = CAMERA_LAKITU_INTRO_ACT_SPAWN_CLOUD;
+            }
         }
+    } else if (marioState->action != ACT_READING_NPC_DIALOG) {
+        // If player left the bridge and is no longer in dialog, reset
+        set_mario_npc_dialog(&gMarioStates[0], 0, NULL);
     }
 }
 
 static u8 camera_lakitu_intro_act_spawn_cloud_continue_dialog(void) {
-    return (o->oAction == CAMERA_LAKITU_INTRO_ACT_SPAWN_CLOUD);
+    // Keep dialog locked during spawn cloud and show dialog phases
+    return (o->oAction == CAMERA_LAKITU_INTRO_ACT_SPAWN_CLOUD || o->oAction == CAMERA_LAKITU_INTRO_ACT_UNK2) && !o->oCameraLakituFinishedDialog;
 }
 /**
  * Warp up into the air and spawn cloud, then enter the TODO action.
@@ -73,6 +81,12 @@ static u8 camera_lakitu_intro_act_spawn_cloud_continue_dialog(void) {
 static void camera_lakitu_intro_act_spawn_cloud(void) {
     struct MarioState* marioState = nearest_mario_state_to_object(o);
     if (marioState && should_start_or_continue_dialog(marioState, o) && set_mario_npc_dialog(&gMarioStates[0], 2, camera_lakitu_intro_act_spawn_cloud_continue_dialog) == 2) {
+        // Play music when Lakitu spawns in the cloud
+        if (!o->oCameraLakituUnk104) {
+            play_music(SEQ_PLAYER_LEVEL, SEQUENCE_ARGS(15, SEQ_EVENT_CUTSCENE_LAKITU), 0);
+            o->oCameraLakituUnk104 = TRUE;
+        }
+        
         o->oAction = CAMERA_LAKITU_INTRO_ACT_UNK2;
 
         o->oPosX = 1800.0f;

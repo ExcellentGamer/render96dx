@@ -133,8 +133,10 @@ void djui_init(void) {
 void djui_init_late(void) {
     gDjuiInMainMenu = false;
     if (configLanguage[0] == '\0') {
-        gPanelLanguageOnStartup = true;
-        djui_panel_language_create(NULL);
+        // Set default language to English instead of showing language selection on startup
+        // Language can be changed via pause menu options
+        snprintf(configLanguage, MAX_CONFIG_STRING, "%s", "English");
+        djui_language_init(configLanguage);
     }
 
     // djui_panel_debug_create();

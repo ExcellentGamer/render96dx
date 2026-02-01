@@ -8,13 +8,20 @@
 void bub_spawner_act_0(void) {
     s32 i;
     s32 sp18 = o->oBirdChirpChirpUnkF4;
-    if (sp18 > 20) { sp18 = 20; }
-    for (i = 0; i < sp18; i++)
-        spawn_object(o, MODEL_BUB, bhvBub);
-    o->oAction = 1;
+#ifndef NODRAWINGDISTANCE
+    if (o->oDistanceToMario < 1500.0f) {
+#endif
+        for (i = 0; i < sp18; i++)
+            spawn_object(o, MODEL_BUB, bhvBub);
+        o->oAction = 1;
+#ifndef NODRAWINGDISTANCE
+    }
+#endif
 }
 
 void bub_spawner_act_1(void) {
+    if (gMarioObject->oPosY - o->oPosY > 2000.0f)
+        o->oAction = 2;
 }
 
 void bub_spawner_act_2(void) {
@@ -29,7 +36,7 @@ void (*sBirdChirpChirpActions[])(void) = { bub_spawner_act_0, bub_spawner_act_1,
                                            bub_spawner_act_2, bub_spawner_act_3 };
 
 void bhv_bub_spawner_loop(void) {
-    CUR_OBJ_CALL_ACTION_FUNCTION(sBirdChirpChirpActions);
+    cur_obj_call_action_function(sBirdChirpChirpActions);
 }
 
 void bub_move_vertically(s32 a0) {
@@ -48,16 +55,12 @@ void bub_act_0(void) {
 }
 
 void bub_act_1(void) {
-    struct Object* player = nearest_player_to_object(o);
-    if (!player) { return; }
-    s32 distanceToPlayer = dist_between_objects(o, player);
-    s32 angleToPlayer = obj_angle_to_object(o, player);
     f32 dy;
     if (o->oTimer == 0) {
         o->oForwardVel = random_float() * 2 + 2;
         o->oCheepCheepUnk108 = random_float();
     }
-    dy = o->oPosY - player->oPosY;
+    dy = o->oPosY - gMarioObject->oPosY;
     if (o->oPosY < o->oCheepCheepUnkF4 - 50.0f) {
         if (dy < 0.0f)
             dy = 0.0f - dy;
@@ -71,20 +74,16 @@ void bub_act_1(void) {
             o->oPosY = o->oPosY - 1.0f;
     }
     if (800.0f < cur_obj_lateral_dist_from_mario_to_home())
-        angleToPlayer = cur_obj_angle_to_home();
-    cur_obj_rotate_yaw_toward(angleToPlayer, 0x100);
-    if (distanceToPlayer < 200.0f)
-        if (distanceToPlayer < 0.5)
+        o->oAngleToMario = cur_obj_angle_to_home();
+    cur_obj_rotate_yaw_toward(o->oAngleToMario, 0x100);
+    if (o->oDistanceToMario < 200.0f)
+        if (o->oCheepCheepUnk108 < 0.5)
             o->oAction = 2;
     if (o->oInteractStatus & INT_STATUS_INTERACTED)
         o->oAction = 2;
 }
 
 void bub_act_2(void) {
-    struct Object* player = nearest_player_to_object(o);
-    if (!player) { return; }
-    s32 distanceToPlayer = dist_between_objects(o, player);
-    s32 angleToPlayer = obj_angle_to_object(o, player);
     f32 dy;
     if (o->oTimer < 20) {
         if (o->oInteractStatus & INT_STATUS_INTERACTED)
@@ -95,7 +94,7 @@ void bub_act_2(void) {
         cur_obj_play_sound_2(SOUND_GENERAL_MOVING_WATER);
     if (o->oForwardVel == 0.0f)
         o->oForwardVel = 6.0f;
-    dy = o->oPosY - player->oPosY;
+    dy = o->oPosY - gMarioObject->oPosY;
     if (o->oPosY < o->oCheepCheepUnkF4 - 50.0f) {
         if (dy < 0.0f)
             dy = 0.0f - dy;
@@ -109,25 +108,21 @@ void bub_act_2(void) {
             o->oPosY -= 1.0f;
     }
     if (cur_obj_lateral_dist_from_mario_to_home() > 800.0f)
-        angleToPlayer = cur_obj_angle_to_home();
-    cur_obj_rotate_yaw_toward(angleToPlayer + 0x8000, 0x400);
-    if (o->oTimer > 200 && distanceToPlayer > 600.0f)
+        o->oAngleToMario = cur_obj_angle_to_home();
+    cur_obj_rotate_yaw_toward(o->oAngleToMario + 0x8000, 0x400);
+    if (o->oTimer > 200 && o->oDistanceToMario > 600.0f)
         o->oAction = 1;
 }
 
 void (*sCheepCheepActions[])(void) = { bub_act_0, bub_act_1, bub_act_2 };
 
 void bhv_bub_loop(void) {
-    struct Object* player = nearest_player_to_object(o);
-
     o->oCheepCheepUnkF4 = find_water_level(o->oPosX, o->oPosZ);
-    if (player) {
-        o->oCheepCheepUnkF8 = player->oPosY + o->oCheepCheepUnkFC;
-    }
+    o->oCheepCheepUnkF8 = gMarioObject->oPosY + o->oCheepCheepUnkFC;
     o->oWallHitboxRadius = 30.0f;
     cur_obj_update_floor_and_walls();
-    CUR_OBJ_CALL_ACTION_FUNCTION(sCheepCheepActions);
+    cur_obj_call_action_function(sCheepCheepActions);
     cur_obj_move_using_fvel_and_gravity();
-    if (!o->parentObj || o->parentObj->oAction == 2)
+    if (o->parentObj->oAction == 2)
         obj_mark_for_deletion(o);
 }

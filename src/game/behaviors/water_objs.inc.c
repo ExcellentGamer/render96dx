@@ -70,37 +70,6 @@ void bhv_small_water_wave_loop(void) {
         obj_mark_for_deletion(o);
 }
 
-void bhv_bubble_player_loop(void) {
-    if (o->heldByPlayerIndex >= MAX_PLAYERS) { return; }
-    struct MarioState* marioState = &gMarioStates[o->heldByPlayerIndex];
-    if (!marioState) { return; }
-
-    // set position
-    o->oPosX = marioState->pos[0];
-    o->oPosY = marioState->pos[1] + 35;
-    o->oPosZ = marioState->pos[2];
-
-    // slowly rotate the bubble
-    o->oFaceAnglePitch += 300;
-    o->oFaceAngleYaw += 230;
-    o->oFaceAngleRoll += 170;
-
-    // scale the bubble
-    extern u32 gGlobalTimer;
-    f32 scale = sins(gGlobalTimer * 800) * 0.1f + 1.4f;
-    o->header.gfx.scale[0] = scale;
-    o->header.gfx.scale[1] = sins(gGlobalTimer * 1500) * 0.2f + scale;
-    o->header.gfx.scale[2] = scale;
-
-    // check if the bubble popped
-    if (marioState->action != ACT_BUBBLED || !is_player_in_local_area(marioState)) {
-        spawn_mist_particles();
-        create_sound_spawner(SOUND_OBJ_DIVING_IN_WATER);
-        marioState->bubbleObj = NULL;
-        obj_mark_for_deletion(o);
-    }
-}
-
 void scale_bubble_sin(void) {
     o->header.gfx.scale[0] = sins(o->oWaterObjUnkF4) * 0.5 + 2.0;
     o->oWaterObjUnkF4 += o->oWaterObjUnkFC;

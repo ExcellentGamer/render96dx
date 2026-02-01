@@ -25,5 +25,4 @@ void bhv_bitfs_sinking_cage_platform_loop(void) {
     } else
         o->oPosY -= sins(o->oPlatformTimer) * 3.0f;
     o->oPlatformTimer += 0x100;
-
 }

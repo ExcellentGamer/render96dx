@@ -4,15 +4,10 @@ void bhv_lll_rotating_hex_flame_loop(void) {
     f32 sp24 = o->oLllRotatingHexFlameUnkF4;
     f32 sp20 = o->oLllRotatingHexFlameUnkF8;
     f32 sp1C = o->oLllRotatingHexFlameUnkFC;
-
-    if (o->parentObj) {
-        cur_obj_set_pos_relative(o->parentObj, sp24, sp20, sp1C);
-        o->oPosY = o->parentObj->oPosY + 100.0f;
-        if (o->parentObj->oAction == 3)
-            obj_mark_for_deletion(o);
-    } else {
+    cur_obj_set_pos_relative(o->parentObj, sp24, sp20, sp1C);
+    o->oPosY = o->parentObj->oPosY + 100.0f;
+    if (o->parentObj->oAction == 3)
         obj_mark_for_deletion(o);
-    }
 }
 
 void fire_bar_spawn_flames(s16 a0) {
@@ -25,19 +20,20 @@ void fire_bar_spawn_flames(s16 a0) {
     sp20 = (o->oBehParams2ndByte == 0) ? 4 : 3;
     for (i = 0; i < sp20; i++) {
         sp2C = spawn_object(o, MODEL_RED_FLAME, bhvLllRotatingHexFlame);
-        if (sp2C != NULL) {
-            sp2C->oLllRotatingHexFlameUnkF4 += sp1C;
-            sp2C->oLllRotatingHexFlameUnkF8 = o->oPosY - 200.0f;
-            sp2C->oLllRotatingHexFlameUnkFC += sp18;
-            obj_scale_xyz(sp2C, 6.0f, 6.0f, 6.0f);
-        }
+        sp2C->oLllRotatingHexFlameUnkF4 += sp1C;
+        sp2C->oLllRotatingHexFlameUnkF8 = o->oPosY - 200.0f;
+        sp2C->oLllRotatingHexFlameUnkFC += sp18;
+        obj_scale_xyz(sp2C, 6.0f, 6.0f, 6.0f);
         sp1C += sins(a0) * 150.0f;
         sp18 += coss(a0) * 150.0f;
     }
 }
 
 void fire_bar_act_0(void) {
-     o->oAction = 1;
+#ifndef NODRAWINGDISTANCE
+    if (o->oDistanceToMario < 3000.0f)
+#endif
+        o->oAction = 1;
 }
 
 void fire_bar_act_1(void) {
@@ -51,6 +47,10 @@ void fire_bar_act_1(void) {
 void fire_bar_act_2(void) {
     o->oAngleVelYaw = -0x100;
     o->oMoveAngleYaw += o->oAngleVelYaw;
+#ifndef NODRAWINGDISTANCE
+    if (o->oDistanceToMario > 3200.0f)
+        o->oAction = 3;
+#endif
 }
 
 void fire_bar_act_3(void) {
@@ -61,7 +61,7 @@ void (*sRotatingCwFireBarsActions[])(void) = { fire_bar_act_0, fire_bar_act_1,
                                                fire_bar_act_2, fire_bar_act_3 };
 
 void bhv_lll_rotating_block_fire_bars_loop(void) {
-    CUR_OBJ_CALL_ACTION_FUNCTION(sRotatingCwFireBarsActions);
+    cur_obj_call_action_function(sRotatingCwFireBarsActions);
     if (o->oBehParams2ndByte == 0)
         load_object_collision_model();
 }

@@ -1,11 +1,5 @@
 // hoot.c.inc
 
-static u8 localTalkToHoot = 0;
-
-static u8 bhv_hoot_ignore_if_true(void) {
-    return (gMarioStates[0].action == ACT_RIDING_HOOT) && (gMarioStates[0].usedObj == o);
-}
-
 void bhv_hoot_init(void) {
     cur_obj_init_animation(0);
 
@@ -15,7 +9,6 @@ void bhv_hoot_init(void) {
     o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
 
     cur_obj_become_intangible();
-    localTalkToHoot = 0;
 }
 
 // sp28 = arg0
@@ -56,7 +49,7 @@ void hoot_free_step(s16 fastOscY, s32 speed) {
     struct FloorGeometry *sp2c;
     s16 yaw = o->oMoveAngleYaw;
     s16 pitch = o->oMoveAnglePitch;
-    s16 sp26 = o->header.gfx.animInfo.animFrame;
+    s16 sp26 = o->header.gfx.unk38.animFrame;
     f32 xPrev = o->oPosX;
     f32 zPrev = o->oPosZ;
     f32 hSpeed;
@@ -84,10 +77,8 @@ void hoot_free_step(s16 fastOscY, s32 speed) {
 }
 
 void hoot_player_set_yaw(void) {
-    if (o->heldByPlayerIndex >= MAX_PLAYERS) { return; }
-    struct MarioState* marioState = &gMarioStates[o->heldByPlayerIndex];
-    s16 stickX = marioState->controller->rawStickX;
-    s16 stickY = marioState->controller->rawStickY;
+    s16 stickX = gPlayer3Controller->rawStickX;
+    s16 stickY = gPlayer3Controller->rawStickY;
     UNUSED s16 pitch = o->oMoveAnglePitch;
     if (stickX < 10 && stickX >= -9)
         stickX = 0;
@@ -104,7 +95,7 @@ void hoot_player_set_yaw(void) {
 void hoot_carry_step(s32 speed, UNUSED f32 xPrev, UNUSED f32 zPrev) {
     s16 yaw = o->oMoveAngleYaw;
     s16 pitch = o->oMoveAnglePitch;
-    s16 sp22 = o->header.gfx.animInfo.animFrame;
+    s16 sp22 = o->header.gfx.unk38.animFrame;
     f32 hSpeed;
 
     o->oVelY = sins(pitch) * speed;
@@ -139,10 +130,7 @@ void hoot_surface_collision(f32 xPrev, UNUSED f32 yPrev, f32 zPrev) {
         o->oPosX = hitbox.x;
         o->oPosY = hitbox.y;
         o->oPosZ = hitbox.z;
-
-        if (o->heldByPlayerIndex < MAX_PLAYERS) {
-            gMarioStates[o->heldByPlayerIndex].marioObj->oInteractStatus |= INT_STATUS_MARIO_UNK7; /* bit 7 */
-        }
+        gMarioObject->oInteractStatus |= INT_STATUS_MARIO_UNK7; /* bit 7 */
     }
 
     floorY = find_floor_height_and_data(o->oPosX, o->oPosY, o->oPosZ, &sp44);
@@ -173,7 +161,7 @@ void hoot_act_ascent(f32 xPrev, f32 zPrev) {
 
     if (o->oTimer >= 29) {
         cur_obj_play_sound_1(SOUND_ENV_WIND2);
-        o->header.gfx.animInfo.animFrame = 1;
+        o->header.gfx.unk38.animFrame = 1;
     }
 
     if (o->oPosY > 6500.0f)
@@ -183,7 +171,6 @@ void hoot_act_ascent(f32 xPrev, f32 zPrev) {
 }
 
 void hoot_action_loop(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
     f32 xPrev = o->oPosX;
     f32 yPrev = o->oPosY;
     f32 zPrev = o->oPosZ;
@@ -199,9 +186,9 @@ void hoot_action_loop(void) {
             o->oMoveAnglePitch = 0x71C;
 
             if (o->oPosY < 2700.0f) {
-                //set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
+                set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
 
-                if (marioState == &gMarioStates[0] && cutscene_object_with_dialog(CUTSCENE_DIALOG, o, gBehaviorValues.dialogs.HootTiredDialog)) {
+                if (cutscene_object_with_dialog(CUTSCENE_DIALOG, o, DIALOG_045)) {
                     clear_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
 
                     o->oAction = HOOT_ACT_TIRED;
@@ -218,11 +205,8 @@ void hoot_action_loop(void) {
 
             hoot_carry_step(20, xPrev, zPrev);
 
-            if (o->oTimer >= 61) {
-                if (o->heldByPlayerIndex < MAX_PLAYERS) {
-                    gMarioStates[o->heldByPlayerIndex].marioObj->oInteractStatus |= INT_STATUS_MARIO_UNK7; /* bit 7 */
-                }
-            }
+            if (o->oTimer >= 61)
+                gMarioObject->oInteractStatus |= INT_STATUS_MARIO_UNK7; /* bit 7 */
             break;
     }
 
@@ -258,17 +242,9 @@ void hoot_awake_loop(void) {
     set_object_visibility(o, 2000);
 }
 
-static u8 hoot_wants_to_talk_continue_dialog(void) {
-    return (o->oHootAvailability == HOOT_AVAIL_WANTS_TO_TALK && localTalkToHoot == 1);
-}
-
 void bhv_hoot_loop(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-    static u8 forceFlySanity = TRUE;
-
     switch (o->oHootAvailability) {
         case HOOT_AVAIL_ASLEEP_IN_TREE:
-            forceFlySanity = TRUE;
             if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 50)) {
                 o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
                 o->oHootAvailability = HOOT_AVAIL_WANTS_TO_TALK;
@@ -278,24 +254,16 @@ void bhv_hoot_loop(void) {
         case HOOT_AVAIL_WANTS_TO_TALK:
             hoot_awake_loop();
 
-            if (marioState == &gMarioStates[0] && localTalkToHoot == 0) {
-                localTalkToHoot = 1;
-            }
+            if (set_mario_npc_dialog(2) == 2 && cutscene_object_with_dialog(CUTSCENE_DIALOG, o, DIALOG_044)) {
+                set_mario_npc_dialog(0);
 
-            if (localTalkToHoot == 1 && set_mario_npc_dialog(&gMarioStates[0], 2, hoot_wants_to_talk_continue_dialog) == 2 && cutscene_object_with_dialog(CUTSCENE_DIALOG, o, gBehaviorValues.dialogs.HootIntroDialog)) {
-                localTalkToHoot = 2;
-                set_mario_npc_dialog(&gMarioStates[0], 0, NULL);
                 cur_obj_become_tangible();
+
                 o->oHootAvailability = HOOT_AVAIL_READY_TO_FLY;
             }
             break;
 
         case HOOT_AVAIL_READY_TO_FLY:
-            if (forceFlySanity) {
-                set_mario_npc_dialog(&gMarioStates[0], 0, NULL);
-                cur_obj_become_tangible();
-                forceFlySanity = FALSE;
-            }
             hoot_awake_loop();
             break;
     }

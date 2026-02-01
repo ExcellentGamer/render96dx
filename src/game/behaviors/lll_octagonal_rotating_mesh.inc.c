@@ -8,7 +8,6 @@ s16 *D_8032F8C8[] = { D_8032F860, D_8032F894 };
 
 
 s32 lll_octagonal_mesh_move(s16 *a0, s32 a1) {
-    if (!BHV_ARR_CHECK(D_8032F860, a1, s16)) { return 0; }
     switch (a0[a1]) {
         case 4:
             o->oMoveAngleYaw = a0[a1 + 2];
@@ -42,7 +41,7 @@ s32 lll_octagonal_mesh_move(s16 *a0, s32 a1) {
 }
 
 s32 lll_octagonal_mesh_find_y_offset(s32 *a0, f32 *a1, s32 a2, s32 a3) {
-    if (cur_obj_is_any_player_on_platform()) {
+    if (cur_obj_is_mario_on_platform()) {
         if (a0[0] < 0x4000)
             a0[0] += a2;
         else
@@ -64,9 +63,9 @@ void bhv_lll_moving_octagonal_mesh_platform_loop(void) {
     if (o->oAction == 0) {
         o->oHorizontalMovementUnkF8 = 0;
         o->oAction++;
-    } else if (BHV_ARR_CHECK(D_8032F8C8, o->oBehParams2ndByte, s16*)) {
-        o->oHorizontalMovementUnkF8 = lll_octagonal_mesh_move(D_8032F8C8[o->oBehParams2ndByte], o->oHorizontalMovementUnkF8);
-    }
+    } else
+        o->oHorizontalMovementUnkF8 =
+            lll_octagonal_mesh_move(D_8032F8C8[o->oBehParams2ndByte], o->oHorizontalMovementUnkF8);
     print_debug_top_down_objectinfo("number %d\n", o->oHorizontalMovementUnkF8);
     cur_obj_move_using_fvel_and_gravity();
     if (lll_octagonal_mesh_find_y_offset(&o->oHorizontalMovementUnk104, &o->oHorizontalMovementUnk108, 0x400, -80)) {

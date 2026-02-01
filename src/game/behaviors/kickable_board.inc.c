@@ -1,19 +1,19 @@
 // kickable_board.c.inc
 
-s32 check_mario_attacking(struct MarioState* marioState) {
-    if (obj_check_if_collided_with_object(o, marioState->marioObj)) {
-        if (abs_angle_diff(o->oMoveAngleYaw, marioState->marioObj->oMoveAngleYaw) > 0x6000) {
-            if (marioState->action == ACT_SLIDE_KICK)
+s32 check_mario_attacking(UNUSED s32 sp18) {
+    if (obj_check_if_collided_with_object(o, gMarioObject)) {
+        if (abs_angle_diff(o->oMoveAngleYaw, gMarioObject->oMoveAngleYaw) > 0x6000) {
+            if (gMarioStates->action == ACT_SLIDE_KICK)
                 return 1;
-            if (marioState->action == ACT_PUNCHING)
+            if (gMarioStates->action == ACT_PUNCHING)
                 return 1;
-            if (marioState->action == ACT_MOVE_PUNCHING)
+            if (gMarioStates->action == ACT_MOVE_PUNCHING)
                 return 1;
-            if (marioState->action == ACT_SLIDE_KICK_SLIDE)
+            if (gMarioStates->action == ACT_SLIDE_KICK_SLIDE)
                 return 1;
-            if (marioState->action == ACT_JUMP_KICK)
+            if (gMarioStates->action == ACT_JUMP_KICK)
                 return 2;
-            if (marioState->action == ACT_WALL_KICK_AIR)
+            if (gMarioStates->action == ACT_WALL_KICK_AIR)
                 return 2;
         }
     }
@@ -26,13 +26,11 @@ void init_kickable_board_rock(void) {
 }
 
 void bhv_kickable_board_loop(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-
     s32 sp24;
     switch (o->oAction) {
         case 0:
             o->oFaceAnglePitch = 0;
-            if (marioState && check_mario_attacking(marioState)) {
+            if (check_mario_attacking(0)) {
                 init_kickable_board_rock();
                 o->oAction++;
             }
@@ -42,20 +40,17 @@ void bhv_kickable_board_loop(void) {
             o->oFaceAnglePitch = 0;
             load_object_collision_model();
             o->oFaceAnglePitch = -sins(o->oKickableBoardF4) * o->oKickableBoardF8;
-            if (marioState) {
-                if (o->oTimer > 30 && (sp24 = check_mario_attacking(marioState))) {
-                    if (marioState->marioObj->oPosY > o->oPosY + 160.0f && sp24 == 2) {
-                        o->oAction++;
-                        cur_obj_play_sound_2(SOUND_GENERAL_BUTTON_PRESS_2);
-                    } else
-                        o->oTimer = 0;
-                }
+            if (o->oTimer > 30 && (sp24 = check_mario_attacking(0))) {
+                if (gMarioObject->oPosY > o->oPosY + 160.0f && sp24 == 2) {
+                    o->oAction++;
+                    cur_obj_play_sound_2(SOUND_GENERAL_BUTTON_PRESS_2);
+                } else
+                    o->oTimer = 0;
             }
             if (o->oTimer != 0) {
                 o->oKickableBoardF8 -= 8;
-                if (o->oKickableBoardF8 < 0) {
+                if (o->oKickableBoardF8 < 0)
                     o->oAction = 0;
-                }
             } else
                 init_kickable_board_rock();
             if (!(o->oKickableBoardF4 & 0x7FFF))
@@ -64,7 +59,7 @@ void bhv_kickable_board_loop(void) {
             break;
         case 2:
             cur_obj_become_intangible();
-            cur_obj_set_model(smlua_model_util_load(E_MODEL_WF_KICKABLE_BOARD_FELLED));
+            cur_obj_set_model(MODEL_WF_KICKABLE_BOARD_FELLED);
             o->oAngleVelPitch -= 0x80;
             o->oFaceAnglePitch += o->oAngleVelPitch;
             if (o->oFaceAnglePitch < -0x4000) {

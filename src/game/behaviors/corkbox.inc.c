@@ -43,25 +43,16 @@ void bhv_respawner_loop(void) {
 
     if (!is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, o->oRespawnerMinSpawnDist)) {
         spawnedObject = spawn_object(o, o->oRespawnerModelToRespawn, o->oRespawnerBehaviorToRespawn);
-        if (spawnedObject != NULL) {
-            spawnedObject->oBehParams = o->oBehParams;
-        }
-
+        spawnedObject->oBehParams = o->oBehParams;
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
     }
 }
 
 void create_respawner(s32 model, const BehaviorScript *behToSpawn, s32 minSpawnDist) {
-    if ((o->coopFlags & (COOP_OBJ_FLAG_LUA | COOP_OBJ_FLAG_NETWORK))) {
-        return;
-    }
-
     struct Object *respawner = spawn_object_abs_with_rot(o, 0, MODEL_NONE, bhvRespawner, o->oHomeX,
                                                          o->oHomeY, o->oHomeZ, 0, 0, 0);
-    if (respawner != NULL) {
-        respawner->oBehParams = o->oBehParams;
-        respawner->oRespawnerModelToRespawn = model;
-        respawner->oRespawnerMinSpawnDist = minSpawnDist;
-        respawner->oRespawnerBehaviorToRespawn = behToSpawn;
-    }
+    respawner->oBehParams = o->oBehParams;
+    respawner->oRespawnerModelToRespawn = model;
+    respawner->oRespawnerMinSpawnDist = minSpawnDist;
+    respawner->oRespawnerBehaviorToRespawn = behToSpawn;
 }

@@ -1,19 +1,18 @@
 // scuttlebug.c.inc
 
 struct ObjectHitbox sScuttlebugHitbox = {
-    .interactType = INTERACT_BOUNCE_TOP,
-    .downOffset = 0,
-    .damageOrCoinValue = 1,
-    .health = 1,
-    .numLootCoins = 3,
-    .radius = 130,
-    .height = 70,
-    .hurtboxRadius = 90,
-    .hurtboxHeight = 60,
+    /* interactType: */ INTERACT_BOUNCE_TOP,
+    /* downOffset: */ 0,
+    /* damageOrCoinValue: */ 1,
+    /* health: */ 1,
+    /* numLootCoins: */ 3,
+    /* radius: */ 130,
+    /* height: */ 70,
+    /* hurtboxRadius: */ 90,
+    /* hurtboxHeight: */ 60,
 };
 
-s32 update_angle_from_move_flags(INOUT s32 *angle) {
-    if (!angle) { return 0; }
+s32 update_angle_from_move_flags(s32 *angle) {
     if (o->oMoveFlags & OBJ_MOVE_HIT_WALL) {
         *angle = o->oWallAngle;
         return 1;
@@ -25,8 +24,8 @@ s32 update_angle_from_move_flags(INOUT s32 *angle) {
 }
 
 void bhv_scuttlebug_loop(void) {
-    struct Object *player = nearest_player_to_object(o);
-
+    UNUSED s32 unused;
+    f32 sp18;
     cur_obj_update_floor_and_walls();
     if (o->oSubAction != 0
         && cur_obj_set_hitbox_and_die_if_attacked(&sScuttlebugHitbox, SOUND_OBJ_DYING_ENEMY1,
@@ -47,14 +46,12 @@ void bhv_scuttlebug_loop(void) {
             break;
         case 1:
             o->oForwardVel = 5.0f;
-            if (player && cur_obj_lateral_dist_from_obj_to_home(player) > 1000.0f) {
+            if (cur_obj_lateral_dist_from_mario_to_home() > 1000.0f)
                 o->oAngleToMario = cur_obj_angle_to_home();
-            } else {
+            else {
                 if (o->oScuttlebugUnkF8 == 0) {
                     o->oScuttlebugUnkFC = 0;
-                    if (player) {
-                        o->oAngleToMario = obj_angle_to_object(o, player);
-                    }
+                    o->oAngleToMario = obj_angle_to_object(o, gMarioObject);
                     if (abs_angle_diff(o->oAngleToMario, o->oMoveAngleYaw) < 0x800) {
                         o->oScuttlebugUnkF8 = 1;
                         o->oVelY = 20.0f;
@@ -73,7 +70,7 @@ void bhv_scuttlebug_loop(void) {
             break;
         case 2:
             o->oForwardVel = 5.0f;
-            if ((s16) o->oMoveAngleYaw == (s16)o->oAngleToMario)
+            if ((s16) o->oMoveAngleYaw == (s16) o->oAngleToMario)
                 o->oSubAction = 1;
             if (o->oPosY - o->oHomeY < -200.0f)
                 obj_mark_for_deletion(o);
@@ -103,43 +100,31 @@ void bhv_scuttlebug_loop(void) {
                 o->oSubAction = 0;
             break;
     }
-    f32 sp18;
-    if (o->oForwardVel < 10.0f) {
+    if (o->oForwardVel < 10.0f)
         sp18 = 1.0f;
-    } else {
+    else
         sp18 = 3.0f;
-    }
     cur_obj_init_animation_with_accel_and_sound(0, sp18);
-    if (o->oMoveFlags & OBJ_MOVE_MASK_ON_GROUND) {
+    if (o->oMoveFlags & OBJ_MOVE_MASK_ON_GROUND)
         set_obj_anim_with_accel_and_sound(1, 23, SOUND_OBJ2_SCUTTLEBUG_WALK);
-    }
     if (o->parentObj != o) {
         if (obj_is_hidden(o))
             obj_mark_for_deletion(o);
-        if (o->activeFlags == ACTIVE_FLAG_DEACTIVATED && o->parentObj) {
+        if (o->activeFlags == ACTIVE_FLAG_DEACTIVATED)
             o->parentObj->oScuttlebugSpawnerUnk88 = 1;
-        }
     }
     cur_obj_move_standard(-50);
 }
 
 void bhv_scuttlebug_spawn_loop(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-    if (marioState && marioState->playerIndex != 0) { return; }
-
-    struct Object* player = marioState ? marioState->marioObj : NULL;
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-
+    struct Object *scuttlebug;
     if (o->oAction == 0) {
-        if (o->oTimer > 30 && 500.0f < distanceToPlayer && distanceToPlayer < 1500.0f) {
+        if (o->oTimer > 30 && 500.0f < o->oDistanceToMario && o->oDistanceToMario < 1500.0f) {
             cur_obj_play_sound_2(SOUND_OBJ2_SCUTTLEBUG_ALERT);
-            struct Object *scuttlebug = spawn_object(o, MODEL_SCUTTLEBUG, bhvScuttlebug);
-            if (scuttlebug != NULL) {
-                scuttlebug->oScuttlebugUnkF4 = o->oScuttlebugSpawnerUnkF4;
-                scuttlebug->oForwardVel = 30.0f;
-                scuttlebug->oVelY = 80.0f;
-            }
-
+            scuttlebug = spawn_object(o, MODEL_SCUTTLEBUG, bhvScuttlebug);
+            scuttlebug->oScuttlebugUnkF4 = o->oScuttlebugSpawnerUnkF4;
+            scuttlebug->oForwardVel = 30.0f;
+            scuttlebug->oVelY = 80.0f;
             o->oAction++;
             o->oScuttlebugUnkF4 = 1;
         }

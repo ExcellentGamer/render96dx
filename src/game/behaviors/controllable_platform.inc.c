@@ -1,7 +1,6 @@
 // controllable_platform.c.inc
-static s8 oldD_80331694 = 0;
+
 static s8 D_80331694 = 0;
-static struct Object* controllablePlatformSubs[4] = { 0 };
 
 void controllable_platform_act_1(void) {
     o->oParentRelativePosY -= 4.0f;
@@ -28,11 +27,8 @@ void bhv_controllable_platform_sub_loop(void) {
             if (o->oTimer < 30)
                 break;
 
-            if (gMarioStates[0].marioObj->platform == o) {
+            if (gMarioObject->platform == o) {
                 D_80331694 = o->oBehParams2ndByte;
-#ifdef VERSION_SH
-                if (o->parentObj) { o->parentObj->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE; }
-#endif
                 o->oAction = 1;
                 cur_obj_play_sound_2(SOUND_GENERAL_MOVING_PLATFORM_SWITCH);
             }
@@ -47,35 +43,27 @@ void bhv_controllable_platform_sub_loop(void) {
             break;
     }
 
-    if (o->parentObj) {
-        o->oVelX = o->parentObj->oVelX;
-        o->oVelZ = o->parentObj->oVelZ;
+    o->oVelX = o->parentObj->oVelX;
+    o->oVelZ = o->parentObj->oVelZ;
 
-        if (o->parentObj->activeFlags == ACTIVE_FLAG_DEACTIVATED)
-            o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-    }
-}
-
-static void bhv_controllable_platform_on_received_post(UNUSED u8 localIndex) {
-    oldD_80331694 = D_80331694;
+    if (o->parentObj->activeFlags == ACTIVE_FLAG_DEACTIVATED)
+        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
 }
 
 void bhv_controllable_platform_init(void) {
-    controllablePlatformSubs[0] = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub, 0,
-                                                            51, 204, 0, 0, 0);
-    if (controllablePlatformSubs[0] != NULL) { controllablePlatformSubs[0]->oBehParams2ndByte = 1; }
-
-    controllablePlatformSubs[1] = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub, 0,
-                                                            51, -204, 0, -0x8000, 0);
-    if (controllablePlatformSubs[1] != NULL) { controllablePlatformSubs[1]->oBehParams2ndByte = 2; }
-
-    controllablePlatformSubs[2] = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub, 204,
-                                                            51, 0, 0, 0x4000, 0);
-    if (controllablePlatformSubs[2] != NULL) { controllablePlatformSubs[2]->oBehParams2ndByte = 3; }
-
-    controllablePlatformSubs[3] = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub,
-                                                            -204, 51, 0, 0, -0x4000, 0);
-    if (controllablePlatformSubs[3] != NULL) { controllablePlatformSubs[3]->oBehParams2ndByte = 4; }
+    struct Object *sp34;
+    sp34 = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub, 0,
+                                     51, 204, 0, 0, 0);
+    sp34->oBehParams2ndByte = 1;
+    sp34 = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub, 0,
+                                     51, -204, 0, -0x8000, 0);
+    sp34->oBehParams2ndByte = 2;
+    sp34 = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub, 204,
+                                     51, 0, 0, 0x4000, 0);
+    sp34->oBehParams2ndByte = 3;
+    sp34 = spawn_object_rel_with_rot(o, MODEL_HMC_METAL_ARROW_PLATFORM, bhvControllablePlatformSub,
+                                     -204, 51, 0, 0, -0x4000, 0);
+    sp34->oBehParams2ndByte = 4;
 
     D_80331694 = 0;
 
@@ -88,9 +76,6 @@ void controllable_platform_hit_wall(s8 sp1B) {
     D_80331694 = 5;
 
     cur_obj_play_sound_2(SOUND_GENERAL_QUIET_POUND1);
-#ifdef VERSION_SH
-    queue_rumble_data(50, 80);
-#endif
 }
 
 void controllable_platform_check_walls(s8 sp1B, s8 sp1C[3], Vec3f sp20, UNUSED Vec3f sp24, Vec3f sp28) {
@@ -118,7 +103,7 @@ void controllable_platform_check_walls(s8 sp1B, s8 sp1C[3], Vec3f sp20, UNUSED V
         }
     }
 
-    if (!is_point_within_radius_of_any_player(o->oPosX, o->oPosY, o->oPosZ, 400)) {
+    if (!is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 400)) {
         D_80331694 = 6;
         o->oControllablePlatformUnk100 = 1;
         o->oTimer = 0;
@@ -143,29 +128,11 @@ void controllable_platform_shake_on_wall_hit(void) {
 }
 
 void controllable_platform_tilt_from_mario(void) {
-    struct MarioState* marioState = nearest_possible_mario_state_to_object(o);
-    struct Object* player = marioState ? marioState->marioObj : NULL;
-    if (!player) { return; }
+    s16 sp1E = gMarioObject->header.gfx.pos[0] - o->oPosX;
+    s16 sp1C = gMarioObject->header.gfx.pos[2] - o->oPosZ;
 
-    u8 playerCount = 0;
-    f32 x = 0;
-    f32 z = 0;
-
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        if (gMarioStates[i].marioObj->platform == o || gMarioStates[i].marioObj->platform == cur_obj_nearest_object_with_behavior(bhvControllablePlatformSub)) {
-            x += gMarioStates[i].pos[0];
-            z += gMarioStates[i].pos[2];
-            playerCount++;
-        }
-    }
-
-    if (playerCount > 0) {
-        x /= (f32)playerCount;
-        z /= (f32)playerCount;
-
-        s16 sp1E = player->header.gfx.pos[0] - x;
-        s16 sp1C = player->header.gfx.pos[2] - z;
-
+    if (gMarioObject->platform == o
+        || gMarioObject->platform == cur_obj_nearest_object_with_behavior(bhvControllablePlatformSub)) {
         o->oFaceAnglePitch = sp1C * 4;
         o->oFaceAngleRoll = -sp1E * 4;
         if (D_80331694 == 6) {
@@ -173,6 +140,7 @@ void controllable_platform_tilt_from_mario(void) {
             o->oTimer = 0;
             o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
         }
+    } else {
     }
 }
 
@@ -235,29 +203,9 @@ void bhv_controllable_platform_loop(void) {
             break;
 
         case 6:
-            if (obj_flicker_and_disappear(o, 150)) {
-                o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
-                o->activeFlags = ACTIVE_FLAG_ACTIVE;
-                o->oControllablePlatformUnk100 = 0;
-                o->oPosX = o->oHomeX;
-                o->oPosY = o->oHomeY;
-                o->oPosZ = o->oHomeZ;
-                o->oAngleVelRoll = 0;
-                o->oAngleVelPitch = 0;
-                o->oVelX = 0;
-                o->oVelZ = 0;
-                o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
-                D_80331694 = 0;
-                o->oTimer = 0;
-                for (s32 i = 0; i < 4; i++) {
-                    if (!controllablePlatformSubs[i]) { continue; }
-                    controllablePlatformSubs[i]->oParentRelativePosY = 51.0f;
-                    controllablePlatformSubs[i]->oAction = 0;
-                    controllablePlatformSubs[i]->oTimer = 0;
-                    controllablePlatformSubs[i]->oVelX = 0;
-                    controllablePlatformSubs[i]->oVelZ = 0;
-                }
-            }
+            if (obj_flicker_and_disappear(o, 150))
+                spawn_object_abs_with_rot(o, 0, MODEL_HMC_METAL_PLATFORM, bhvControllablePlatform,
+                                          o->oHomeX, o->oHomeY, o->oHomeZ, 0, 0, 0);
             break;
     }
 
@@ -266,6 +214,4 @@ void bhv_controllable_platform_loop(void) {
     o->oPosZ += o->oVelZ;
     if (D_80331694 != 0 && D_80331694 != 6)
         cur_obj_play_sound_1(SOUND_ENV_ELEVATOR2);
-
-    oldD_80331694 = D_80331694;
 }

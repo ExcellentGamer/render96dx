@@ -1,36 +1,25 @@
 // sparkle_spawn_star.c.inc
 
 struct ObjectHitbox sSparkleSpawnStarHitbox = {
-    .interactType = INTERACT_STAR_OR_KEY,
-    .downOffset = 0,
-    .damageOrCoinValue = 0,
-    .health = 0,
-    .numLootCoins = 0,
-    .radius = 80,
-    .height = 50,
-    .hurtboxRadius = 0,
-    .hurtboxHeight = 0,
+    /* interactType: */ INTERACT_STAR_OR_KEY,
+    /* downOffset: */ 0,
+    /* damageOrCoinValue: */ 0,
+    /* health: */ 0,
+    /* numLootCoins: */ 0,
+    /* radius: */ 80,
+    /* height: */ 50,
+    /* hurtboxRadius: */ 0,
+    /* hurtboxHeight: */ 0,
 };
 
 void bhv_spawned_star_init(void) {
-    if (!(o->oInteractionSubtype & INT_SUBTYPE_NO_EXIT) && o->parentObj) {
+    s32 sp24;
+    if (!(o->oInteractionSubtype & INT_SUBTYPE_NO_EXIT))
         o->oBehParams = o->parentObj->oBehParams;
-    }
-    s32 starId = (o->oBehParams >> 24) & 0xFF;
-    if (bit_shift_left(gLevelValues.useGlobalStarIds ? starId % 7 : starId) & save_file_get_star_flags(gCurrSaveFileNum - 1, (gLevelValues.useGlobalStarIds ? (starId / 7) - 1 : gCurrCourseNum - 1))) {
-        cur_obj_set_model(smlua_model_util_load(E_MODEL_TRANSPARENT_STAR));
-    }
+    sp24 = (o->oBehParams >> 24) & 0xFF;
+    if (bit_shift_left(sp24) & save_file_get_star_flags(gCurrSaveFileNum - 1, gCurrCourseNum - 1))
+        cur_obj_set_model(MODEL_TRANSPARENT_STAR);
     cur_obj_play_sound_2(SOUND_GENERAL2_STAR_APPEARS);
-
-    // exclamation box stars are not sent through the normal exclamation box
-    // path due to jankiness in oBehParams. Send the spawn event here instead.
-    // Only exclamation boxes use bhvSpawnedStar so this check really isn't necessary
-    u8 spawnedFromExclamationBox = (o->parentObj != NULL && o->parentObj->behavior == smlua_override_behavior(bhvExclamationBox));
-    if (spawnedFromExclamationBox) {
-        o->oStarSpawnExtCutsceneFlags = 1;
-        o->parentObj = o;
-    }
-    spawn_star_number();
 }
 
 void set_sparkle_spawn_star_hitbox(void) {
@@ -42,22 +31,15 @@ void set_sparkle_spawn_star_hitbox(void) {
 }
 
 void set_home_to_mario(void) {
-    if (o->parentObj == gMarioStates[0].marioObj) {
-        o->oHomeX = o->parentObj->oPosX;
-        o->oHomeZ = o->parentObj->oPosZ;
-        o->oHomeY = o->parentObj->oPosY;
-    } else {
-        struct Object* player = nearest_player_to_object(o);
-        if (player) {
-            o->oHomeX = player->oPosX;
-            o->oHomeZ = player->oPosZ;
-            o->oHomeY = player->oPosY;
-        }
-    }
+    f32 sp1C;
+    f32 sp18;
+    o->oHomeX = gMarioObject->oPosX;
+    o->oHomeZ = gMarioObject->oPosZ;
+    o->oHomeY = gMarioObject->oPosY;
     o->oHomeY += 250.0f;
     o->oPosY = o->oHomeY;
-    f32 sp1C = o->oHomeX - o->oPosX;
-    f32 sp18 = o->oHomeZ - o->oPosZ;
+    sp1C = o->oHomeX - o->oPosX;
+    sp18 = o->oHomeZ - o->oPosZ;
     o->oForwardVel = sqrtf(sp1C * sp1C + sp18 * sp18) / 23.0f;
 }
 
@@ -73,22 +55,10 @@ void slow_star_rotation(void) {
 
 void bhv_spawned_star_loop(void) {
     if (o->oAction == 0) {
-        // All of these are for checking if we spawned the star, If 
-        // we didn't. We don't need the time stop.
-        u8 playExclamationBoxCutscene = (o->oStarSpawnExtCutsceneFlags && (gNetworkType == NT_NONE || is_nearest_mario_state_to_object(gMarioState, o)));
-        if (gNetworkType == NT_NONE) {
-            playExclamationBoxCutscene = o->oStarSpawnExtCutsceneFlags;
-        }
-        u8 playGenericSpawnCutscene = (o->parentObj != NULL && o->parentObj == gMarioStates[0].marioObj);
-        u8 playCutscene = (playExclamationBoxCutscene || playGenericSpawnCutscene);
-        
         if (o->oTimer == 0) {
-            if (playCutscene && ((gMarioStates[0].action & ACT_GROUP_MASK) != ACT_GROUP_CUTSCENE)) {
-                cutscene_object(CUTSCENE_STAR_SPAWN, o);
-                gMarioStates[0].freeze = 60;
-                set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
-                o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
-            }
+            cutscene_object(CUTSCENE_STAR_SPAWN, o);
+            set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
+            o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
             o->oAngleVelYaw = 0x800;
             if (o->oBehParams2ndByte == 0)
                 set_home_to_mario();
@@ -126,41 +96,23 @@ void bhv_spawned_star_loop(void) {
         }
         spawn_object(o, MODEL_NONE, bhvSparkleSpawn);
     } else if (o->oAction == 2) {
-        if (gCamera && gCamera->cutscene == 0 && gRecentCutscene == 0) {
-            gMarioStates[0].freeze = 0;
+        if (gCamera->cutscene == 0 && gRecentCutscene == 0) {
             clear_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_MARIO_AND_DOORS);
             o->activeFlags &= ~ACTIVE_FLAG_INITIATED_TIME_STOP;
             o->oAction++;
         }
     } else {
-        if (o->oTimer == 0) {
-            o->oStarSpawnExtCutsceneFlags = 0;
-        }
         set_sparkle_spawn_star_hitbox();
         slow_star_rotation();
     }
     cur_obj_move_using_fvel_and_gravity();
     o->oFaceAngleYaw += o->oAngleVelYaw;
     o->oInteractStatus = 0;
-    spawn_star_number();
 }
 
-void bhv_spawn_star_no_level_exit(struct Object* object, u32 params, u8 networkSendEvent) {
-    // de-duplication checking
-    for (s32 i = 0; i < gSpawnedStarNLECount; i++) {
-        if (gSpawnedStarNLE[i] == params) { return; }
-    }
-    if (gSpawnedStarNLECount < 8) {
-        gSpawnedStarNLE[gSpawnedStarNLECount++] = params;
-    }
-
-    struct Object *star = spawn_object(object, MODEL_STAR, bhvSpawnedStarNoLevelExit);
-    if (star != NULL) {
-        star->oBehParams = params << 24;
-        star->oInteractionSubtype = INT_SUBTYPE_NO_EXIT;
-        obj_set_angle(star, 0, 0, 0);
-    }
-    if (networkSendEvent && gNetworkType != NT_NONE) {
-        network_send_spawn_star_nle(object, params);
-    }
+void bhv_spawn_star_no_level_exit(u32 sp20) {
+    struct Object *sp1C = spawn_object(o, MODEL_STAR, bhvSpawnedStarNoLevelExit);
+    sp1C->oBehParams = sp20 << 24;
+    sp1C->oInteractionSubtype = INT_SUBTYPE_NO_EXIT;
+    obj_set_angle(sp1C, 0, 0, 0);
 }

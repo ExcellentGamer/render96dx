@@ -4,7 +4,6 @@ void bhv_swing_platform_init(void) {
 }
 
 void bhv_swing_platform_update(void) {
-
     s32 startRoll = o->oFaceAngleRoll;
 
     if (o->oFaceAngleRoll < 0) {

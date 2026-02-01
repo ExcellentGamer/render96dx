@@ -1,22 +1,18 @@
 // spindrift.c.inc
 
 struct ObjectHitbox sSpindriftHitbox = {
-    .interactType = INTERACT_BOUNCE_TOP,
-    .downOffset = 0,
-    .damageOrCoinValue = 2,
-    .health = 1,
-    .numLootCoins = 3,
-    .radius = 90,
-    .height = 80,
-    .hurtboxRadius = 80,
-    .hurtboxHeight = 70,
+    /* interactType: */ INTERACT_BOUNCE_TOP,
+    /* downOffset: */ 0,
+    /* damageOrCoinValue: */ 2,
+    /* health: */ 1,
+    /* numLootCoins: */ 3,
+    /* radius: */ 90,
+    /* height: */ 80,
+    /* hurtboxRadius: */ 80,
+    /* hurtboxHeight: */ 70,
 };
 
 void bhv_spindrift_loop(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-
     o->activeFlags |= ACTIVE_FLAG_UNK10;
     if (cur_obj_set_hitbox_and_die_if_attacked(&sSpindriftHitbox, SOUND_OBJ_DYING_ENEMY1, 0))
         cur_obj_change_action(1);
@@ -24,12 +20,11 @@ void bhv_spindrift_loop(void) {
     switch (o->oAction) {
         case 0:
             approach_forward_vel(&o->oForwardVel, 4.0f, 1.0f);
-            if (cur_obj_lateral_dist_from_mario_to_home() > 1000.0f) {
-                angleToPlayer = cur_obj_angle_to_home();
-            } else if (distanceToPlayer > 300.0f) {
-                //angleToPlayer = angleToPlayer;
-            }
-            cur_obj_rotate_yaw_toward(angleToPlayer, 0x400);
+            if (cur_obj_lateral_dist_from_mario_to_home() > 1000.0f)
+                o->oAngleToMario = cur_obj_angle_to_home();
+            else if (o->oDistanceToMario > 300.0f)
+                o->oAngleToMario = obj_angle_to_object(o, gMarioObject);
+            cur_obj_rotate_yaw_toward(o->oAngleToMario, 0x400);
             break;
         case 1:
             o->oFlags &= ~8;

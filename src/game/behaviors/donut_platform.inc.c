@@ -13,57 +13,48 @@ static Vec3s sDonutPlatformPositions[] = {
 };
 
 void bhv_donut_platform_spawner_update(void) {
-    if (o->oDonutPlatformSpawnerSpawnedPlatforms != 0) { return; }
-    o->oDonutPlatformSpawnerSpawnedPlatforms = 1;
+    s32 i;
+    s32 platformFlag;
+    f32 dx;
+    f32 dy;
+    f32 dz;
+    f32 marioSqDist;
 
-    for (s32 i = 0; i < 31; i++) {
-        struct Object* platform = spawn_object_relative(i,
-            sDonutPlatformPositions[i][0],
-            sDonutPlatformPositions[i][1],
-            sDonutPlatformPositions[i][2],
-            o,
-            MODEL_RR_DONUT_PLATFORM,
-            bhvDonutPlatform);
-        if (platform == NULL) { continue; }
+    for (i = 0, platformFlag = 1; i < 31; i++, platformFlag = platformFlag << 1) {
+        if (!(o->oDonutPlatformSpawnerSpawnedPlatforms & platformFlag)) {
+            dx = gMarioObject->oPosX - sDonutPlatformPositions[i][0];
+            dy = gMarioObject->oPosY - sDonutPlatformPositions[i][1];
+            dz = gMarioObject->oPosZ - sDonutPlatformPositions[i][2];
+            marioSqDist = dx * dx + dy * dy + dz * dz;
+
+            // dist > 1000 and dist < 2000
+            if (marioSqDist > 1000000.0f && marioSqDist < 4000000.0f) {
+                if (spawn_object_relative(i, sDonutPlatformPositions[i][0],
+                                          sDonutPlatformPositions[i][1], sDonutPlatformPositions[i][2],
+                                          o, MODEL_RR_DONUT_PLATFORM, bhvDonutPlatform)
+                    != NULL) {
+                    o->oDonutPlatformSpawnerSpawnedPlatforms |= platformFlag;
+                }
+            }
+        }
     }
 }
 
 void bhv_donut_platform_update(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    if (o->oTimer != 0 && ((o->oMoveFlags & OBJ_MOVE_MASK_ON_GROUND) || o->oDistanceToMario > 2500.0f)) {
+        o->parentObj->oDonutPlatformSpawnerSpawnedPlatforms =
+            o->parentObj->oDonutPlatformSpawnerSpawnedPlatforms
+            & ((1 << o->oBehParams2ndByte) ^ 0xFFFFFFFF);
 
-    if (o->oAction == 2) {
-        cur_obj_set_pos_to_home();
-        o->oGravity = 0;
-        o->oVelX = 0;
-        o->oVelY = 0;
-        o->oVelZ = 0;
-        if (distanceToPlayer > 1000 && distanceToPlayer < 2000) {
-            cur_obj_unhide();
-            cur_obj_become_tangible();
-            o->oAction = 0;
+        if (o->oDistanceToMario > 2500.0f) {
+            obj_mark_for_deletion(o);
         } else {
-            cur_obj_hide();
-            cur_obj_become_intangible();
-            return;
-        }
-    }
-
-    if (o->oTimer != 0 && (o->oMoveFlags & OBJ_MOVE_MASK_ON_GROUND)) {
-        if (distanceToPlayer > 2500.0f) {
-            o->oAction = 2;
-            o->oMoveFlags = OBJ_MOVE_IN_AIR;
-        } else {
-            s16 oldActiveFlags = o->activeFlags;
             obj_explode_and_spawn_coins(150.0f, 1);
-            o->activeFlags = oldActiveFlags;
-            o->oAction = 2;
-            o->oMoveFlags = OBJ_MOVE_IN_AIR;
             create_sound_spawner(SOUND_GENERAL_DONUT_PLATFORM_EXPLOSION);
         }
     } else {
         if (o->oGravity == 0.0f) {
-            if (cur_obj_is_any_player_on_platform()) {
+            if (gMarioObject->platform == o) {
                 cur_obj_shake_y(4.0f);
                 if (o->oTimer > 15) {
                     o->oGravity = -0.1f;

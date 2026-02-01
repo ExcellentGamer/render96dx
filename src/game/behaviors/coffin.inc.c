@@ -52,7 +52,7 @@ void bhv_coffin_spawner_loop(void) {
             o->oAction += 1;
         }
     } else if (o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM) {
-        //o->oAction = COFFIN_SPAWNER_ACT_COFFINS_UNLOADED;
+        o->oAction = COFFIN_SPAWNER_ACT_COFFINS_UNLOADED;
     }
 }
 
@@ -93,17 +93,8 @@ void coffin_act_idle(void) {
             yawCos = coss(o->oFaceAngleYaw);
             yawSin = sins(o->oFaceAngleYaw);
 
-            struct MarioState* marioState = nearest_mario_state_to_object(o);
-            struct Object* player = marioState ? marioState->marioObj : NULL;
-            s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-
-            if (player) {
-                dx = player->oPosX - o->oPosX;
-                dz = player->oPosZ - o->oPosZ;
-            } else {
-                dx = 10000;
-                dz = 10000;
-            }
+            dx = gMarioObject->oPosX - o->oPosX;
+            dz = gMarioObject->oPosZ - o->oPosZ;
 
             distForwards = dx * yawCos + dz * yawSin;
             distSideways = dz * yawCos - dx * yawSin;
@@ -111,8 +102,8 @@ void coffin_act_idle(void) {
             // This checks a box around the coffin and if it has been a bit since it stood up.
             // It also checks in the case Mario is squished, so he doesn't get permanently squished.
             if (o->oTimer > 60
-                && (distanceToPlayer > 100.0f || (marioState && marioState->action == ACT_SQUISHED))) {
-                if ((player && player->oPosY - o->oPosY < 200.0f) && absf(distForwards) < 140.0f) {
+                && (o->oDistanceToMario > 100.0f || gMarioState->action == ACT_SQUISHED)) {
+                if (gMarioObject->oPosY - o->oPosY < 200.0f && absf(distForwards) < 140.0f) {
                     if (distSideways < 150.0f && distSideways > -450.0f) {
                         cur_obj_play_sound_2(SOUND_GENERAL_BUTTON_PRESS_2_LOWPRIO);
                         o->oAction = COFFIN_ACT_STAND_UP;
@@ -156,7 +147,7 @@ void coffin_act_stand_up(void) {
  */
 void bhv_coffin_loop(void) {
     // Gotta save those 6 object slots
-    if (o->parentObj && o->parentObj->oAction == COFFIN_SPAWNER_ACT_COFFINS_UNLOADED) {
+    if (o->parentObj->oAction == COFFIN_SPAWNER_ACT_COFFINS_UNLOADED) {
         obj_mark_for_deletion(o);
     } else {
         // Scale the coffin vertically? Must have thought it was too short?
@@ -171,12 +162,6 @@ void bhv_coffin_loop(void) {
                 break;
         }
 
-        // allow bubbled players to pass through if crushed by it
-        if (gMarioStates[0].action == ACT_BUBBLED && gMarioStates[0].pos[1] <= o->oPosY) {
-            cur_obj_become_intangible();
-        } else {
-            cur_obj_become_tangible();
-            load_object_collision_model();
-        }
+        load_object_collision_model();
     }
 }

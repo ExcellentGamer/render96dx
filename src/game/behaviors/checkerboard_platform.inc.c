@@ -4,7 +4,14 @@ struct Struct8032F754 D_8032F754[] = { { 145, { 0.7f, 1.5f, 0.7f }, 7.0f },
                                        { 235, { 1.2f, 2.0f, 1.2f }, 11.6f } };
 
 void bhv_checkerboard_elevator_group_init(void) {
-    o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
+    // Added to prevent a crash in the vanish cap stage
+    cur_obj_hide();
+    // Here's the theory: Since it is only valid for a few frames, I believe
+    // the model gets deallocated after removal. Since changing the camera
+    // precision makes the camera end up in a slightly different spot, it
+    // could be trying to render the object when `precision` is set to 3 but
+    // not to 1.
+
     s32 sp3C;
     s32 sp38;
     s32 sp34;
@@ -22,14 +29,10 @@ void bhv_checkerboard_elevator_group_init(void) {
 
         sp2C = spawn_object_relative(i, 0, i * sp3C, sp38, o, MODEL_CHECKERBOARD_PLATFORM,
                                      bhvCheckerboardPlatformSub);
-        if (sp2C == NULL) { continue; }
         sp2C->oCheckerBoardPlatformUnk1AC = D_8032F754[sp34].unk2;
-        sp2C->oTimer = 0;
-        vec3f_copy(sp2C->header.gfx.scale, D_8032F754[sp34].unk1);
+        vec3f_copy_2(sp2C->header.gfx.scale, D_8032F754[sp34].unk1);
     }
 }
-
-void bhv_checkerboard_elevator_group_loop(void) { }
 
 void checkerboard_plat_act_move_y(UNUSED s32 unused, f32 vel, s32 a2) {
     o->oMoveAnglePitch = 0;
@@ -43,30 +46,20 @@ void checkerboard_plat_act_move_y(UNUSED s32 unused, f32 vel, s32 a2) {
 void checkerboard_plat_act_rotate(s32 a0, s16 a1) {
     o->oVelY = 0.0f;
     o->oAngleVelPitch = a1;
-    if (o->oTimer + 1 == 0x8000 / absi(a1)) {
+    if (o->oTimer + 1 == 0x8000 / absi(a1))
         o->oAction = a0;
-    }
     o->oCheckerBoardPlatformUnkF8 = a0;
 }
 
-static void bhv_checkerboard_platform_run_once(void) {
-    if (o->oDistanceToMario < 1000.0f) {
-        cur_obj_play_sound_1(SOUND_ENV_ELEVATOR4);
-    }
-    load_object_collision_model();
-}
-
 void bhv_checkerboard_platform_init(void) {
-    o->oCheckerBoardPlatformUnkFC = o->parentObj ? o->parentObj->oBehParams2ndByte : 0;
-    o->areaTimerType = AREA_TIMER_TYPE_LOOP;
-    o->areaTimer = 0;
-    o->areaTimerDuration = 132 + o->oCheckerBoardPlatformUnkFC * 2;
-    o->areaTimerRunOnceCallback = bhv_checkerboard_platform_run_once;
+    o->oCheckerBoardPlatformUnkFC = o->parentObj->oBehParams2ndByte;
 }
 
 void bhv_checkerboard_platform_loop(void) {
     f32 sp24 = o->oCheckerBoardPlatformUnk1AC;
     o->oCheckerBoardPlatformUnkF8 = 0;
+    if (o->oDistanceToMario < 1000.0f)
+        cur_obj_play_sound_1(SOUND_ENV_ELEVATOR4);
     switch (o->oAction) {
         case 0:
             if (o->oBehParams2ndByte == 0)
@@ -98,7 +91,7 @@ void bhv_checkerboard_platform_loop(void) {
         o->oAngleVelPitch = 0;
         o->oFaceAnglePitch &= ~0x7FFF;
         cur_obj_move_using_fvel_and_gravity();
-    } else {
+    } else
         cur_obj_move_using_fvel_and_gravity();
-    }
+    load_object_collision_model();
 }

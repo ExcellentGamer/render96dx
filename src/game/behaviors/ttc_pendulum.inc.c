@@ -7,7 +7,7 @@
 /**
  * Initial angle acceleration.
  */
-f32 gTTCPendulumInitialAccels[] = {
+static f32 sTTCPendulumInitialAccels[] = {
     /* TTC_SPEED_SLOW    */ 13.0f,
     /* TTC_SPEED_FAST    */ 22.0f,
     /* TTC_SPEED_RANDOM  */ 13.0f,
@@ -18,8 +18,8 @@ f32 gTTCPendulumInitialAccels[] = {
  * Init function for bhvTTCPendulum.
  */
 void bhv_ttc_pendulum_init(void) {
-    if (gTTCSpeedSetting != TTC_SPEED_STOPPED && gTTCSpeedSetting > 0 && gTTCSpeedSetting < 4) {
-        o->oTTCPendulumAngleAccel = gTTCPendulumInitialAccels[gTTCSpeedSetting];
+    if (gTTCSpeedSetting != TTC_SPEED_STOPPED) {
+        o->oTTCPendulumAngleAccel = sTTCPendulumInitialAccels[gTTCSpeedSetting];
         o->oTTCPendulumAngle = 6500.0f;
     } else {
         o->oTTCPendulumAngle = 6371.5557f;

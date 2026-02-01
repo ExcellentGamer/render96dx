@@ -1,21 +1,18 @@
 // clam.inc.c
 
 struct ObjectHitbox sClamShellHitbox = {
-    .interactType = INTERACT_CLAM_OR_BUBBA,
-    .downOffset = 0,
-    .damageOrCoinValue = 2,
-    .health = 99,
-    .numLootCoins = 0,
-    .radius = 150,
-    .height = 80,
-    .hurtboxRadius = 150,
-    .hurtboxHeight = 80,
+    /* interactType:      */ INTERACT_CLAM_OR_BUBBA,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 2,
+    /* health:            */ 99,
+    /* numLootCoins:      */ 0,
+    /* radius:            */ 150,
+    /* height:            */ 80,
+    /* hurtboxRadius:     */ 150,
+    /* hurtboxHeight:     */ 80,
 };
 
 void clam_act_0(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = dist_between_objects(o, player);
-
     if (cur_obj_init_anim_check_frame(0, 25)) {
         cur_obj_play_sound_2(SOUND_GENERAL_CLAM_SHELL3);
         spawn_mist_from_global();
@@ -23,7 +20,7 @@ void clam_act_0(void) {
 
         o->oClamUnkF4 = 10;
         o->oTimer = 0;
-    } else if (o->oTimer > 150 && player == gMarioStates[0].marioObj && distanceToPlayer < 500.0f) {
+    } else if (o->oTimer > 150 && o->oDistanceToMario < 500.0f) {
         cur_obj_play_sound_2(SOUND_GENERAL_CLAM_SHELL2);
         o->oAction = 1;
     } else if (o->oClamUnkF4 != 0) {
@@ -37,8 +34,7 @@ void clam_act_1(void) {
     s16 val04;
     s16 val02;
 
-    struct Object* player = nearest_player_to_object(o);
-    if (o->oTimer > 150 && player == gMarioStates[0].marioObj) {
+    if (o->oTimer > 150) {
         o->oAction = 0;
     } else if (obj_is_rendering_enabled() && cur_obj_init_anim_check_frame(1, 8)) {
         for (val06 = -0x2000; val06 < 0x2000; val06 += 0x555) {

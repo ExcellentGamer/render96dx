@@ -88,18 +88,12 @@ void bhv_lll_bowser_puzzle_spawn_piece(s16 model, const BehaviorScript *behavior
                                        f32 xOffset, f32 zOffset,
                                        s8 initialAction, s8 *actionList) {
     struct Object *puzzlePiece = spawn_object(o, model, behavior);
-    if (puzzlePiece == NULL) { return; }
     puzzlePiece->oPosX += xOffset;
     puzzlePiece->oPosY += 50.0f;
     puzzlePiece->oPosZ += zOffset;
     puzzlePiece->oAction = initialAction; // This action never gets executed.
     puzzlePiece->oBowserPuzzlePieceActionList = actionList;
     puzzlePiece->oBowserPuzzlePieceNextAction = actionList;
-    puzzlePiece->oTimer = 0;
-    puzzlePiece->areaTimerType = AREA_TIMER_TYPE_LOOP;
-    puzzlePiece->areaTimer = 0;
-    puzzlePiece->areaTimerDuration = 650;
-    puzzlePiece->areaTimerRunOnceCallback = load_object_collision_model;
 }
 
 /**
@@ -126,16 +120,13 @@ void bhv_lll_bowser_puzzle_spawn_pieces(f32 pieceWidth) {
 void bhv_lll_bowser_puzzle_loop(void) {
     s32 i;
     UNUSED struct Object *sp28;
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-
     switch (o->oAction) {
         case BOWSER_PUZZLE_ACT_SPAWN_PIECES:
             bhv_lll_bowser_puzzle_spawn_pieces(480.0f);
             break;
         case BOWSER_PUZZLE_ACT_WAIT_FOR_COMPLETE:
             // If both completion flags are set and Mario is within 1000 units...
-            if (o->oBowserPuzzleCompletionFlags == 3 && distanceToPlayer < 1000.0f) {
+            if (o->oBowserPuzzleCompletionFlags == 3 && o->oDistanceToMario < 1000.0f) {
                 // Spawn 5 coins.
                 for (i = 0; i < 5; i++)
                     sp28 = spawn_object(o, MODEL_YELLOW_COIN, bhvSingleCoinGetsSpawned);
@@ -170,16 +161,14 @@ void bhv_lll_bowser_puzzle_piece_action_1(void) {
  * Update the puzzle piece.
  */
 void bhv_lll_bowser_puzzle_piece_update(void) {
-    s8* nextAction = o->oBowserPuzzlePieceNextAction;
-    if (!nextAction) { return; }
+    s8 *nextAction = o->oBowserPuzzlePieceNextAction;
 
     // If Mario is standing on this puzzle piece, set a flag in the parent.
-    if (cur_obj_is_any_player_on_platform() && o->parentObj)
+    if (gMarioObject->platform == o)
         o->parentObj->oBowserPuzzleCompletionFlags = 1;
 
     // If we should advance to the next action...
     if (o->oBowserPuzzlePieceContinuePerformingAction == 0) {
-
         // Start doing the next action.
         cur_obj_change_action(*nextAction);
 
@@ -190,9 +179,7 @@ void bhv_lll_bowser_puzzle_piece_update(void) {
         // If we're at the end of the list...
         if (*nextAction == -1) {
             // Set the other completion flag in the parent.
-            if (o->parentObj) {
-                o->parentObj->oBowserPuzzleCompletionFlags |= 2;
-            }
+            o->parentObj->oBowserPuzzleCompletionFlags |= 2;
 
             // The next action is the first action in the list again.
             o->oBowserPuzzlePieceNextAction = o->oBowserPuzzlePieceActionList;
@@ -268,7 +255,7 @@ void (*sBowserPuzzlePieceActions[])(void) = {
 void bhv_lll_bowser_puzzle_piece_loop(void) {
     bhv_lll_bowser_puzzle_piece_update();
 
-    CUR_OBJ_CALL_ACTION_FUNCTION(sBowserPuzzlePieceActions);
+    cur_obj_call_action_function(sBowserPuzzlePieceActions);
 
     o->oPosX = o->oBowserPuzzlePieceOffsetX + o->oHomeX;
     o->oPosY = o->oBowserPuzzlePieceOffsetY + o->oHomeY;

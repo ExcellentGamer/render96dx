@@ -3,21 +3,13 @@
 
 void bhv_water_mist_spawn_loop(void) {
     clear_particle_flags(0x20000);
-    if (o->parentObj == NULL || o->parentObj->behavior != bhvMario) {
-        obj_mark_for_deletion(o);
-        return;
-    }
-    spawn_object(o->parentObj, MODEL_MIST, bhvWaterMist);
+    spawn_object(o, MODEL_MIST, bhvWaterMist);
 }
 
 void bhv_water_mist_loop(void) {
-    if (o->parentObj == NULL || o->parentObj->behavior != bhvMario) {
-        obj_mark_for_deletion(o);
-        return;
-    }
     f32 sp1C;
     if (o->oTimer == 0) {
-        o->oMoveAngleYaw = o->parentObj->oMoveAngleYaw;
+        o->oMoveAngleYaw = gMarioObject->oMoveAngleYaw;
         obj_translate_xz_random(o, 10.0f);
     }
     cur_obj_move_using_fvel_and_gravity();

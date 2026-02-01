@@ -14,11 +14,9 @@ void bhv_object_bubble_loop(void) {
     if (bubbleY > waterY) {
         if (gFreeObjectList.next) {
             bubbleSplash = spawn_object_at_origin(o, 0, MODEL_SMALL_WATER_SPLASH, bhvBubbleSplash);
-            if (bubbleSplash != NULL) {
-                bubbleSplash->oPosX = o->oPosX;
-                bubbleSplash->oPosY = bubbleY + 5.0f;
-                bubbleSplash->oPosZ = o->oPosZ;
-            }
+            bubbleSplash->oPosX = o->oPosX;
+            bubbleSplash->oPosY = bubbleY + 5.0f;
+            bubbleSplash->oPosZ = o->oPosZ;
         }
 
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;

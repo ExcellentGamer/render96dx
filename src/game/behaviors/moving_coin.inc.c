@@ -3,27 +3,27 @@
 // sp18 = collisionFlagsPtr
 
 static struct ObjectHitbox sMovingYellowCoinHitbox = {
-    .interactType = INTERACT_COIN,
-    .downOffset = 0,
-    .damageOrCoinValue = 1,
-    .health = 0,
-    .numLootCoins = 0,
-    .radius = 100,
-    .height = 64,
-    .hurtboxRadius = 0,
-    .hurtboxHeight = 0,
+    /* interactType:      */ INTERACT_COIN,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 1,
+    /* health:            */ 0,
+    /* numLootCoins:      */ 0,
+    /* radius:            */ 100,
+    /* height:            */ 64,
+    /* hurtboxRadius:     */ 0,
+    /* hurtboxHeight:     */ 0,
 };
 
 static struct ObjectHitbox sMovingBlueCoinHitbox = {
-    .interactType = INTERACT_COIN,
-    .downOffset = 0,
-    .damageOrCoinValue = 5,
-    .health = 0,
-    .numLootCoins = 0,
-    .radius = 100,
-    .height = 64,
-    .hurtboxRadius = 0,
-    .hurtboxHeight = 0,
+    /* interactType:      */ INTERACT_COIN,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 5,
+    /* health:            */ 0,
+    /* numLootCoins:      */ 0,
+    /* radius:            */ 100,
+    /* height:            */ 64,
+    /* hurtboxRadius:     */ 0,
+    /* hurtboxHeight:     */ 0,
 };
 
 s32 coin_step(s16 *collisionFlagsPtr) {
@@ -104,7 +104,11 @@ void bhv_moving_blue_coin_init(void) {
 }
 
 void bhv_moving_blue_coin_loop(void) {
+#ifdef VERSION_EU
+    s32 collisionFlags;
+#else
     s16 collisionFlags;
+#endif
 
     switch (o->oAction) {
         case MOV_BCOIN_ACT_STILL:
@@ -145,13 +149,10 @@ void bhv_blue_coin_sliding_jumping_init(void) {
 }
 
 void blue_coin_sliding_away_from_mario(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-
     s16 collisionFlags;
 
     o->oForwardVel = 15.0;
-    o->oMoveAngleYaw = angleToPlayer + 0x8000;
+    o->oMoveAngleYaw = o->oAngleToMario + 0x8000;
 
     if (coin_step(&collisionFlags) != 0)
         o->oVelY += 18.0f;

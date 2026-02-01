@@ -18,16 +18,10 @@ static void const *sPlatformOnTrackCollisionModels[] = {
 /**
  * Paths for the different instances of these platforms.
  */
-static Trajectory** sPlatformOnTrackPaths[] = {
-    &gBehaviorValues.trajectories.PlatformRrTrajectory,
-    &gBehaviorValues.trajectories.PlatformRr2Trajectory,
-    &gBehaviorValues.trajectories.PlatformCcmTrajectory,
-    &gBehaviorValues.trajectories.PlatformBitfsTrajectory,
-    &gBehaviorValues.trajectories.PlatformHmcTrajectory,
-    &gBehaviorValues.trajectories.PlatformLllTrajectory,
-    &gBehaviorValues.trajectories.PlatformLll2Trajectory,
-    &gBehaviorValues.trajectories.PlatformRr3Trajectory,
-    &gBehaviorValues.trajectories.PlatformRr4Trajectory,
+static void const *sPlatformOnTrackPaths[] = {
+    rr_seg7_trajectory_0702EC3C,    rr_seg7_trajectory_0702ECC0,  ccm_seg7_trajectory_0701669C,
+    bitfs_seg7_trajectory_070159AC, hmc_seg7_trajectory_0702B86C, lll_seg7_trajectory_0702856C,
+    lll_seg7_trajectory_07028660,   rr_seg7_trajectory_0702ED9C,  rr_seg7_trajectory_0702EEE0,
 };
 
 /**
@@ -53,20 +47,6 @@ static void platform_on_track_mario_not_on_platform(void) {
     }
 }
 
-#if 0
-static u32 platformTrackPathedPrevWaypoint = 0;
-
-static void bhv_platform_track_on_received_post(UNUSED u8 fromLocalIndex) {
-    if (o->oPathedStartWaypoint == NULL) { return; }
-    o->oPathedPrevWaypoint = (struct Waypoint*)o->oPathedStartWaypoint + platformTrackPathedPrevWaypoint;
-}
-
-static void bhv_platform_track_on_sent_pre(void) {
-    if (o->oPathedStartWaypoint == NULL) { platformTrackPathedPrevWaypoint = 0; return; }
-    platformTrackPathedPrevWaypoint = ((u8*)o->oPathedPrevWaypoint - (u8*)o->oPathedStartWaypoint) / sizeof(struct Waypoint*);
-}
-#endif
-
 /**
  * Init function for bhvPlatformOnTrack.
  */
@@ -77,13 +57,10 @@ void bhv_platform_on_track_init(void) {
 
         o->oPlatformOnTrackIsNotSkiLift = o->oPlatformOnTrackType - PLATFORM_ON_TRACK_TYPE_SKI_LIFT;
 
-        if (BHV_ARR_CHECK(sPlatformOnTrackCollisionModels, o->oPlatformOnTrackType, void const *)) {
-            o->collisionData = segmented_to_virtual(sPlatformOnTrackCollisionModels[o->oPlatformOnTrackType]);
-        }
+        o->collisionData =
+            segmented_to_virtual(sPlatformOnTrackCollisionModels[o->oPlatformOnTrackType]);
 
-        if (BHV_ARR_CHECK(sPlatformOnTrackPaths, pathIndex, Trajectory**)) {
-            o->oPlatformOnTrackStartWaypoint = segmented_to_virtual(*sPlatformOnTrackPaths[pathIndex]);
-        }
+        o->oPlatformOnTrackStartWaypoint = segmented_to_virtual(sPlatformOnTrackPaths[pathIndex]);
 
         o->oPlatformOnTrackIsNotHMC = pathIndex - 4;
 
@@ -131,7 +108,7 @@ static void platform_on_track_act_init(void) {
  * Wait for mario to stand on the platform for 20 frames, then begin moving.
  */
 static void platform_on_track_act_wait_for_mario(void) {
-    if (cur_obj_is_any_player_on_platform()) {
+    if (gMarioObject->platform == o) {
         if (o->oTimer > 20) {
             o->oAction = PLATFORM_ON_TRACK_ACT_MOVE_ALONG_TRACK;
         }
@@ -229,7 +206,7 @@ static void platform_on_track_act_move_along_track(void) {
         }
     }
 
-    if (!cur_obj_is_any_player_on_platform()) {
+    if (gMarioObject->platform != o) {
         platform_on_track_mario_not_on_platform();
     } else {
         o->oTimer = 0;
@@ -253,7 +230,7 @@ static void platform_on_track_act_pause_briefly(void) {
 static void platform_on_track_act_fall(void) {
     cur_obj_move_using_vel_and_gravity();
 
-    if (!cur_obj_is_any_player_on_platform()) {
+    if (gMarioObject->platform != o) {
         platform_on_track_mario_not_on_platform();
     } else {
         o->oTimer = 0;
@@ -270,20 +247,10 @@ static void platform_on_track_rock_ski_lift(void) {
 
     o->oFaceAngleRoll += (s32) o->oPlatformOnTrackSkiLiftRollVel;
 
-    struct Object* player = NULL;
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        if (!is_player_active(&gMarioStates[i])) { continue; }
-        if (gMarioStates[i].marioObj->platform != o) { continue; }
-        player = gMarioStates[i].marioObj;
-        break;
-    }
-
     // Tilt away from the moving direction and toward mario
-    if (player != NULL) {
-        s32 distanceToPlayer = dist_between_objects(o, player);
-        s32 angleToPlayer = obj_angle_to_object(o, player);
+    if (gMarioObject->platform == o) {
         targetRoll = o->oForwardVel * sins(o->oMoveAngleYaw) * -50.0f
-                     + (s32)(distanceToPlayer * sins(angleToPlayer - o->oFaceAngleYaw) * -4.0f);
+                     + (s32)(o->oDistanceToMario * sins(o->oAngleToMario - o->oFaceAngleYaw) * -4.0f);
     }
 
     oscillate_toward(
@@ -300,8 +267,6 @@ static void platform_on_track_rock_ski_lift(void) {
  * Update function for bhvPlatformOnTrack.
  */
 void bhv_platform_on_track_update(void) {
-    if (!o->oPlatformOnTrackStartWaypoint) { return; }
-
     switch (o->oAction) {
         case PLATFORM_ON_TRACK_ACT_INIT:
             platform_on_track_act_init();
@@ -323,7 +288,7 @@ void bhv_platform_on_track_update(void) {
     if (!o->oPlatformOnTrackIsNotSkiLift) {
         platform_on_track_rock_ski_lift();
     } else if (o->oPlatformOnTrackType == PLATFORM_ON_TRACK_TYPE_CARPET) {
-        if (!o->oPlatformOnTrackWasStoodOn && cur_obj_is_any_player_on_platform()) {
+        if (!o->oPlatformOnTrackWasStoodOn && gMarioObject->platform == o) {
             o->oPlatformOnTrackOffsetY = -8.0f;
             o->oPlatformOnTrackWasStoodOn = TRUE;
         }
@@ -338,9 +303,8 @@ void bhv_platform_on_track_update(void) {
  */
 void bhv_track_ball_update(void) {
     // Despawn after the elevator passes this ball
-    s16 relativeIndex = o->parentObj ?
-        ((s16) o->oBehParams2ndByte - (s16) o->parentObj->oPlatformOnTrackBaseBallIndex - 1)
-        : 0;
+    s16 relativeIndex =
+        (s16) o->oBehParams2ndByte - (s16) o->parentObj->oPlatformOnTrackBaseBallIndex - 1;
     if (relativeIndex < 1 || relativeIndex > 5) {
         obj_mark_for_deletion(o);
     }

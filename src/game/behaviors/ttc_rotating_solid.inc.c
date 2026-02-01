@@ -15,7 +15,7 @@ static void const *sTTCRotatingSolidCollisionModels[] = {
 /**
  * The number of frames to wait before rotating for the first time.
  */
-u8 gTTCRotatingSolidInitialDelays[] = {
+static u8 sTTCRotatingSolidInitialDelays[] = {
     /* TTC_SPEED_SLOW    */ 120,
     /* TTC_SPEED_FAST    */ 40,
     /* TTC_SPEED_RANDOM  */ 0,
@@ -26,13 +26,11 @@ u8 gTTCRotatingSolidInitialDelays[] = {
  * Init function for bhvTTCRotatingSolid.
  */
 void bhv_ttc_rotating_solid_init(void) {
-    if (BHV_ARR_CHECK(sTTCRotatingSolidCollisionModels, o->oBehParams2ndByte, void const*)) {
-        o->collisionData = segmented_to_virtual(sTTCRotatingSolidCollisionModels[o->oBehParams2ndByte]);
-    }
+    o->collisionData = segmented_to_virtual(sTTCRotatingSolidCollisionModels[o->oBehParams2ndByte]);
 
     o->oTTCRotatingSolidNumSides = o->oBehParams2ndByte == TTC_ROTATING_SOLID_BP_CUBE ? 4 : 3;
 
-    o->oTTCRotatingSolidRotationDelay = gTTCRotatingSolidInitialDelays[gTTCSpeedSetting];
+    o->oTTCRotatingSolidRotationDelay = sTTCRotatingSolidInitialDelays[gTTCSpeedSetting];
 }
 
 /**
@@ -59,9 +57,8 @@ void bhv_ttc_rotating_solid_update(void) {
             if (o->oAngleVelRoll == 0) {
                 cur_obj_play_sound_2(SOUND_GENERAL2_ROTATING_BLOCK_CLICK);
 
-                if (o->oTTCRotatingSolidNumSides) {
-                    o->oTTCRotatingSolidNumTurns = (o->oTTCRotatingSolidNumTurns + 1) % o->oTTCRotatingSolidNumSides;
-                }
+                o->oTTCRotatingSolidNumTurns =
+                    (o->oTTCRotatingSolidNumTurns + 1) % o->oTTCRotatingSolidNumSides;
 
                 o->oTimer = 0;
                 if (gTTCSpeedSetting == TTC_SPEED_RANDOM) {

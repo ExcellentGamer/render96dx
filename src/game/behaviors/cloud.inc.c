@@ -47,8 +47,14 @@ static void cloud_act_spawn_parts(void) {
  * Wait for mario to approach, then unhide and enter the spawn parts action.
  */
 static void cloud_act_fwoosh_hidden(void) {
-    cur_obj_unhide();
-    o->oAction = CLOUD_ACT_SPAWN_PARTS;
+#ifndef NODRAWINGDISTANCE
+    if (o->oDistanceToMario < 2000.0f) {
+#endif
+        cur_obj_unhide();
+        o->oAction = CLOUD_ACT_SPAWN_PARTS;
+#ifndef NODRAWINGDISTANCE
+    }
+#endif
 }
 
 /**
@@ -56,43 +62,48 @@ static void cloud_act_fwoosh_hidden(void) {
  * long enough, blow wind at him.
  */
 static void cloud_fwoosh_update(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-
-    if (o->oCloudBlowing) {
-        o->header.gfx.scale[0] += o->oCloudGrowSpeed;
-
-        if ((o->oCloudGrowSpeed -= 0.005f) < -0.16f) {
-            // Stop blowing once we are shrinking faster than -0.16
-            o->oCloudBlowing = o->oTimer = 0;
-        } else if (o->oCloudGrowSpeed < -0.1f) {
-            // Start blowing once we start shrinking faster than -0.1
-            cur_obj_play_sound_1(SOUND_AIR_BLOW_WIND);
-            cur_obj_spawn_strong_wind_particles(12, 3.0f, 0.0f, -50.0f, 120.0f);
-        } else {
-            cur_obj_play_sound_1(SOUND_ENV_WIND1);
-        }
+#ifndef NODRAWINGDISTANCE
+    if (o->oDistanceToMario > 2500.0f) {
+        o->oAction = CLOUD_ACT_UNLOAD;
     } else {
-        // Return to normal size
-        approach_f32_ptr(&o->header.gfx.scale[0], 3.0f, 0.012f);
-        o->oCloudFwooshMovementRadius += 0xC8;
+#endif
+        if (o->oCloudBlowing) {
+            o->header.gfx.scale[0] += o->oCloudGrowSpeed;
 
-        // If mario stays nearby for 100 frames, begin blowing
-        if (distanceToPlayer < 1000.0f) {
-            if (o->oTimer > 100) {
-                o->oCloudBlowing = TRUE;
-                o->oCloudGrowSpeed = 0.14f;
+            if ((o->oCloudGrowSpeed -= 0.005f) < -0.16f) {
+                // Stop blowing once we are shrinking faster than -0.16
+                o->oCloudBlowing = o->oTimer = 0;
+            } else if (o->oCloudGrowSpeed < -0.1f) {
+                // Start blowing once we start shrinking faster than -0.1
+                cur_obj_play_sound_1(SOUND_AIR_BLOW_WIND);
+                cur_obj_spawn_strong_wind_particles(12, 3.0f, 0.0f, -50.0f, 120.0f);
+            } else {
+                cur_obj_play_sound_1(SOUND_ENV_WIND1);
             }
         } else {
-            o->oTimer = 0;
+            // Return to normal size
+            approach_f32_ptr(&o->header.gfx.scale[0], 3.0f, 0.012f);
+            o->oCloudFwooshMovementRadius += 0xC8;
+
+            // If mario stays nearby for 100 frames, begin blowing
+            if (o->oDistanceToMario < 1000.0f) {
+                if (o->oTimer > 100) {
+                    o->oCloudBlowing = TRUE;
+                    o->oCloudGrowSpeed = 0.14f;
+                }
+            } else {
+                o->oTimer = 0;
+            }
+
+            o->oCloudCenterX = o->oHomeX + 100.0f * coss(o->oCloudFwooshMovementRadius);
+            o->oPosZ = o->oHomeZ + 100.0f * sins(o->oCloudFwooshMovementRadius);
+            o->oCloudCenterY = o->oHomeY;
         }
 
-        o->oCloudCenterX = o->oHomeX + 100.0f * coss(o->oCloudFwooshMovementRadius);
-        o->oPosZ = o->oHomeZ + 100.0f * sins(o->oCloudFwooshMovementRadius);
-        o->oCloudCenterY = o->oHomeY;
+        cur_obj_scale(o->header.gfx.scale[0]);
+#ifndef NODRAWINGDISTANCE
     }
-
-    cur_obj_scale(o->header.gfx.scale[0]);
+#endif
 }
 
 /**
@@ -105,7 +116,7 @@ static void cloud_act_main(void) {
 
     localOffsetPhase = 0x800 * gGlobalTimer;
 
-    if (o->parentObj && o->parentObj != o) {
+    if (o->parentObj != o) {
         // Despawn if the parent lakitu does
         if (o->parentObj->activeFlags == ACTIVE_FLAG_DEACTIVATED) {
             o->oAction = CLOUD_ACT_UNLOAD;
@@ -119,9 +130,9 @@ static void cloud_act_main(void) {
     } else if (o->oBehParams2ndByte != CLOUD_BP_FWOOSH) {
         // This code should never run, since a lakitu cloud should always have
         // a parent
-        /*if (o->oDistanceToMario > 1500.0f) {
+        if (o->oDistanceToMario > 1500.0f) {
             o->oAction = CLOUD_ACT_UNLOAD;
-        }*/
+        }
     } else {
         cloud_fwoosh_update();
     }
@@ -170,7 +181,7 @@ void bhv_cloud_update(void) {
  * Update function for bhvCloudPart. Follow the parent cloud with some oscillation.
  */
 void bhv_cloud_part_update(void) {
-    if (!o->parentObj || o->parentObj->oAction == CLOUD_ACT_UNLOAD) {
+    if (o->parentObj->oAction == CLOUD_ACT_UNLOAD) {
         obj_mark_for_deletion(o);
     } else {
         f32 size = 2.0f / 3.0f * o->parentObj->header.gfx.scale[0];
@@ -196,7 +207,8 @@ void bhv_cloud_part_update(void) {
 
         o->oPosX = o->parentObj->oCloudCenterX + cloudRadius * sins(angleFromCenter) + localOffset;
 
-        o->oPosY = o->parentObj->oCloudCenterY + localOffset + size * BHV_ARR(sCloudPartHeights, o->oBehParams2ndByte, s8);
+        o->oPosY =
+            o->parentObj->oCloudCenterY + localOffset + size * sCloudPartHeights[o->oBehParams2ndByte];
 
         o->oPosZ = o->parentObj->oPosZ + cloudRadius * coss(angleFromCenter) + localOffset;
 

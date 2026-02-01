@@ -1,15 +1,15 @@
 // haunted_chair.inc.c
 
 struct ObjectHitbox sHauntedChairHitbox = {
-    .interactType = INTERACT_MR_BLIZZARD,
-    .downOffset = 0,
-    .damageOrCoinValue = 2,
-    .health = 0,
-    .numLootCoins = 0,
-    .radius = 50,
-    .height = 50,
-    .hurtboxRadius = 50,
-    .hurtboxHeight = 50,
+    /* interactType:      */ INTERACT_MR_BLIZZARD,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 2,
+    /* health:            */ 0,
+    /* numLootCoins:      */ 0,
+    /* radius:            */ 50,
+    /* height:            */ 50,
+    /* hurtboxRadius:     */ 50,
+    /* hurtboxHeight:     */ 50,
 };
 
 void bhv_haunted_chair_init(void) {
@@ -26,9 +26,7 @@ void bhv_haunted_chair_init(void) {
 
 void haunted_chair_act_0(void) {
     s16 val0E;
-
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
+    f32 val08;
 
     if (o->parentObj != o) {
         if (o->oHauntedChairUnk104 == 0) {
@@ -61,14 +59,12 @@ void haunted_chair_act_0(void) {
                              4000.0f, 20.0f, 2.0f);
         }
     } else if (o->oHauntedChairUnkF4 != 0) {
-        if (distanceToPlayer < 500.0f) {
+        if (o->oDistanceToMario < 500.0f) {
             o->oHauntedChairUnkF4 -= 1;
         }
         o->oTimer = 0.0f;
     } else {
         if ((o->oTimer & 0x8) != 0) {
-            f32 val08;
-
             if (o->oFaceAnglePitch < 0) {
                 cur_obj_play_sound_2(SOUND_GENERAL_HAUNTED_CHAIR_MOVE);
                 val08 = 4.0f;
@@ -80,6 +76,7 @@ void haunted_chair_act_0(void) {
             o->oHomeZ -= val08;
 
             o->oFaceAnglePitch = o->oFaceAngleRoll = (s32)(50.0f * val08);
+            ;
         } else {
             o->oFaceAnglePitch = o->oFaceAngleRoll = 0;
         }
@@ -98,10 +95,6 @@ void haunted_chair_act_0(void) {
 void haunted_chair_act_1(void) {
     cur_obj_update_floor_and_walls();
 
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-    struct Object* player = marioState ? marioState->marioObj : NULL;
-    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-
     if (o->oTimer < 70) {
         if (o->oTimer < 50) {
             o->oVelY = 6.0f;
@@ -116,10 +109,8 @@ void haunted_chair_act_1(void) {
         if (o->oHauntedChairUnkF4 != 0) {
             if (--o->oHauntedChairUnkF4 == 0) {
                 cur_obj_play_sound_2(SOUND_GENERAL_HAUNTED_CHAIR);
-                if (marioState) {
-                    o->oMoveAnglePitch = obj_turn_pitch_toward_mario(marioState, 120.0f, 0);
-                }
-                o->oMoveAngleYaw = angleToPlayer;
+                o->oMoveAnglePitch = obj_turn_pitch_toward_mario(120.0f, 0);
+                o->oMoveAngleYaw = o->oAngleToMario;
                 obj_compute_vel_from_move_pitch(50.0f);
             } else if (o->oHauntedChairUnkF4 > 20) {
                 if (gGlobalTimer % 4 == 0) {

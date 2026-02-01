@@ -24,11 +24,6 @@ void boulder_act_1(void) {
 
     if (o->oPosY < -1000.0f)
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-
-    if (o->oBehParams2ndByte == 2 && (sp1E & OBJ_COL_FLAG_HIT_WALL)) {
-        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-        obj_explode_and_spawn_coins(46.0f, 1);
-    }
 }
 
 void bhv_big_boulder_loop(void) {
@@ -56,23 +51,18 @@ void bhv_big_boulder_generator_loop(void) {
         o->oTimer = 0;
     }
 
-    // TODO: current_mario_room_check() isn't remote-aware!!!!
     if (!current_mario_room_check(4) || is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 1500))
         return;
 
     if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 6000)) {
         if ((o->oTimer & 0x3F) == 0) {
             sp1C = spawn_object(o, MODEL_HMC_ROLLING_ROCK, bhvBigBoulder);
-            if (sp1C != NULL) {
-                sp1C->oMoveAngleYaw = random_float() * 4096.0f;
-            }
+            sp1C->oMoveAngleYaw = random_float() * 4096.0f;
         }
     } else {
         if ((o->oTimer & 0x7F) == 0) {
             sp1C = spawn_object(o, MODEL_HMC_ROLLING_ROCK, bhvBigBoulder);
-            if (sp1C != NULL) {
-                sp1C->oMoveAngleYaw = random_float() * 4096.0f;
-            }
+            sp1C->oMoveAngleYaw = random_float() * 4096.0f;
         }
     }
 }

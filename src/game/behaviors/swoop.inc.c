@@ -8,15 +8,15 @@
  * Hitbox for swoop.
  */
 static struct ObjectHitbox sSwoopHitbox = {
-    .interactType = INTERACT_HIT_FROM_BELOW,
-    .downOffset = 0,
-    .damageOrCoinValue = 1,
-    .health = 0,
-    .numLootCoins = 1,
-    .radius = 100,
-    .height = 80,
-    .hurtboxRadius = 70,
-    .hurtboxHeight = 70,
+    /* interactType:      */ INTERACT_HIT_FROM_BELOW,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 1,
+    /* health:            */ 0,
+    /* numLootCoins:      */ 1,
+    /* radius:            */ 100,
+    /* height:            */ 80,
+    /* hurtboxRadius:     */ 70,
+    /* hurtboxHeight:     */ 70,
 };
 
 /**
@@ -24,14 +24,10 @@ static struct ObjectHitbox sSwoopHitbox = {
  * toward him and enter the move action.
  */
 static void swoop_act_idle(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-
     cur_obj_init_animation_with_sound(1);
 
-    if (approach_f32_ptr(&o->header.gfx.scale[0], 1.0f, 0.05f) && distanceToPlayer < 1500.0f) {
-        if (cur_obj_rotate_yaw_toward(angleToPlayer, 800)) {
+    if (approach_f32_ptr(&o->header.gfx.scale[0], 1.0f, 0.05f) && o->oDistanceToMario < 1500.0f) {
+        if (cur_obj_rotate_yaw_toward(o->oAngleToMario, 800)) {
             cur_obj_play_sound_2(SOUND_OBJ2_SWOOP);
             o->oAction = SWOOP_ACT_MOVE;
             o->oVelY = -12.0f;
@@ -46,9 +42,6 @@ static void swoop_act_idle(void) {
  * him. Return to home once mario is far away.
  */
 static void swoop_act_move(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-
     cur_obj_init_animation_with_accel_and_sound(0, 2.0f);
     if (cur_obj_check_if_near_animation_end()) {
         cur_obj_play_sound_2(SOUND_OBJ_UNKNOWN6);
@@ -72,8 +65,8 @@ static void swoop_act_move(void) {
         } else if (o->oVelY != 0.0f) {
             // If we're not done swooping, turn toward mario. When between
             // 0 and 200 units above mario, increase speed and stop swooping
-            o->oSwoopTargetYaw = angleToPlayer;
-            if (player && o->oPosY < player->oPosY + 200.0f) {
+            o->oSwoopTargetYaw = o->oAngleToMario;
+            if (o->oPosY < gMarioObject->oPosY + 200.0f) {
                 if (obj_y_vel_approach(0.0f, 0.5f)) {
                     o->oForwardVel *= 2.0f;
                 }

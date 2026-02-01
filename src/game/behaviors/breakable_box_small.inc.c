@@ -1,15 +1,15 @@
 // breakable_box.c.inc
 
 struct ObjectHitbox sBreakableBoxSmallHitbox = {
-    .interactType = INTERACT_GRABBABLE,
-    .downOffset = 20,
-    .damageOrCoinValue = 0,
-    .health = 1,
-    .numLootCoins = 0,
-    .radius = 150,
-    .height = 250,
-    .hurtboxRadius = 150,
-    .hurtboxHeight = 250,
+    /* interactType:      */ INTERACT_GRABBABLE,
+    /* downOffset:        */ 20,
+    /* damageOrCoinValue: */ 0,
+    /* health:            */ 1,
+    /* numLootCoins:      */ 0,
+    /* radius:            */ 150,
+    /* height:            */ 250,
+    /* hurtboxRadius:     */ 150,
+    /* hurtboxHeight:     */ 250,
 };
 
 void bhv_breakable_box_small_init(void) {
@@ -24,7 +24,6 @@ void bhv_breakable_box_small_init(void) {
 
 void small_breakable_box_spawn_dust(void) {
     struct Object *sp24 = spawn_object(o, MODEL_SMOKE, bhvSmoke);
-    if (sp24 == NULL) { return; }
     sp24->oPosX += (s32)(random_float() * 80.0f) - 40;
     sp24->oPosZ += (s32)(random_float() * 80.0f) - 40;
 }
@@ -42,9 +41,7 @@ void small_breakable_box_act_move(void) {
         }
     }
 
-    // Set these flags to break the small box without a wall collision
-    s32 breakStatus = ATTACK_KICK_OR_TRIP | INT_STATUS_INTERACTED | INT_STATUS_WAS_ATTACKED | INT_STATUS_STOP_RIDING;
-    if ((sp1E & 2) || (o->oInteractStatus & breakStatus) == breakStatus) {
+    if (sp1E & 2) {
         spawn_mist_particles();
         spawn_triangle_break_particles(20, 138, 0.7f, 3);
         obj_spawn_yellow_coins(o, 3);

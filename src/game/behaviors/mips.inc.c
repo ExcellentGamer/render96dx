@@ -2,52 +2,25 @@
  * Behavior for MIPS (everyone's favorite yellow rabbit).
  */
 
-static Trajectory** sMipsPaths[] = {
-    &gBehaviorValues.trajectories.MipsTrajectory,
-    &gBehaviorValues.trajectories.Mips2Trajectory,
-    &gBehaviorValues.trajectories.Mips3Trajectory,
-    &gBehaviorValues.trajectories.Mips4Trajectory,
-    &gBehaviorValues.trajectories.Mips5Trajectory,
-    &gBehaviorValues.trajectories.Mips6Trajectory,
-    &gBehaviorValues.trajectories.Mips7Trajectory,
-    &gBehaviorValues.trajectories.Mips8Trajectory,
-    &gBehaviorValues.trajectories.Mips9Trajectory,
-    &gBehaviorValues.trajectories.Mips10Trajectory,
-};
-
-#if 0
-static u32 mipsPrevHeldState = 0;
-
-static void bhv_mips_on_received_pre(UNUSED u8 fromLocalIndex) {
-    mipsPrevHeldState = o->oHeldState;
-}
-
-static void bhv_mips_on_received_post(UNUSED u8 fromLocalIndex) {
-    if (mipsPrevHeldState == HELD_HELD && o->oHeldState == HELD_FREE) {
-        cur_obj_init_animation(0);
-    }
-}
-#endif
-
 /**
  * Initializes MIPS' physics parameters and checks if he should be active,
  * hiding him if necessary.
  */
 void bhv_mips_init(void) {
     // Retrieve star flags for Castle Secret Stars on current save file.
-    u8 starFlags = save_file_get_star_flags(gCurrSaveFileNum - 1, -1);
+    u8 starFlags;
+    starFlags = save_file_get_star_flags(gCurrSaveFileNum - 1, -1);
 
     // If the player has >= 15 stars and hasn't collected first MIPS star...
-    if (save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1) >= gBehaviorValues.MipsStar1Requirement
-        && !(starFlags & SAVE_FLAG_TO_STAR_FLAG(SAVE_FLAG_COLLECTED_MIPS_STAR_1))) {
+    if (save_file_get_total_star_count(gCurrSaveFileNum - 1, 0, 24) >= 15 && (starFlags & 0x08) == 0) {
         o->oBehParams2ndByte = 0;
 #ifndef VERSION_JP
         o->oMipsForwardVelocity = 40.0f;
 #endif
     }
     // If the player has >= 50 stars and hasn't collected second MIPS star...
-    else if (save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1) >= gBehaviorValues.MipsStar2Requirement
-             && !(starFlags & SAVE_FLAG_TO_STAR_FLAG(SAVE_FLAG_COLLECTED_MIPS_STAR_2))) {
+    else if (save_file_get_total_star_count(gCurrSaveFileNum - 1, 0, 24) >= 50
+             && (starFlags & 0x10) == 0) {
         o->oBehParams2ndByte = 1;
 #ifndef VERSION_JP
         o->oMipsForwardVelocity = 45.0f;
@@ -80,13 +53,14 @@ s16 bhv_mips_find_furthest_waypoint_to_mario(void) {
     s16 furthestWaypointIndex = -1;
     f32 furthestWaypointDistance = -10000.0f;
     f32 distanceToMario;
+    struct Waypoint **pathBase;
     struct Waypoint *waypoint;
 
-    struct Object* player = nearest_player_to_object(o);
+    pathBase = segmented_to_virtual(&inside_castle_seg7_trajectory_mips);
 
     // For each waypoint in MIPS path...
     for (i = 0; i < 10; i++) {
-        waypoint = segmented_to_virtual(*sMipsPaths[i]);
+        waypoint = segmented_to_virtual(*(pathBase + i));
         x = waypoint->pos[0];
         y = waypoint->pos[1];
         z = waypoint->pos[2];
@@ -94,7 +68,8 @@ s16 bhv_mips_find_furthest_waypoint_to_mario(void) {
         // Is the waypoint within 800 units of MIPS?
         if (is_point_close_to_object(o, x, y, z, 800)) {
             // Is this further from Mario than the last waypoint?
-            distanceToMario = player ? (sqr(x - player->header.gfx.pos[0]) + sqr(z - player->header.gfx.pos[2])) : 10000;
+            distanceToMario =
+                sqr(x - gMarioObject->header.gfx.pos[0]) + sqr(z - gMarioObject->header.gfx.pos[2]);
             if (furthestWaypointDistance < distanceToMario) {
                 furthestWaypointIndex = i;
                 furthestWaypointDistance = distanceToMario;
@@ -135,15 +110,13 @@ void bhv_mips_act_wait_for_nearby_mario(void) {
  */
 void bhv_mips_act_follow_path(void) {
     s16 collisionFlags = 0;
-    s32 followStatus = 0;
+    s32 followStatus;
     struct Waypoint **pathBase;
     struct Waypoint *waypoint;
 
     // Retrieve current waypoint.
-    pathBase = segmented_to_virtual(sMipsPaths[0]);
-    s32 length = get_trajectory_length((Trajectory*)pathBase);
-    if (o->oMipsStartWaypointIndex >= length || o->oMipsStartWaypointIndex < 0) { return; }
-    waypoint = segmented_to_virtual(pathBase[o->oMipsStartWaypointIndex]);
+    pathBase = segmented_to_virtual(&inside_castle_seg7_trajectory_mips);
+    waypoint = segmented_to_virtual(*(pathBase + o->oMipsStartWaypointIndex));
 
     // Set start waypoint and follow the path from there.
     o->oPathedStartWaypoint = waypoint;
@@ -191,7 +164,7 @@ void bhv_mips_act_fall_down(void) {
     s16 collisionFlags = 0;
 
     collisionFlags = object_step();
-    o->header.gfx.animInfo.animFrame = 0;
+    o->header.gfx.unk38.animFrame = 0;
 
     if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) == 1) {
         o->oAction = MIPS_ACT_WAIT_FOR_ANIMATION_DONE;
@@ -215,7 +188,7 @@ void bhv_mips_act_idle(void) {
 
     // Spawn a star if he was just picked up for the first time.
     if (o->oMipsStarStatus == MIPS_STAR_STATUS_SHOULD_SPAWN_STAR) {
-        bhv_spawn_star_no_level_exit(o, o->oBehParams2ndByte + 3, TRUE);
+        bhv_spawn_star_no_level_exit(o->oBehParams2ndByte + 3);
         o->oMipsStarStatus = MIPS_STAR_STATUS_ALREADY_SPAWNED_STAR;
     }
 }
@@ -247,39 +220,32 @@ void bhv_mips_free(void) {
     }
 }
 
-static u8 bhv_mips_held_continue_dialog(void) {
-    return (o->heldByPlayerIndex == 0 && o->oHeldState == HELD_HELD && o->oMipsStarStatus == MIPS_STAR_STATUS_HAVENT_SPAWNED_STAR);
-}
-
 /**
  * Handles MIPS being held by Mario.
  */
 void bhv_mips_held(void) {
-    s32 dialogID;
-
-    if (o->heldByPlayerIndex >= MAX_PLAYERS) { return; }
-    struct Object* player = gMarioStates[o->heldByPlayerIndex].marioObj;
+    s16 dialogID;
 
     o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
     cur_obj_init_animation(4); // Held animation.
-    cur_obj_set_pos_relative(player, 0, 60.0f, 100.0f);
+    cur_obj_set_pos_relative(gMarioObject, 0, 60.0f, 100.0f);
     cur_obj_become_intangible();
 
     // If MIPS hasn't spawned his star yet...
     if (o->oMipsStarStatus == MIPS_STAR_STATUS_HAVENT_SPAWNED_STAR) {
         // Choose dialog based on which MIPS encounter this is.
         if (o->oBehParams2ndByte == 0)
-            dialogID = gBehaviorValues.dialogs.Mips1Dialog;
+            dialogID = DIALOG_084;
         else
-            dialogID = gBehaviorValues.dialogs.Mips2Dialog;
+            dialogID = DIALOG_162;
 
-        if (should_start_or_continue_dialog(&gMarioStates[o->heldByPlayerIndex], o) && set_mario_npc_dialog(&gMarioStates[0], 1, bhv_mips_held_continue_dialog) == 2) {
-            //o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
+        if (set_mario_npc_dialog(1) == 2) {
+            o->activeFlags |= ACTIVE_FLAG_INITIATED_TIME_STOP;
             if (cutscene_object_with_dialog(CUTSCENE_DIALOG, o, dialogID)) {
                 o->oInteractionSubtype |= INT_SUBTYPE_DROP_IMMEDIATELY;
                 o->activeFlags &= ~ACTIVE_FLAG_INITIATED_TIME_STOP;
                 o->oMipsStarStatus = MIPS_STAR_STATUS_SHOULD_SPAWN_STAR;
-                set_mario_npc_dialog(&gMarioStates[0], 0, NULL);
+                set_mario_npc_dialog(0);
             }
         }
     }

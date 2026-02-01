@@ -21,27 +21,9 @@ void bhv_ttm_rolling_log_init(void) {
 void rolling_log_roll_log(void) {
     f32 sp24;
 
-    f32 x = 0;
-    UNUSED f32 y = 0;
-    f32 z = 0;
-
-    u8 playersTouched = 0;
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        if (!is_player_active(&gMarioStates[i])) { continue; }
-        struct Object* player = gMarioStates[i].marioObj;
-        if (player->platform != o) { continue; }
-        x += player->header.gfx.pos[0];
-        y += player->header.gfx.pos[1];
-        z += player->header.gfx.pos[2];
-        playersTouched++;
-    }
-
-    if (playersTouched > 0) {
-        x /= (f32)playersTouched;
-        y /= (f32)playersTouched;
-        z /= (f32)playersTouched;
-
-        sp24 = (z - o->oPosZ) * coss(-1*o->oMoveAngleYaw) - (x - o->oPosX) * sins(-1*o->oMoveAngleYaw);
+    if (gMarioObject->platform == o) {
+        sp24 = (gMarioObject->header.gfx.pos[2] - o->oPosZ) * coss(-1*o->oMoveAngleYaw)
+               - (gMarioObject->header.gfx.pos[0] - o->oPosX) * sins(-1*o->oMoveAngleYaw);
         if (sp24 > 0)
             o->oAngleVelPitch += 0x10;
         else

@@ -1,15 +1,15 @@
 // jrb_ship.c.inc
 
 struct ObjectHitbox sSkullSlidingBoxHitbox = {
-    .interactType = INTERACT_DAMAGE,
-    .downOffset = 0,
-    .damageOrCoinValue = 1,
-    .health = 1,
-    .numLootCoins = 0,
-    .radius = 130,
-    .height = 100,
-    .hurtboxRadius = 0,
-    .hurtboxHeight = 0,
+    /* interactType: */ INTERACT_DAMAGE,
+    /* downOffset: */ 0,
+    /* damageOrCoinValue: */ 1,
+    /* health: */ 1,
+    /* numLootCoins: */ 0,
+    /* radius: */ 130,
+    /* height: */ 100,
+    /* hurtboxRadius: */ 0,
+    /* hurtboxHeight: */ 0,
 };
 
 void bhv_sunken_ship_part_loop(void) {
@@ -29,9 +29,8 @@ void bhv_ship_part_3_loop(void) {
     o->oFaceAngleRoll = sins(o->oShipPart3UnkF8) * 1024.0f;
     o->oAngleVelPitch = o->oFaceAnglePitch - sp1E;
     o->oAngleVelRoll = o->oFaceAngleRoll - sp1C;
-    if (gMarioObject && gMarioObject->oPosY > 1000.0f) {
+    if (gMarioObject->oPosY > 1000.0f)
         cur_obj_play_sound_1(SOUND_ENV_BOAT_ROCKING1);
-    }
 }
 
 void bhv_jrb_sliding_box_loop(void) {
@@ -46,12 +45,11 @@ void bhv_jrb_sliding_box_loop(void) {
     s16 sp1E;
     if (o->oJrbSlidingBoxUnkF4 == NULL) {
         sp3C = cur_obj_nearest_object_with_behavior(bhvInSunkenShip3);
-        if (sp3C != NULL) {
+        if (sp3C != NULL) // NULL check only for assignment, not for dereference?
             o->oJrbSlidingBoxUnkF4 = sp3C;
-            o->oParentRelativePosX = o->oPosX - sp3C->oPosX;
-            o->oParentRelativePosY = o->oPosY - sp3C->oPosY;
-            o->oParentRelativePosZ = o->oPosZ - sp3C->oPosZ;
-        }
+        o->oParentRelativePosX = o->oPosX - sp3C->oPosX;
+        o->oParentRelativePosY = o->oPosY - sp3C->oPosY;
+        o->oParentRelativePosZ = o->oPosZ - sp3C->oPosZ;
     } else {
         sp3C = o->oJrbSlidingBoxUnkF4;
         sp40[0] = sp3C->oFaceAnglePitch;
@@ -80,18 +78,13 @@ void bhv_jrb_sliding_box_loop(void) {
     o->oJrbSlidingBoxUnkFC = sins(o->oJrbSlidingBoxUnkF8) * 20.0f;
     o->oJrbSlidingBoxUnkF8 += 0x100;
     o->oParentRelativePosZ += o->oJrbSlidingBoxUnkFC;
-    if (gMarioObject && gMarioObject->oPosY > 1000.0f) {
-        if (absf(o->oJrbSlidingBoxUnkFC) > 3.0f) {
+    if (gMarioObject->oPosY > 1000.0f)
+        if (absf(o->oJrbSlidingBoxUnkFC) > 3.0f)
             cur_obj_play_sound_1(SOUND_AIR_ROUGH_SLIDE);
-        }
-    }
-
     obj_set_hitbox(o, &sSkullSlidingBoxHitbox);
-    if (!(o->oJrbSlidingBoxUnkF8 & 0x7FFF)) {
+    if (!(o->oJrbSlidingBoxUnkF8 & 0x7FFF))
         cur_obj_become_tangible();
-    }
-
-    if (gMarioObject && obj_check_if_collided_with_object(o, gMarioObject)) {
+    if (obj_check_if_collided_with_object(o, gMarioObject)) {
         o->oInteractStatus = 0;
         cur_obj_become_intangible();
     }

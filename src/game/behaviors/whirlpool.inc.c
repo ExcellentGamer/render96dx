@@ -1,15 +1,15 @@
 // whirlpool.c.inc
 
 static struct ObjectHitbox sWhirlpoolHitbox = {
-    .interactType = INTERACT_WHIRLPOOL,
-    .downOffset = 0,
-    .damageOrCoinValue = 0,
-    .health = 0,
-    .numLootCoins = 0,
-    .radius = 200,
-    .height = 500,
-    .hurtboxRadius = 0,
-    .hurtboxHeight = 0,
+    /* interactType:      */ INTERACT_WHIRLPOOL,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 0,
+    /* health:            */ 0,
+    /* numLootCoins:      */ 0,
+    /* radius:            */ 200,
+    /* height:            */ 500,
+    /* hurtboxRadius:     */ 0,
+    /* hurtboxHeight:     */ 0,
 };
 
 void bhv_whirlpool_init(void) {
@@ -35,36 +35,31 @@ void whirpool_orient_graph(void) {
 }
 
 void bhv_whirlpool_loop(void) {
-    if (o->oWhirlpoolTimeout > 0) {
-        o->oWhirlpoolTimeout--;
-        if (o->oWhirlpoolTimeout <= 0) {
-            o->oInteractStatus = 0;
-        }
-    } else if (o->oInteractStatus == INT_STATUS_INTERACTED) {
-        o->oWhirlpoolTimeout = 30;
-    }
-
-    f32 marioDist = dist_between_objects(o, gMarioStates[0].marioObj);
-    if (marioDist < 5000.0f * draw_distance_scalar()) {
+#ifndef NODRAWINGDISTANCE
+    if (o->oDistanceToMario < 5000.0f) {
+#endif
         o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
+
+        // not sure if actually an array
+        gEnvFxBubbleConfig[ENVFX_STATE_PARTICLECOUNT] = 60;
+        gEnvFxBubbleConfig[ENVFX_STATE_SRC_X] = o->oPosX;
+        gEnvFxBubbleConfig[ENVFX_STATE_SRC_Z] = o->oPosZ;
+        gEnvFxBubbleConfig[ENVFX_STATE_DEST_X] = o->oPosX;
+        gEnvFxBubbleConfig[ENVFX_STATE_DEST_Y] = o->oPosY;
+        gEnvFxBubbleConfig[ENVFX_STATE_DEST_Z] = o->oPosZ;
+        gEnvFxBubbleConfig[ENVFX_STATE_SRC_Y] = o->oPosY + 800.0f;
+        gEnvFxBubbleConfig[ENVFX_STATE_PITCH] = o->oWhirlpoolInitFacePitch;
+        gEnvFxBubbleConfig[ENVFX_STATE_YAW] = o->oWhirlpoolInitFaceRoll;
+
+        whirpool_orient_graph();
+
+        o->oFaceAngleYaw += 0x1F40;
+#ifndef NODRAWINGDISTANCE
     } else {
         o->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
+        gEnvFxBubbleConfig[ENVFX_STATE_PARTICLECOUNT] = 0;
     }
-
-    // not sure if actually an array
-    gEnvFxBubbleConfig[ENVFX_STATE_PARTICLECOUNT] = 60;
-    gEnvFxBubbleConfig[ENVFX_STATE_SRC_X] = o->oPosX;
-    gEnvFxBubbleConfig[ENVFX_STATE_SRC_Z] = o->oPosZ;
-    gEnvFxBubbleConfig[ENVFX_STATE_DEST_X] = o->oPosX;
-    gEnvFxBubbleConfig[ENVFX_STATE_DEST_Y] = o->oPosY;
-    gEnvFxBubbleConfig[ENVFX_STATE_DEST_Z] = o->oPosZ;
-    gEnvFxBubbleConfig[ENVFX_STATE_SRC_Y] = o->oPosY + 800.0f;
-    gEnvFxBubbleConfig[ENVFX_STATE_PITCH] = o->oWhirlpoolInitFacePitch;
-    gEnvFxBubbleConfig[ENVFX_STATE_YAW] = o->oWhirlpoolInitFaceRoll;
-
-    whirpool_orient_graph();
-
-    o->oFaceAngleYaw += 0x1F40;
+#endif
 
     cur_obj_play_sound_1(SOUND_ENV_WATER);
 
@@ -72,8 +67,7 @@ void bhv_whirlpool_loop(void) {
 }
 
 void bhv_jet_stream_loop(void) {
-    f32 marioDist = dist_between_objects(o, gMarioStates[0].marioObj);
-    if (marioDist < 5000.0f) {
+    if (o->oDistanceToMario < 5000.0f) {
         gEnvFxBubbleConfig[ENVFX_STATE_PARTICLECOUNT] = 60;
         gEnvFxBubbleConfig[ENVFX_STATE_SRC_X] = o->oPosX;
         gEnvFxBubbleConfig[ENVFX_STATE_SRC_Y] = o->oPosY;

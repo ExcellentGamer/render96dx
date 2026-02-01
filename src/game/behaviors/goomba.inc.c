@@ -9,15 +9,15 @@
  * Hitbox for goomba.
  */
 static struct ObjectHitbox sGoombaHitbox = {
-    .interactType = INTERACT_BOUNCE_TOP,
-    .downOffset = 0,
-    .damageOrCoinValue = 1,
-    .health = 0,
-    .numLootCoins = 1,
-    .radius = 72,
-    .height = 50,
-    .hurtboxRadius = 42,
-    .hurtboxHeight = 40,
+    /* interactType:      */ INTERACT_BOUNCE_TOP,
+    /* downOffset:        */ 0,
+    /* damageOrCoinValue: */ 1,
+    /* health:            */ 0,
+    /* numLootCoins:      */ 1,
+    /* radius:            */ 72,
+    /* height:            */ 50,
+    /* hurtboxRadius:     */ 42,
+    /* hurtboxHeight:     */ 40,
 };
 
 /**
@@ -78,25 +78,35 @@ void bhv_goomba_triplet_spawner_update(void) {
     // If mario is close enough and the goombas aren't currently loaded, then
     // spawn them
     if (o->oAction == GOOMBA_TRIPLET_SPAWNER_ACT_UNLOADED) {
-        // The spawner is capable of spawning more than 3 goombas, but this
-        // is not used in the game
-        dAngle =
-            0x10000
-            / (((o->oBehParams2ndByte & GOOMBA_TRIPLET_SPAWNER_BP_EXTRA_GOOMBAS_MASK) >> 2) + 3);
+#ifndef NODRAWINGDISTANCE
+        if (o->oDistanceToMario < 3000.0f) {
+#endif
+            // The spawner is capable of spawning more than 3 goombas, but this
+            // is not used in the game
+            dAngle =
+                0x10000
+                / (((o->oBehParams2ndByte & GOOMBA_TRIPLET_SPAWNER_BP_EXTRA_GOOMBAS_MASK) >> 2) + 3);
 
-        for (angle = 0, goombaFlag = 1 << 8; angle < 0xFFFF; angle += dAngle, goombaFlag <<= 1) {
-            // Only spawn goombas which haven't been killed yet
-            if (!(o->oBehParams & goombaFlag)) {
-                dx = 500.0f * coss(angle);
-                dz = 500.0f * sins(angle);
+            for (angle = 0, goombaFlag = 1 << 8; angle < 0xFFFF; angle += dAngle, goombaFlag <<= 1) {
+                // Only spawn goombas which haven't been killed yet
+                if (!(o->oBehParams & goombaFlag)) {
+                    dx = 500.0f * coss(angle);
+                    dz = 500.0f * sins(angle);
 
-                spawn_object_relative((o->oBehParams2ndByte & GOOMBA_TRIPLET_SPAWNER_BP_SIZE_MASK)
-                                            | (goombaFlag >> 6),
-                                        dx, 0, dz, o, MODEL_GOOMBA, bhvGoomba);
+                    spawn_object_relative((o->oBehParams2ndByte & GOOMBA_TRIPLET_SPAWNER_BP_SIZE_MASK)
+                                              | (goombaFlag >> 6),
+                                          dx, 0, dz, o, MODEL_GOOMBA, bhvGoomba);
+                }
             }
-        }
 
-        o->oAction += 1;
+            o->oAction += 1;
+#ifndef NODRAWINGDISTANCE
+        }
+    } else if (o->oDistanceToMario > 4000.0f) {
+        // If mario is too far away, enter the unloaded action. The goombas
+        // will detect this and unload themselves
+        o->oAction = GOOMBA_TRIPLET_SPAWNER_ACT_UNLOADED;
+#endif
     }
 }
 
@@ -125,7 +135,6 @@ static void goomba_begin_jump(void) {
     o->oAction = GOOMBA_ACT_JUMP;
     o->oForwardVel = 0.0f;
     o->oVelY = 50.0f / 3.0f * o->oGoombaScale;
-    o->oGoombaJumpCooldown = 10;
 }
 
 /**
@@ -133,10 +142,13 @@ static void goomba_begin_jump(void) {
  * this goomba died. This prevents it from spawning again when mario leaves and
  * comes back.
  */
-void mark_goomba_as_dead(void) {
-    if (o->parentObj && o->parentObj != o) {
-        set_object_respawn_info_bits(o->parentObj, (o->oBehParams2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) >> 2);
-        o->parentObj->oBehParams = o->parentObj->oBehParams | (o->oBehParams2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) << 6;
+static void mark_goomba_as_dead(void) {
+    if (o->parentObj != o) {
+        set_object_respawn_info_bits(o->parentObj,
+                                     (o->oBehParams2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) >> 2);
+
+        o->parentObj->oBehParams =
+            o->parentObj->oBehParams | (o->oBehParams2ndByte & GOOMBA_BP_TRIPLET_FLAG_MASK) << 6;
     }
 }
 
@@ -145,7 +157,7 @@ void mark_goomba_as_dead(void) {
  * chase him.
  */
 static void goomba_act_walk(void) {
-    treat_far_home_as_mario(1000.0f, NULL, NULL);
+    treat_far_home_as_mario(1000.0f);
 
     obj_forward_vel_approach(o->oGoombaRelativeSpeed * o->oGoombaScale, 0.4f);
 
@@ -164,20 +176,15 @@ static void goomba_act_walk(void) {
     if (o->oGoombaTurningAwayFromWall) {
         o->oGoombaTurningAwayFromWall = obj_resolve_collisions_and_turn(o->oGoombaTargetYaw, 0x200);
     } else {
-        struct Object* player = nearest_player_to_object(o);
-        s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-        s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-        treat_far_home_as_mario(1000.0f, &distanceToPlayer, &angleToPlayer);
-
         // If far from home, walk toward home.
-        if (distanceToPlayer >= 25000.0f) {
-            o->oGoombaTargetYaw = angleToPlayer;
+        if (o->oDistanceToMario >= 25000.0f) {
+            o->oGoombaTargetYaw = o->oAngleToMario;
             o->oGoombaWalkTimer = random_linear_offset(20, 30);
         }
 
         if (!(o->oGoombaTurningAwayFromWall =
                   obj_bounce_off_walls_edges_objects(&o->oGoombaTargetYaw))) {
-            if (distanceToPlayer < 500.0f) {
+            if (o->oDistanceToMario < 500.0f) {
                 // If close to mario, begin chasing him. If not already chasing
                 // him, jump first
 
@@ -185,7 +192,7 @@ static void goomba_act_walk(void) {
                     goomba_begin_jump();
                 }
 
-                o->oGoombaTargetYaw = angleToPlayer;
+                o->oGoombaTargetYaw = o->oAngleToMario;
                 o->oGoombaRelativeSpeed = 20.0f;
             } else {
                 // If mario is far away, walk at a normal pace, turning randomly
@@ -195,7 +202,7 @@ static void goomba_act_walk(void) {
                 if (o->oGoombaWalkTimer != 0) {
                     o->oGoombaWalkTimer -= 1;
                 } else {
-                    if (random_u16() & 3 || o->oGoombaJumpCooldown > 0) {
+                    if (random_u16() & 3) {
                         o->oGoombaTargetYaw = obj_random_fixed_turn(0x2000);
                         o->oGoombaWalkTimer = random_linear_offset(100, 100);
                     } else {
@@ -207,10 +214,6 @@ static void goomba_act_walk(void) {
         }
 
         cur_obj_rotate_yaw_toward(o->oGoombaTargetYaw, 0x200);
-    }
-
-    if (o->oGoombaJumpCooldown > 0) {
-        o->oGoombaJumpCooldown--;
     }
 }
 
@@ -226,10 +229,8 @@ static void goomba_act_attacked_mario(void) {
     } else {
         //! This can happen even when the goomba is already in the air. It's
         //  hard to chain these in practice
-        struct Object* player = nearest_player_to_object(o);
-        s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
         goomba_begin_jump();
-        o->oGoombaTargetYaw = angleToPlayer;
+        o->oGoombaTargetYaw = o->oAngleToMario;
         o->oGoombaTurningAwayFromWall = FALSE;
     }
 }
@@ -275,7 +276,7 @@ void bhv_goomba_update(void) {
     if (obj_update_standard_actions(o->oGoombaScale)) {
         // If this goomba has a spawner and mario moved away from the spawner,
         // unload
-        if (o->parentObj && o->parentObj != o) {
+        if (o->parentObj != o) {
             if (o->parentObj->oAction == GOOMBA_TRIPLET_SPAWNER_ACT_UNLOADED) {
                 obj_mark_for_deletion(o);
             }

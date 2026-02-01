@@ -8,7 +8,7 @@
 /**
  * Speeds for the hand and the 2D cog, respectively. Negative because clockwise.
  */
-s16 gTTC2DRotatorSpeeds[] = {
+static s16 sTTC2DRotatorSpeeds[] = {
     -0x444,
     -0xCCC,
 };
@@ -18,7 +18,7 @@ s16 gTTC2DRotatorSpeeds[] = {
  * only used for the first turn, after which it is chosen randomly.
  * These values are for the hand and the 2D cog, respectively.
  */
-s16 gTTC2DRotatorTimeBetweenTurns[][4] = {
+static s16 sTTC2DRotatorTimeBetweenTurns[][4] = {
     {
         /* TTC_SPEED_SLOW    */ 40,
         /* TTC_SPEED_FAST    */ 10,
@@ -37,10 +37,9 @@ s16 gTTC2DRotatorTimeBetweenTurns[][4] = {
  * Init function for bhvTTC2DRotator.
  */
 void bhv_ttc_2d_rotator_init(void) {
-    if (o->oBehParams2ndByte >= 0 && o->oBehParams2ndByte < 2 && gTTCSpeedSetting >= 0 && gTTCSpeedSetting < 4) {
-        o->oTTC2DRotatorMinTimeUntilNextTurn = gTTC2DRotatorTimeBetweenTurns[o->oBehParams2ndByte][gTTCSpeedSetting];
-        o->oTTC2DRotatorIncrement = o->oTTC2DRotatorSpeed = gTTC2DRotatorSpeeds[o->oBehParams2ndByte];
-    }
+    o->oTTC2DRotatorMinTimeUntilNextTurn =
+        sTTC2DRotatorTimeBetweenTurns[o->oBehParams2ndByte][gTTCSpeedSetting];
+    o->oTTC2DRotatorIncrement = o->oTTC2DRotatorSpeed = sTTC2DRotatorSpeeds[o->oBehParams2ndByte];
 }
 
 /**

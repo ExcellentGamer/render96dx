@@ -1,15 +1,15 @@
 // switch_hidden_objects.c.inc
 
 struct ObjectHitbox sBreakableBoxHitbox = {
-    .interactType = INTERACT_BREAKABLE,
-    .downOffset = 20,
-    .damageOrCoinValue = 0,
-    .health = 1,
-    .numLootCoins = 0,
-    .radius = 150,
-    .height = 200,
-    .hurtboxRadius = 150,
-    .hurtboxHeight = 200,
+    /* interactType: */ INTERACT_BREAKABLE,
+    /* downOffset: */ 20,
+    /* damageOrCoinValue: */ 0,
+    /* health: */ 1,
+    /* numLootCoins: */ 0,
+    /* radius: */ 150,
+    /* height: */ 200,
+    /* hurtboxRadius: */ 150,
+    /* hurtboxHeight: */ 200,
 };
 
 void breakable_box_init(void) {
@@ -34,7 +34,7 @@ void breakable_box_init(void) {
 void hidden_breakable_box_actions(void) {
     struct Object *sp1C;
     obj_set_hitbox(o, &sBreakableBoxHitbox);
-    cur_obj_set_model(smlua_model_util_load(E_MODEL_BREAKABLE_BOX_SMALL));
+    cur_obj_set_model(MODEL_BREAKABLE_BOX_SMALL);
     if (o->oAction == 0) {
         cur_obj_disable_rendering();
         cur_obj_become_intangible();

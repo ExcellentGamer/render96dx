@@ -1,26 +1,13 @@
 // mushroom_1up.c.inc
 
 void bhv_1up_interact(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-    if (marioState && marioState->playerIndex == 0 && obj_check_if_collided_with_object(o, marioState->marioObj) == 1) {
-        play_sound(SOUND_GENERAL_COLLECT_1UP, gGlobalSoundSource);
-        marioState->numLives++;
-        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-        if (gLevelValues.mushroom1UpHeal) {
-            marioState->healCounter = 31;
-            marioState->hurtCounter = 0;
-        }
-#ifdef VERSION_SH
-        if (marioState->playerIndex == 0) {
-            queue_rumble_data(5, 80);
-        }
-#endif
-    }
-}
+    UNUSED s32 sp1C;
 
-void bhv_1up_trigger_init(void) {
-    obj_set_model(o, MODEL_NONE);
-    cur_obj_hide();
+    if (obj_check_if_collided_with_object(o, gMarioObject) == 1) {
+        play_sound(SOUND_GENERAL_COLLECT_1UP, gDefaultSoundArgs);
+        gMarioState->numLives++;
+        o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
+    }
 }
 
 void bhv_1up_common_init(void) {
@@ -33,13 +20,11 @@ void bhv_1up_common_init(void) {
 void bhv_1up_init(void) {
     bhv_1up_common_init();
     if (o->oBehParams2ndByte == 1) {
-        if (!(save_file_get_flags() & (SAVE_FLAG_HAVE_KEY_1 | SAVE_FLAG_UNLOCKED_BASEMENT_DOOR))) {
+        if ((save_file_get_flags() & 0x50) == 0)
             o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-        }
     } else if (o->oBehParams2ndByte == 2) {
-        if (!(save_file_get_flags() & (SAVE_FLAG_HAVE_KEY_2 | SAVE_FLAG_UNLOCKED_UPSTAIRS_DOOR))) {
+        if ((save_file_get_flags() & 0xa0) == 0)
             o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-        }
     }
 }
 
@@ -55,27 +40,21 @@ void one_up_loop_in_air(void) {
 }
 
 void pole_1up_move_towards_mario(void) {
-    struct Object* player = nearest_player_to_object(o);
-    if (player) {
-        f32 sp34 = player->header.gfx.pos[0] - o->oPosX;
-        f32 sp30 = player->header.gfx.pos[1] + 120.0f - o->oPosY;
-        f32 sp2C = player->header.gfx.pos[2] - o->oPosZ;
-        s16 sp2A = atan2s(sqrtf(sqr(sp34) + sqr(sp2C)), sp30);
+    f32 sp34 = gMarioObject->header.gfx.pos[0] - o->oPosX;
+    f32 sp30 = gMarioObject->header.gfx.pos[1] + 120.0f - o->oPosY;
+    f32 sp2C = gMarioObject->header.gfx.pos[2] - o->oPosZ;
+    s16 sp2A = atan2s(sqrtf(sqr(sp34) + sqr(sp2C)), sp30);
 
-        obj_turn_toward_object(o, player, 16, 0x1000);
-        o->oMoveAnglePitch = approach_s16_symmetric(o->oMoveAnglePitch, sp2A, 0x1000);
-    }
+    obj_turn_toward_object(o, gMarioObject, 16, 0x1000);
+    o->oMoveAnglePitch = approach_s16_symmetric(o->oMoveAnglePitch, sp2A, 0x1000);
     o->oVelY = sins(o->oMoveAnglePitch) * 30.0f;
     o->oForwardVel = coss(o->oMoveAnglePitch) * 30.0f;
     bhv_1up_interact();
 }
 
 void one_up_move_away_from_mario(s16 sp1A) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 angleToPlayer = player ? obj_angle_to_object(o, player) : 0;
-
     o->oForwardVel = 8.0f;
-    o->oMoveAngleYaw = angleToPlayer + 0x8000;
+    o->oMoveAngleYaw = o->oAngleToMario + 0x8000;
     bhv_1up_interact();
     if (sp1A & 0x02)
         o->oAction = 2;
@@ -93,7 +72,7 @@ void bhv_1up_walking_loop(void) {
                 spawn_object(o, MODEL_NONE, bhvSparkleSpawn);
 
             if (o->oTimer == 0)
-                play_sound(SOUND_GENERAL2_1UP_APPEAR, gGlobalSoundSource);
+                play_sound(SOUND_GENERAL2_1UP_APPEAR, gDefaultSoundArgs);
 
             one_up_loop_in_air();
 
@@ -130,7 +109,7 @@ void bhv_1up_running_away_loop(void) {
                 spawn_object(o, MODEL_NONE, bhvSparkleSpawn);
 
             if (o->oTimer == 0)
-                play_sound(SOUND_GENERAL2_1UP_APPEAR, gGlobalSoundSource);
+                play_sound(SOUND_GENERAL2_1UP_APPEAR, gDefaultSoundArgs);
 
             one_up_loop_in_air();
 
@@ -236,7 +215,7 @@ void bhv_1up_hidden_loop(void) {
                 o->oVelY = 40.0f;
                 o->oAction = 3;
                 o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
-                play_sound(SOUND_GENERAL2_1UP_APPEAR, gGlobalSoundSource);
+                play_sound(SOUND_GENERAL2_1UP_APPEAR, gDefaultSoundArgs);
             }
             break;
 
@@ -269,14 +248,14 @@ void bhv_1up_hidden_loop(void) {
 }
 
 void bhv_1up_hidden_trigger_loop(void) {
-    struct Object* player = nearest_player_to_object(o);
-    if (player && player == gMarioStates[0].marioObj && obj_check_if_collided_with_object(o, player) == 1) {
-        struct Object *hiddenObj = cur_obj_nearest_object_with_behavior(bhvHidden1up);
-        if (hiddenObj != NULL) {
-            hiddenObj->o1UpHiddenUnkF4++;
-        }
+    struct Object *sp1C;
+    if (obj_check_if_collided_with_object(o, gMarioObject) == 1) {
+        sp1C = cur_obj_nearest_object_with_behavior(bhvHidden1up);
+        if (sp1C != NULL)
+            sp1C->o1UpHiddenUnkF4++;
+
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-     }
+    }
 }
 
 void bhv_1up_hidden_in_pole_loop(void) {
@@ -288,7 +267,7 @@ void bhv_1up_hidden_in_pole_loop(void) {
                 o->oVelY = 40.0f;
                 o->oAction = 3;
                 o->header.gfx.node.flags &= ~GRAPH_RENDER_INVISIBLE;
-                play_sound(SOUND_GENERAL2_1UP_APPEAR, gGlobalSoundSource);
+                play_sound(SOUND_GENERAL2_1UP_APPEAR, gDefaultSoundArgs);
             }
             break;
 
@@ -314,34 +293,26 @@ void bhv_1up_hidden_in_pole_loop(void) {
 }
 
 void bhv_1up_hidden_in_pole_trigger_loop(void) {
-    struct Object* player = nearest_player_to_object(o);
-    if (player && player == gMarioStates[0].marioObj && obj_check_if_collided_with_object(o, player) == 1) {
-        struct Object *hiddenObj = cur_obj_nearest_object_with_behavior(bhvHidden1upInPole);
-        if (hiddenObj != NULL) {
-            hiddenObj->o1UpHiddenUnkF4++;
+    struct Object *sp1C;
+
+    if (obj_check_if_collided_with_object(o, gMarioObject) == 1) {
+        sp1C = cur_obj_nearest_object_with_behavior(bhvHidden1upInPole);
+        if (sp1C != NULL) {
+            sp1C->o1UpHiddenUnkF4++;
+            ;
         }
+
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;
     }
 }
 
 void bhv_1up_hidden_in_pole_spawner_loop(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-    if (player && player == gMarioStates[0].marioObj && distanceToPlayer < 700) {
-        struct Object* spawn_objects[3];
-        u32 models[3];
+    s8 sp2F;
 
-        spawn_objects[0] = spawn_object_relative(2, 0, 50, 0, o, MODEL_1UP, bhvHidden1upInPole);
-        models[0] = MODEL_1UP;
-
-        for (s8 sp2F = 0; sp2F < 2; sp2F++) {
-            spawn_objects[1 + sp2F] = spawn_object_relative(0, 0, sp2F * -200, 0, o, MODEL_NONE, bhvHidden1upInPoleTrigger);
-            models[1 + sp2F] = MODEL_NONE;
-        }
-
-        for (s32 i = 0; i < 3; i++) {
-            if (spawn_objects[i] == NULL) { continue; }
-            spawn_objects[i]->parentObj = spawn_objects[i];
+    if (is_point_within_radius_of_mario(o->oPosX, o->oPosY, o->oPosZ, 700)) {
+        spawn_object_relative(2, 0, 50, 0, o, MODEL_1UP, bhvHidden1upInPole);
+        for (sp2F = 0; sp2F < 2; sp2F++) {
+            spawn_object_relative(0, 0, sp2F * -200, 0, o, MODEL_NONE, bhvHidden1upInPoleTrigger);
         }
 
         o->activeFlags = ACTIVE_FLAG_DEACTIVATED;

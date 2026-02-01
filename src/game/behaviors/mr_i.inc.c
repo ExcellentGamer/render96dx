@@ -33,27 +33,20 @@ void mr_i_piranha_particle_act_1(void) {
 void (*sMrIParticleActions[])(void) = { mr_i_piranha_particle_act_0, mr_i_piranha_particle_act_1 };
 
 void bhv_mr_i_particle_loop(void) {
-    CUR_OBJ_CALL_ACTION_FUNCTION(sMrIParticleActions);
+    cur_obj_call_action_function(sMrIParticleActions);
 }
 
 void spawn_mr_i_particle(void) {
     struct Object *particle;
     f32 sp18 = o->header.gfx.scale[1];
     particle = spawn_object(o, MODEL_PURPLE_MARBLE, bhvMrIParticle);
-    if (particle != NULL) {
-        particle->oPosY += 50.0f * sp18;
-        particle->oPosX += sins(o->oMoveAngleYaw) * 90.0f * sp18;
-        particle->oPosZ += coss(o->oMoveAngleYaw) * 90.0f * sp18;
-    }
-
+    particle->oPosY += 50.0f * sp18;
+    particle->oPosX += sins(o->oMoveAngleYaw) * 90.0f * sp18;
+    particle->oPosZ += coss(o->oMoveAngleYaw) * 90.0f * sp18;
     cur_obj_play_sound_2(SOUND_OBJ_MRI_SHOOT);
 }
 
 void bhv_mr_i_body_loop(void) {
-    if (!o->parentObj) {
-        obj_mark_for_deletion(o);
-        return;
-    }
     obj_copy_pos_and_angle(o, o->parentObj);
     if (!(o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM)) {
         obj_copy_scale(o, o->parentObj);
@@ -116,8 +109,7 @@ void mr_i_act_3(void) {
             o->oMrISize = sp1C * 0.6;
             if (o->oBehParams2ndByte) {
                 o->oPosY += 100.0f;
-                f32* starPos = gLevelValues.starPositions.MrIStarPos;
-                spawn_default_star(starPos[0], starPos[1], starPos[2]);
+                spawn_default_star(1370, 2000.0f, -320.0f);
                 obj_mark_for_deletion(o);
             } else
                 cur_obj_spawn_loot_blue_coin();
@@ -131,9 +123,6 @@ void mr_i_act_3(void) {
 }
 
 void mr_i_act_2(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-    struct Object* player = marioState ? marioState->marioObj : NULL;
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
     s16 sp1E;
     s16 sp1C;
     sp1E = o->oMoveAngleYaw;
@@ -146,10 +135,8 @@ void mr_i_act_2(void) {
         o->oMrIUnk100 = 0;
         o->oMrIUnk104 = 0;
     }
-    if (player) {
-        obj_turn_toward_object(o, player, 0x10, 0x800);
-        obj_turn_toward_object(o, player, 0x0F, 0x400);
-    }
+    obj_turn_toward_object(o, gMarioObject, 0x10, 0x800);
+    obj_turn_toward_object(o, gMarioObject, 0x0F, 0x400);
     sp1C = sp1E - (s16)(o->oMoveAngleYaw);
     if (!sp1C) {
         o->oMrIUnkFC = 0;
@@ -180,9 +167,7 @@ void mr_i_act_2(void) {
         if (o->oMrIUnk104 == o->oMrIUnk108)
             o->oMrIUnk110 = 1;
         if (o->oMrIUnk104 == o->oMrIUnk108 + 20) {
-            if (marioState && marioState->playerIndex == 0) {
-                spawn_mr_i_particle();
-            }
+            spawn_mr_i_particle();
             o->oMrIUnk104 = 0;
             o->oMrIUnk108 = (s32)(random_float() * 50.0f + 50.0f);
         }
@@ -191,20 +176,17 @@ void mr_i_act_2(void) {
         o->oMrIUnk104 = 0;
         o->oMrIUnk108 = (s32)(random_float() * 50.0f + 50.0f);
     }
-    if (distanceToPlayer > 800.0f)
+    if (o->oDistanceToMario > 800.0f)
         o->oAction = 1;
 }
 
 void mr_i_act_1(void) {
-    struct MarioState* marioState = nearest_mario_state_to_object(o);
-    struct Object* player = marioState ? marioState->marioObj : NULL;
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
     s16 sp1E;
     s16 sp1C;
     s16 sp1A;
-    sp1E = player ? obj_angle_to_object(o, player) : 0;
-    sp1C = player ? abs_angle_diff(o->oMoveAngleYaw, sp1E) : 0;
-    sp1A = player ? abs_angle_diff(o->oMoveAngleYaw, player->oFaceAngleYaw) : 0;
+    sp1E = obj_angle_to_object(o, gMarioObject);
+    sp1C = abs_angle_diff(o->oMoveAngleYaw, sp1E);
+    sp1A = abs_angle_diff(o->oMoveAngleYaw, gMarioObject->oFaceAngleYaw);
     if (o->oTimer == 0) {
         cur_obj_become_tangible();
         o->oMoveAnglePitch = 0;
@@ -216,13 +198,10 @@ void mr_i_act_1(void) {
             o->oAngleVelYaw = 256;
     }
     if (sp1C < 1024 && sp1A > 0x4000) {
-        if (distanceToPlayer < 700.0f) {
-            if (marioState && marioState->playerIndex == 0) {
-                o->oAction = 2;
-            }
-        } else {
+        if (o->oDistanceToMario < 700.0f)
+            o->oAction = 2;
+        else
             o->oMrIUnk104++;
-        }
     } else {
         o->oMoveAngleYaw += o->oAngleVelYaw;
         o->oMrIUnk104 = 30;
@@ -232,16 +211,11 @@ void mr_i_act_1(void) {
     if (o->oMrIUnk108 + 80 < o->oMrIUnk104) {
         o->oMrIUnk104 = 0;
         o->oMrIUnk108 = random_float() * 80.0f;
-        if (marioState && marioState->playerIndex == 0) {
-            spawn_mr_i_particle();
-        }
+        spawn_mr_i_particle();
     }
 }
 
 void mr_i_act_0(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-
 #ifndef VERSION_JP
     obj_set_angle(o, 0, 0, 0);
 #else
@@ -252,34 +226,29 @@ void mr_i_act_0(void) {
     cur_obj_scale(o->oBehParams2ndByte + 1);
     if (o->oTimer == 0)
         cur_obj_set_pos_to_home();
-    if (distanceToPlayer < 1500.0f)
+    if (o->oDistanceToMario < 1500.0f)
         o->oAction = 1;
 }
 
 void (*sMrIActions[])(void) = { mr_i_act_0, mr_i_act_1, mr_i_act_2, mr_i_act_3 };
 
 struct ObjectHitbox sMrIHitbox = {
-    .interactType = INTERACT_DAMAGE,
-    .downOffset = 0,
-    .damageOrCoinValue = 2,
-    .health = 2,
-    .numLootCoins = 5,
-    .radius = 80,
-    .height = 150,
-    .hurtboxRadius = 0,
-    .hurtboxHeight = 0,
+    /* interactType: */ INTERACT_DAMAGE,
+    /* downOffset: */ 0,
+    /* damageOrCoinValue: */ 2,
+    /* health: */ 2,
+    /* numLootCoins: */ 5,
+    /* radius: */ 80,
+    /* height: */ 150,
+    /* hurtboxRadius: */ 0,
+    /* hurtboxHeight: */ 0,
 };
 
 void bhv_mr_i_loop(void) {
-    struct Object* player = nearest_player_to_object(o);
-    s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
-
     obj_set_hitbox(o, &sMrIHitbox);
-    CUR_OBJ_CALL_ACTION_FUNCTION(sMrIActions);
-    if (o->oAction != 3) {
-        if (distanceToPlayer > 3000.0f || o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM) {
+    cur_obj_call_action_function(sMrIActions);
+    if (o->oAction != 3)
+        if (o->oDistanceToMario > 3000.0f || o->activeFlags & ACTIVE_FLAG_IN_DIFFERENT_ROOM)
             o->oAction = 0;
-        }
-    }
     o->oInteractStatus = 0;
 }

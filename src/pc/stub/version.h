@@ -19,13 +19,13 @@
 #endif
 
 #ifdef DEVELOPMENT
-#define GAME_NAME "sm64coopdx-dev"
+#define GAME_NAME "render96dx-dev"
 #define WINDOW_NAME "Render96 Deluxe (DEV)"
 #elif !defined(VERSION_US)
-#define GAME_NAME "sm64coopdx-intl"
+#define GAME_NAME "render96dx-intl"
 #define WINDOW_NAME "Render96 Deluxe (INTL)"
 #else
-#define GAME_NAME "sm64coopdx"
+#define GAME_NAME "render96dx"
 #define WINDOW_NAME "Render96 Deluxe"
 #endif
 

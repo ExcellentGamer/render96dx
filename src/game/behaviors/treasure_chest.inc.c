@@ -136,11 +136,10 @@ struct Object* spawn_treasure_chest(s8 index, s32 x, s32 y, s32 z, s16 r) {
 }
 
 void bhv_treasure_chest_ship_init(void) {
-    struct Object *chests[3] = { 0 };
-    chests[0] = spawn_treasure_chest(1, 400, -350, -2700, 0);
-    chests[1] = spawn_treasure_chest(2, 650, -350, -940, -0x6001);
-    chests[2] = spawn_treasure_chest(3, -550, -350, -770, 0x5FFF);
-    chests[3] = spawn_treasure_chest(4, 100, -350, -1700, 0);
+    spawn_treasure_chest(1, 400, -350, -2700, 0);
+    spawn_treasure_chest(2, 650, -350, -940, -0x6001);
+    spawn_treasure_chest(3, -550, -350, -770, 0x5FFF);
+    spawn_treasure_chest(4, 100, -350, -1700, 0);
     
     o->oTreasureChestCurrentAnswer = 1;
     o->oTreasureChestIsAboveWater = 0;
@@ -184,11 +183,10 @@ void bhv_treasure_chest_ship_loop(void) {
 }
 
 void bhv_treasure_chest_jrb_init(void) {
-    struct Object *chests[3] = { 0 };
-    chests[0] = spawn_treasure_chest(1, -1700, -2812, -1150, 0x7FFF);
-    chests[1] = spawn_treasure_chest(2, -1150, -2812, -1550, 0x7FFF);
-    chests[2] = spawn_treasure_chest(3, -2400, -2812, -1800, 0x7FFF);
-    chests[3] = spawn_treasure_chest(4, -1800, -2812, -2100, 0x7FFF);
+    spawn_treasure_chest(1, -1700, -2812, -1150, 0x7FFF);
+    spawn_treasure_chest(2, -1150, -2812, -1550, 0x7FFF);
+    spawn_treasure_chest(3, -2400, -2812, -1800, 0x7FFF);
+    spawn_treasure_chest(4, -1800, -2812, -2100, 0x7FFF);
     
     o->oTreasureChestCurrentAnswer = 1;
     o->oTreasureChestIsAboveWater = 1;
@@ -227,11 +225,10 @@ void bhv_treasure_chest_jrb_loop(void) {
 }
 
 void bhv_treasure_chest_init(void) {
-    struct Object *chests[3] = { 0 };
-    chests[0] = spawn_treasure_chest(1, -4500, -5119, 1300, -0x6001);
-    chests[1] = spawn_treasure_chest(2, -1800, -5119, 1050, 0x1FFF);
-    chests[2] = spawn_treasure_chest(3, -4500, -5119, -1100, 9102);
-    chests[3] = spawn_treasure_chest(4, -2400, -4607, 125, 16019);
+    spawn_treasure_chest(1, -4500, -5119, 1300, -0x6001);
+    spawn_treasure_chest(2, -1800, -5119, 1050, 0x1FFF);
+    spawn_treasure_chest(3, -4500, -5119, -1100, 9102);
+    spawn_treasure_chest(4, -2400, -4607, 125, 16019);
 
     o->oTreasureChestCurrentAnswer = 1;
     o->oTreasureChestIsAboveWater = 0;

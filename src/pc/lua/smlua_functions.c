@@ -1000,13 +1000,7 @@ void smlua_bind_functions(void) {
     smlua_bind_function(L, "table_copy", smlua_func_table_copy);
     smlua_bind_function(L, "table_deepcopy", smlua_func_table_deepcopy);
     smlua_bind_function(L, "init_mario_after_warp", smlua_func_init_mario_after_warp);
-    smlua_bind_function(L, "network_init_object", smlua_func_network_init_object);
-    smlua_bind_function(L, "network_send_object", smlua_func_network_send_object);
     smlua_bind_function(L, "reset_level", smlua_func_reset_level);
-    smlua_bind_function(L, "network_send", smlua_func_network_send);
-    smlua_bind_function(L, "network_send_to", smlua_func_network_send_to);
-    smlua_bind_function(L, "network_send_bytestring", smlua_func_network_send_bytestring);
-    smlua_bind_function(L, "network_send_bytestring_to", smlua_func_network_send_bytestring_to);
     smlua_bind_function(L, "set_exclamation_box_contents", smlua_func_set_exclamation_box_contents);
     smlua_bind_function(L, "get_exclamation_box_contents", smlua_func_get_exclamation_box_contents);
     smlua_bind_function(L, "get_texture_info", smlua_func_get_texture_info);

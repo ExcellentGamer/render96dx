@@ -76,29 +76,20 @@ static void djui_panel_staff_roll(UNUSED struct DjuiBase* caller) {
     if (configMenuStaffRoll && gMainMenuSounds[configMenuSound].sound == STAGE_MUSIC) {
         configMenuSound = 0;
     }
-    // restart djui back to this menu
-    djui_panel_shutdown();
-    gDjuiInMainMenu = true;
-    djui_panel_main_create(NULL);
-    djui_panel_options_create(NULL);
-    djui_panel_misc_create(NULL);
-    djui_panel_main_menu_create(NULL);
+    if (gDjuiPanelPauseCreated) {
+        djui_panel_shutdown();
+        djui_panel_pause_create(NULL);
+        djui_panel_options_create(NULL);
+        djui_panel_misc_create(NULL);
+        djui_panel_main_menu_create(NULL);
+    }
 }
 
 extern bool gDjuiChangingTheme;
 static void djui_panel_menu_options_djui_setting_change(UNUSED struct DjuiBase* caller) {
     gDjuiChangingTheme = true;
-    if (gDjuiInMainMenu) {
+    if (gDjuiPanelPauseCreated) {
         djui_panel_shutdown();
-        gDjuiInMainMenu = true;
-        djui_panel_modlist_create(NULL);
-        djui_panel_main_create(NULL);
-        djui_panel_options_create(NULL);
-        djui_panel_misc_create(NULL);
-        djui_panel_main_menu_create(NULL);
-    } else if (gDjuiPanelPauseCreated) {
-        djui_panel_shutdown();
-        djui_panel_modlist_create(NULL);
         djui_panel_pause_create(NULL);
         djui_panel_options_create(NULL);
         djui_panel_misc_create(NULL);

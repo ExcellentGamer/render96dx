@@ -350,12 +350,6 @@ void network_shutdown(UNUSED bool sendLeaving, bool exiting, UNUSED bool popup, 
     init_mario_from_save_file();
 
     djui_panel_shutdown();
-    if (!sNetworkRestarting) {
-        if (!gDjuiInMainMenu) {
-            gDjuiInMainMenu = true;
-            djui_panel_main_create(NULL);
-        }
-    }
     djui_lua_error_clear();
 
     packet_ordered_clear_all();

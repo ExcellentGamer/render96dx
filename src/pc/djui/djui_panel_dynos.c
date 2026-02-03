@@ -7,6 +7,7 @@
 #include "pc/network/network.h"
 #include "djui_panel_main.h"
 #include "djui_panel_options.h"
+#include "djui_panel_pause.h"
 #include "game/level_update.h"
 
 void djui_panel_dynos_create(struct DjuiBase* caller);
@@ -25,9 +26,7 @@ static void djui_panel_dynos_refresh(UNUSED struct DjuiBase* base) {
     dynos_gfx_init();
 
     djui_panel_shutdown();
-    gDjuiInMainMenu = true;
-    djui_panel_main_create(NULL);
-    djui_panel_options_create(NULL);
+    djui_panel_pause_create(NULL);
     djui_panel_dynos_create(NULL);
 }
 

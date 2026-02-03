@@ -10941,53 +10941,8 @@ BAD_RETURN(s32) cutscene_door_mode(struct Camera *c) {
 extern struct DjuiText* gDjuiPaletteToggle;
 void cutscene_palette_editor(struct Camera *c) {
     if (!c) { return; }
-    struct MarioState* m = gMarioState;
-
-    // Init cap state
-    // Ensures that Mario regains his correct cap state when exiting the palette editor
-    if (!c->paletteEditorCapState) {
-        c->paletteEditorCapState = (m->flags & MARIO_CAP_ON_HEAD) ? 1 : 2;
-    }
-
-    if (!gDjuiInPlayerMenu) {
-        mario_exit_palette_editor(m, c);
-        gCutsceneTimer = CUTSCENE_STOP;
-        c->cutscene = 0;
-        skip_camera_interpolation();
-        return;
-    }
-
-    bool capMissing = !(m->flags & (MARIO_CAP_ON_HEAD | MARIO_CAP_IN_HAND));
-
-    // Press the Z bind to toggle cap
-    static bool pressed = false;
-    if (gInteractablePad.button & PAD_BUTTON_Z) {
-        if (!capMissing && !pressed && m->action == ACT_IDLE) {
-            set_mario_action(m, ACT_PALETTE_EDITOR_CAP, (m->flags & MARIO_CAP_ON_HEAD) != 0);
-        }
-        pressed = true;
-    } else {
-        pressed = false;
-    }
-
-    // Hide text if it is not possible to toggle cap
-    if (gDjuiPaletteToggle) {
-        djui_base_set_visible(
-            &gDjuiPaletteToggle->base,
-            (
-                m->action == ACT_IDLE ||
-                m->action == ACT_PALETTE_EDITOR_CAP 
-            ) && !capMissing
-        );
-    }
-
-    c->pos[0] = m->pos[0] + (0x200 * sins(m->faceAngle[1]));
-    c->pos[1] = m->pos[1] + 0x80;
-    c->pos[2] = m->pos[2] + (0x200 * coss(m->faceAngle[1]));
-
-    c->focus[0] = m->pos[0];
-    c->focus[1] = m->pos[1] + 0x80;
-    c->focus[2] = m->pos[2];
+    gCutsceneTimer = CUTSCENE_STOP;
+    c->cutscene = 0;
 }
 
 /******************************************************************************************************
@@ -11865,7 +11820,6 @@ void play_cutscene(struct Camera *c) {
         CUTSCENE(CUTSCENE_RACE_DIALOG, sCutsceneDialog)
         CUTSCENE(CUTSCENE_ENTER_PYRAMID_TOP, sCutsceneEnterPyramidTop)
         CUTSCENE(CUTSCENE_SSL_PYRAMID_EXPLODE, sCutscenePyramidTopExplode)
-        CUTSCENE(CUTSCENE_PALETTE_EDITOR, sCutscenePaletteEditor)
     }
 
 #undef CUTSCENE

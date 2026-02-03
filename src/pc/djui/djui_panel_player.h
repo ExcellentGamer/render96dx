@@ -2,3 +2,4 @@
 #include "djui.h"
 
 void djui_panel_player_create(struct DjuiBase* caller);
+void djui_panel_character_create(struct DjuiBase* caller);

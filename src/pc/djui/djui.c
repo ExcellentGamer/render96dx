@@ -144,9 +144,7 @@ void djui_init_late(void) {
 }
 
 void djui_connect_menu_open(void) {
-    djui_panel_shutdown();
-    gDjuiInMainMenu = true;
-    djui_panel_main_create(NULL);
+    return;
 }
 
 void djui_lua_error(char* text, struct DjuiColor color) {

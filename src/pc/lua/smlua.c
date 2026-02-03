@@ -332,11 +332,42 @@ void smlua_init(void) {
     smlua_bind_cobject();
     smlua_bind_functions();
     smlua_bind_functions_autogen();
+
+    {
+        lua_State* L = gLuaState;
+        const char* nilGlobals[] = {
+            "mario_exit_palette_editor",
+            "network_player_get_palette_color_channel",
+            "network_player_get_override_palette_color_channel",
+            "network_player_set_override_palette_color",
+            "network_player_reset_override_palette",
+            "network_player_is_override_palette_same",
+            "network_player_color_to_palette",
+            "network_player_palette_to_color",
+        };
+        for (size_t i = 0; i < (sizeof(nilGlobals) / sizeof(nilGlobals[0])); i++) {
+            lua_pushnil(L);
+            lua_setglobal(L, nilGlobals[i]);
+        }
+    }
+
     smlua_bind_sync_table();
     smlua_init_require_system();
 
     extern char gSmluaConstants[];
     smlua_exec_str(gSmluaConstants);
+
+    {
+        lua_State* L = gLuaState;
+        const char* nilConstants[] = {
+            "CUTSCENE_PALETTE_EDITOR",
+            "ACT_PALETTE_EDITOR_CAP",
+        };
+        for (size_t i = 0; i < (sizeof(nilConstants) / sizeof(nilConstants[0])); i++) {
+            lua_pushnil(L);
+            lua_setglobal(L, nilConstants[i]);
+        }
+    }
 
     smlua_cobject_init_globals();
     smlua_model_util_initialize();

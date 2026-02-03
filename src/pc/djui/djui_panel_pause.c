@@ -43,11 +43,9 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
     struct DjuiThreePanel* panel = djui_panel_menu_create(DLANG(PAUSE, PAUSE_TITLE), false);
     struct DjuiBase* body = djui_three_panel_get_body(panel);
     {
-        struct DjuiRect* rect1 = djui_rect_container_create(body, 64);
-        {
-            djui_button_left_create(&rect1->base, DLANG(PAUSE, PLAYER), DJUI_BUTTON_STYLE_NORMAL, djui_panel_player_create);
-            djui_button_right_create(&rect1->base, DLANG(PAUSE, DYNOS_PACKS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_dynos_create);
-        }
+        djui_button_create(body, DLANG(PLAYER, MODEL), DJUI_BUTTON_STYLE_NORMAL, djui_panel_character_create);
+
+        djui_button_create(body, DLANG(PAUSE, DYNOS_PACKS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_dynos_create);
 
         struct DjuiButton* button3 = djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
         defaultBase = &button3->base;

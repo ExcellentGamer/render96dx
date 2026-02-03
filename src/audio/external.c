@@ -297,7 +297,7 @@ const u8 sBackgroundMusicDefaultVolumeDefault[35] = {
     80,  // SEQ_EVENT_CUTSCENE_VICTORY
     70,  // SEQ_EVENT_CUTSCENE_ENDING
     65,  // SEQ_MENU_FILE_SELECT
-    0,   // SEQ_EVENT_CUTSCENE_LAKITU (not in JP)
+    75,  // SEQ_EVENT_CUTSCENE_LAKITU (not in JP)
 };
 
 // Default volume for background music sequences (playing on player 0).
@@ -336,7 +336,7 @@ u8 sBackgroundMusicDefaultVolume[MAX_AUDIO_OVERRIDE] = {
     80,  // SEQ_EVENT_CUTSCENE_VICTORY
     70,  // SEQ_EVENT_CUTSCENE_ENDING
     65,  // SEQ_MENU_FILE_SELECT
-    0,   // SEQ_EVENT_CUTSCENE_LAKITU (not in JP)
+    75,  // SEQ_EVENT_CUTSCENE_LAKITU (not in JP)
     75,  // SEQ_???
     75,  // SEQ_???
     75,  // SEQ_???

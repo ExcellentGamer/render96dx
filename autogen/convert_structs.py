@@ -80,8 +80,6 @@ override_field_types = {
 override_field_mutable = {
     "NetworkPlayer": [
         "overrideModelIndex",
-        "overridePalette",
-        "overridePaletteIndex",
     ],
 }
 
@@ -89,7 +87,7 @@ override_field_invisible = {
     "Mod": [ "files", "showedScriptWarning" ],
     "Camera": [ "paletteEditorCapState" ],
     "MarioState": [ "visibleToEnemies" ],
-    "NetworkPlayer": [ "gag", "moderator", "discordId", "rxPacketHash", "rxSeqIds" ],
+    "NetworkPlayer": [ "gag", "moderator", "discordId", "rxPacketHash", "rxSeqIds", "palette", "overridePalette", "paletteIndex", "overridePaletteIndex", "overridePaletteIndexLp" ],
     "GraphNode": [ "_guard1", "_guard2", "padding" ],
     "GraphNodeRoot": ["unk15", "views"],
     "GraphNodeMasterList": [ "listHeads", "listTails" ],
@@ -104,7 +102,7 @@ override_field_invisible = {
 }
 
 override_field_deprecated = {
-    "NetworkPlayer": [ "paletteIndex", "overridePaletteIndex", "overridePaletteIndexLp" ],
+    "NetworkPlayer": [ ],
 }
 
 override_field_immutable = {
@@ -155,7 +153,7 @@ override_field_version_excludes = {
 override_allowed_structs = {
     "src/pc/network/network.h": [ "ServerSettings", "NametagsSettings" ],
     "src/pc/djui/djui_types.h": [ "DjuiColor" ],
-    "src/game/player_palette.h": [ "PlayerPalette" ],
+    "src/game/player_palette.h": [ ],
     "src/game/ingame_menu.h" : [ "DialogEntry" ],
     "include/PR/gbi.h": [ "Gfx", "Vtx" ],
 }

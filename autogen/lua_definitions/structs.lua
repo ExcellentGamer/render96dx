@@ -1276,7 +1276,6 @@
 --- @field public onRxSeqId integer
 --- @field public modelIndex integer
 --- @field public ping integer
---- @field public palette PlayerPalette
 --- @field public name string
 --- @field public description string
 --- @field public descriptionR integer
@@ -1285,10 +1284,6 @@
 --- @field public descriptionA integer
 --- @field public overrideLocation string
 --- @field public overrideModelIndex integer
---- @field public overridePalette PlayerPalette
---- @field public paletteIndex integer
---- @field public overridePaletteIndex integer
---- @field public overridePaletteIndexLp integer
 
 --- @class Object
 --- @field public header ObjectNode
@@ -2140,9 +2135,6 @@
 --- @field public unused integer
 --- @field public cameraEvent integer
 --- @field public usedObj Object
-
---- @class PlayerPalette
---- @field public parts Color[]
 
 --- @class RayIntersectionInfo
 --- @field public surface Surface

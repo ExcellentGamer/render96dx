@@ -1554,7 +1554,7 @@ static struct LuaObjectField sNametagsSettingsFields[LUA_NAMETAGS_SETTINGS_FIELD
     { "showSelfTag", LVT_BOOL, offsetof(struct NametagsSettings, showSelfTag), false, LOT_NONE, 1, sizeof(bool) },
 };
 
-#define LUA_NETWORK_PLAYER_FIELD_COUNT 32
+#define LUA_NETWORK_PLAYER_FIELD_COUNT 27
 static struct LuaObjectField sNetworkPlayerFields[LUA_NETWORK_PLAYER_FIELD_COUNT] = {
     { "connected",              LVT_BOOL,    offsetof(struct NetworkPlayer, connected),              true,  LOT_NONE,          1, sizeof(bool)                 },
     { "currActNum",             LVT_S16,     offsetof(struct NetworkPlayer, currActNum),             true,  LOT_NONE,          1, sizeof(s16)                  },
@@ -1581,11 +1581,6 @@ static struct LuaObjectField sNetworkPlayerFields[LUA_NETWORK_PLAYER_FIELD_COUNT
     { "onRxSeqId",              LVT_U8,      offsetof(struct NetworkPlayer, onRxSeqId),              true,  LOT_NONE,          1, sizeof(u8)                   },
     { "overrideLocation",       LVT_STRING,  offsetof(struct NetworkPlayer, overrideLocation),       true,  LOT_NONE,          1, sizeof(char)                 },
     { "overrideModelIndex",     LVT_U8,      offsetof(struct NetworkPlayer, overrideModelIndex),     false, LOT_NONE,          1, sizeof(u8)                   },
-    { "overridePalette",        LVT_COBJECT, offsetof(struct NetworkPlayer, overridePalette),        false, LOT_PLAYERPALETTE, 1, sizeof(struct PlayerPalette) },
-    { "overridePaletteIndex",   LVT_U8,      offsetof(struct NetworkPlayer, overridePaletteIndex),   false, LOT_NONE,          1, sizeof(u8)                   },
-    { "overridePaletteIndexLp", LVT_U8,      offsetof(struct NetworkPlayer, overridePaletteIndexLp), true,  LOT_NONE,          1, sizeof(u8)                   },
-    { "palette",                LVT_COBJECT, offsetof(struct NetworkPlayer, palette),                true,  LOT_PLAYERPALETTE, 1, sizeof(struct PlayerPalette) },
-    { "paletteIndex",           LVT_U8,      offsetof(struct NetworkPlayer, paletteIndex),           true,  LOT_NONE,          1, sizeof(u8)                   },
     { "ping",                   LVT_U32,     offsetof(struct NetworkPlayer, ping),                   true,  LOT_NONE,          1, sizeof(u32)                  },
     { "type",                   LVT_U8,      offsetof(struct NetworkPlayer, type),                   true,  LOT_NONE,          1, sizeof(u8)                   },
 };
@@ -2469,10 +2464,8 @@ static struct LuaObjectField sPlayerCameraStateFields[LUA_PLAYER_CAMERA_STATE_FI
     { "usedObj",      LVT_COBJECT_P, offsetof(struct PlayerCameraState, usedObj),      false, LOT_OBJECT, 1, sizeof(struct Object*) },
 };
 
-#define LUA_PLAYER_PALETTE_FIELD_COUNT 1
-static struct LuaObjectField sPlayerPaletteFields[LUA_PLAYER_PALETTE_FIELD_COUNT] = {
-    { "parts", LVT_COBJECT, offsetof(struct PlayerPalette, parts), true, LOT_COLOR, PLAYER_PART_MAX, sizeof(Color) },
-};
+#define LUA_PLAYER_PALETTE_FIELD_COUNT 0
+static struct LuaObjectField sPlayerPaletteFields[1] = { 0 };
 
 #define LUA_RAY_INTERSECTION_INFO_FIELD_COUNT 2
 static struct LuaObjectField sRayIntersectionInfoFields[LUA_RAY_INTERSECTION_INFO_FIELD_COUNT] = {

@@ -42,6 +42,7 @@
 #include "pc/lua/utils/smlua_text_utils.h"
 #include "menu/ingame_text.h"
 #include "pc/dialog_table.h"
+#include "object_list_processor.h"
 
 u16 gDialogColorFadeTimer;
 s8 gLastDialogLineNum;
@@ -1086,6 +1087,19 @@ void handle_special_dialog_text(s32 dialogID) { // dialog ID tables, in order
 
 static u8 *sOverrideDialogHookString = NULL;
 
+static bool sTotwcIntroDialogPausedPhysics = false;
+static u32 sTotwcIntroDialogSavedTimeStopState = 0;
+
+static void totwc_intro_dialog_restore_time_stop_state(void) {
+    if (!sTotwcIntroDialogPausedPhysics) { return; }
+
+    u32 mask = TIME_STOP_ENABLED | TIME_STOP_ALL_OBJECTS | TIME_STOP_ACTIVE;
+    gTimeStopState = (gTimeStopState & ~mask) | (sTotwcIntroDialogSavedTimeStopState & mask);
+
+    sTotwcIntroDialogPausedPhysics = false;
+    sTotwcIntroDialogSavedTimeStopState = 0;
+}
+
 bool handle_dialog_hook(s32 dialogId) {
     bool openDialogBox = true;
     const char *dialogTextOverride = NULL;
@@ -1136,6 +1150,8 @@ void create_dialog_box_with_response(s32 dialog) {
 
 void reset_dialog_render_state(void) {
     level_set_transition(0, NULL);
+
+    totwc_intro_dialog_restore_time_stop_state();
 
     if (gDialogBoxType == DIALOG_TYPE_ZOOM) {
         trigger_cutscene_dialog(2);
@@ -1893,10 +1909,22 @@ void render_dialog_entries(void) {
 #if defined(VERSION_US) || defined(VERSION_SH)
     s8 lowerBound = 0;
 #endif
+
+    bool wasTotwcIntroDialog = sTotwcIntroDialogPausedPhysics;
+    if (gDialogID == DIALOG_131 && !sTotwcIntroDialogPausedPhysics) {
+        sTotwcIntroDialogPausedPhysics = true;
+        sTotwcIntroDialogSavedTimeStopState = gTimeStopState;
+        set_time_stop_flags(TIME_STOP_ENABLED | TIME_STOP_ALL_OBJECTS);
+        gTimeStopState |= TIME_STOP_ACTIVE;
+    }
+
     struct DialogEntry *dialog = dialog_table_get(gDialogID);
 
     if (dialog == NULL) {
         gDialogID = DIALOG_NONE;
+        if (wasTotwcIntroDialog) {
+            totwc_intro_dialog_restore_time_stop_state();
+        }
         return;
     }
 
@@ -2024,6 +2052,10 @@ void render_dialog_entries(void) {
 #endif
     if (gLastDialogPageStrPos != -1 && gDialogBoxState == DIALOG_STATE_VERTICAL) {
         render_dialog_string_color(dialog->linesPerBox);
+    }
+
+    if (wasTotwcIntroDialog && gDialogID == DIALOG_NONE) {
+        totwc_intro_dialog_restore_time_stop_state();
     }
 }
 

@@ -6,4 +6,4 @@ struct ModCategory {
     const char* category;
 };
 
-void djui_panel_host_mods_create(struct DjuiBase* caller);
+void djui_panel_mods_create(struct DjuiBase* caller);

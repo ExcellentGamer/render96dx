@@ -299,20 +299,6 @@ static const struct ConfigOption options[] = {
 #endif
     // player settings
     {.name = "coop_player_model",              .type = CONFIG_TYPE_UINT,   .uintValue   = &configPlayerModel},
-    // coop settings
-    {.name = "amount_of_players",              .type = CONFIG_TYPE_UINT,   .uintValue   = &configAmountOfPlayers},
-    {.name = "bubble_death",                   .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBubbleDeath},
-    {.name = "coop_host_port",                 .type = CONFIG_TYPE_UINT,   .uintValue   = &configHostPort},
-    {.name = "coop_host_save_slot",            .type = CONFIG_TYPE_UINT,   .uintValue   = &configHostSaveSlot},
-    {.name = "coop_join_ip",                   .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configJoinIp, .maxStringLength = MAX_CONFIG_STRING},
-    {.name = "coop_join_port",                 .type = CONFIG_TYPE_UINT,   .uintValue   = &configJoinPort},
-    {.name = "coop_network_system",            .type = CONFIG_TYPE_UINT,   .uintValue   = &configNetworkSystem},
-    {.name = "coop_player_interaction",        .type = CONFIG_TYPE_UINT,   .uintValue   = &configPlayerInteraction},
-    {.name = "coop_player_knockback_strength", .type = CONFIG_TYPE_UINT,   .uintValue   = &configPlayerKnockbackStrength},
-    {.name = "coop_stay_in_level_after_star",  .type = CONFIG_TYPE_UINT,   .uintValue   = &configStayInLevelAfterStar},
-    {.name = "coop_nametags",                  .type = CONFIG_TYPE_BOOL,   .boolValue   = &configNametags},
-    {.name = "coop_mod_dev_mode",              .type = CONFIG_TYPE_BOOL,   .boolValue   = &configModDevMode},
-    {.name = "coop_bouncy_bounds",             .type = CONFIG_TYPE_UINT,   .uintValue   = &configBouncyLevelBounds},
     {.name = "skip_intro",                     .type = CONFIG_TYPE_BOOL,   .boolValue   = &configSkipIntro},
     {.name = "pause_anywhere",                 .type = CONFIG_TYPE_BOOL,   .boolValue   = &configPauseAnywhere},
     {.name = "coop_menu_staff_roll",           .type = CONFIG_TYPE_BOOL,   .boolValue   = &configMenuStaffRoll},
@@ -325,11 +311,6 @@ static const struct ConfigOption options[] = {
     {.name = "language",                       .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configLanguage, .maxStringLength = MAX_CONFIG_STRING},
     {.name = "force_4by3",                     .type = CONFIG_TYPE_BOOL,   .boolValue   = &configForce4By3},
     {.name = "dynos_local_player_model_only",  .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDynosLocalPlayerModelOnly},
-    // CoopNet settings
-    {.name = "coopnet_ip",                     .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configCoopNetIp, .maxStringLength = MAX_CONFIG_STRING},
-    {.name = "coopnet_port",                   .type = CONFIG_TYPE_UINT,   .uintValue   = &configCoopNetPort},
-    {.name = "coopnet_password",               .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configPassword, .maxStringLength = MAX_CONFIG_STRING},
-    {.name = "coopnet_dest",                   .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configDestId, .maxStringLength = MAX_CONFIG_STRING},
     // DJUI settings
     {.name = "djui_theme",                     .type = CONFIG_TYPE_UINT,   .uintValue   = &configDjuiTheme},
     {.name = "djui_theme_center",              .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDjuiThemeCenter},
@@ -378,6 +359,85 @@ void enable_queued_mods(void) {
         free(sQueuedEnableModsHead);
         sQueuedEnableModsHead = next;
     }
+}
+
+static bool configfile_read_legacy_multiplayer_option(char** tokens, int numTokens) {
+    if (tokens == NULL || numTokens < 2) { return false; }
+
+    if (strcmp(tokens[0], "amount_of_players") == 0) {
+        sscanf(tokens[1], "%u", &configAmountOfPlayers);
+        return true;
+    }
+    if (strcmp(tokens[0], "bubble_death") == 0) {
+        configBubbleDeath = (strcmp(tokens[1], "true") == 0);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_host_port") == 0) {
+        sscanf(tokens[1], "%u", &configHostPort);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_host_save_slot") == 0) {
+        sscanf(tokens[1], "%u", &configHostSaveSlot);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_join_ip") == 0) {
+        memset(configJoinIp, '\0', MAX_CONFIG_STRING);
+        snprintf(configJoinIp, MAX_CONFIG_STRING, "%s", tokens[1]);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_join_port") == 0) {
+        sscanf(tokens[1], "%u", &configJoinPort);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_network_system") == 0) {
+        sscanf(tokens[1], "%u", &configNetworkSystem);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_player_interaction") == 0) {
+        sscanf(tokens[1], "%u", &configPlayerInteraction);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_player_knockback_strength") == 0) {
+        sscanf(tokens[1], "%u", &configPlayerKnockbackStrength);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_stay_in_level_after_star") == 0) {
+        sscanf(tokens[1], "%u", &configStayInLevelAfterStar);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_nametags") == 0) {
+        configNametags = (strcmp(tokens[1], "true") == 0);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_mod_dev_mode") == 0) {
+        configModDevMode = (strcmp(tokens[1], "true") == 0);
+        return true;
+    }
+    if (strcmp(tokens[0], "coop_bouncy_bounds") == 0) {
+        sscanf(tokens[1], "%u", &configBouncyLevelBounds);
+        return true;
+    }
+    if (strcmp(tokens[0], "coopnet_ip") == 0) {
+        memset(configCoopNetIp, '\0', MAX_CONFIG_STRING);
+        snprintf(configCoopNetIp, MAX_CONFIG_STRING, "%s", tokens[1]);
+        return true;
+    }
+    if (strcmp(tokens[0], "coopnet_port") == 0) {
+        sscanf(tokens[1], "%u", &configCoopNetPort);
+        return true;
+    }
+    if (strcmp(tokens[0], "coopnet_password") == 0) {
+        memset(configPassword, '\0', MAX_CONFIG_STRING);
+        snprintf(configPassword, MAX_CONFIG_STRING, "%s", tokens[1]);
+        return true;
+    }
+    if (strcmp(tokens[0], "coopnet_dest") == 0) {
+        memset(configDestId, '\0', MAX_CONFIG_STRING);
+        snprintf(configDestId, MAX_CONFIG_STRING, "%s", tokens[1]);
+        return true;
+    }
+
+    return false;
 }
 
 static void enable_mod_read(char** tokens, UNUSED int numTokens) {
@@ -679,6 +739,11 @@ static void configfile_load_internal(const char *filename, bool* error) {
                         option = &options[i];
                         break;
                     }
+                }
+
+                // legacy multiplayer options (read-only)
+                if (option == NULL && configfile_read_legacy_multiplayer_option(tokens, numTokens)) {
+                    goto NEXT_OPTION;
                 }
 
                 // secret options

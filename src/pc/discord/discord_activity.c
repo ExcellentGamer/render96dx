@@ -4,16 +4,9 @@
 #include "pc/mods/mods.h"
 #include "pc/debuglog.h"
 #include "pc/utils/misc.h"
-#include "pc/djui/djui_panel_join_message.h"
-#ifdef COOPNET
-#include "pc/network/coopnet/coopnet.h"
-#endif
 
 extern struct DiscordApplication app;
 struct DiscordActivity sCurActivity = { 0 };
-static int sQueuedLobby = 0;
-static uint64_t sQueuedLobbyId = 0;
-static char sQueuedLobbyPassword[64] = "";
 
 static void on_activity_update_callback(UNUSED void* data, enum EDiscordResult result) {
     LOG_INFO("> on_activity_update_callback returned %d", result);
@@ -22,33 +15,8 @@ static void on_activity_update_callback(UNUSED void* data, enum EDiscordResult r
 
 static void on_activity_join(UNUSED void* data, const char* secret) {
     LOG_INFO("> on_activity_join, secret: %s", secret);
-    char *token;
-
-    // extract lobby type
-    token = strtok((char*)secret, ":");
-    if (strcmp(token, "coopnet") != 0) {
-        LOG_ERROR("Tried to join unrecognized lobby type: %s", token);
-        return;
-    }
-
-#ifdef COOPNET
-    // extract lobby ID
-    token = strtok(NULL, ":");
-    char* end;
-    u64 lobbyId = strtoull(token, &end, 10);
-
-    // extract lobby password
-    token = strtok(NULL, ":");
-    if (token == NULL) { token = ""; }
-
-    // join
-    if (gNetworkType != NT_NONE) {
-        network_shutdown(true, false, false, false);
-    }
-    sQueuedLobbyId = lobbyId;
-    snprintf(sQueuedLobbyPassword, 64, "%s", token);
-    sQueuedLobby = 2;
-#endif
+    (void)secret;
+    return;
 }
 
 static void on_activity_join_request_callback(UNUSED void* data, enum EDiscordResult result) {
@@ -98,17 +66,10 @@ void discord_activity_update(void) {
     snprintf(sCurActivity.assets.small_image, 128, "icon");
     snprintf(sCurActivity.assets.small_text, 128, "render96dx Icon");
 
-    if (gNetworkType != NT_NONE && gNetworkSystem) {
-        gNetworkSystem->get_lobby_id(sCurActivity.party.id, 128);
-        gNetworkSystem->get_lobby_secret(sCurActivity.secrets.join, 128);
-        sCurActivity.party.size.current_size = network_player_connected_count();
-        sCurActivity.party.size.max_size = gServerSettings.maxPlayers;
-    } else {
-        snprintf(sCurActivity.party.id, 128, "%s", "");
-        snprintf(sCurActivity.secrets.join, 128, "%s", "");
-        sCurActivity.party.size.current_size = 1;
-        sCurActivity.party.size.max_size = 1;
-    }
+    snprintf(sCurActivity.party.id, 128, "%s", "");
+    snprintf(sCurActivity.secrets.join, 128, "%s", "");
+    sCurActivity.party.size.current_size = 1;
+    sCurActivity.party.size.max_size = 1;
 
     if ((sCurActivity.party.size.current_size > 1 || configAmountOfPlayers == 1) && !gDjuiInMainMenu) {
         strcpy(sCurActivity.state, "Playing!");
@@ -166,7 +127,7 @@ void discord_activity_update_check(void) {
 
 struct IDiscordActivityEvents* discord_activity_initialize(void) {
     static struct IDiscordActivityEvents events = { 0 };
-    events.on_activity_join         = on_activity_join;
+    events.on_activity_join         = NULL;
     events.on_activity_join_request = on_activity_join_request;
     return &events;
 }

@@ -24,6 +24,51 @@ struct Mod* gLuaActiveMod = NULL;
 struct ModFile* gLuaActiveModFile = NULL;
 struct Mod* gLuaLastHookMod = NULL;
 
+static bool smlua_starts_with(const char* str, const char* prefix) {
+    if (str == NULL || prefix == NULL) { return false; }
+    while (*prefix) {
+        if (*str++ != *prefix++) { return false; }
+    }
+    return true;
+}
+
+static void smlua_nil_globals_with_prefix(lua_State* L, const char* prefix) {
+    if (L == NULL || prefix == NULL) { return; }
+
+    lua_pushglobaltable(L);
+    int globalIndex = lua_gettop(L);
+
+    lua_newtable(L);
+    int removeIndex = lua_gettop(L);
+    int removeCount = 1;
+
+    lua_pushnil(L);
+    while (lua_next(L, globalIndex) != 0) {
+        if (lua_type(L, -2) == LUA_TSTRING) {
+            const char* key = lua_tostring(L, -2);
+            if (smlua_starts_with(key, prefix)) {
+                lua_pushinteger(L, removeCount++);
+                lua_pushvalue(L, -2);
+                lua_settable(L, removeIndex);
+            }
+        }
+        lua_pop(L, 1);
+    }
+
+    for (int i = 1; i < removeCount; i++) {
+        lua_pushinteger(L, i);
+        lua_gettable(L, removeIndex);
+        const char* key = lua_tostring(L, -1);
+        if (key != NULL) {
+            lua_pushnil(L);
+            lua_setglobal(L, key);
+        }
+        lua_pop(L, 1);
+    }
+
+    lua_pop(L, 2);
+}
+
 void smlua_mod_error(void) {
     struct Mod* mod = gLuaActiveMod;
     if (mod == NULL) { mod = gLuaLastHookMod; }
@@ -332,6 +377,9 @@ void smlua_init(void) {
     smlua_bind_cobject();
     smlua_bind_functions();
     smlua_bind_functions_autogen();
+
+    smlua_nil_globals_with_prefix(L, "network_");
+    smlua_nil_globals_with_prefix(L, "get_network_player");
 
     {
         lua_State* L = gLuaState;

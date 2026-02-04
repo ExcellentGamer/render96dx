@@ -553,8 +553,6 @@ C_FILES           := $(filter-out \
   src/pc/djui/djui_panel_rules.c \
 ,$(C_FILES))
 
-C_FILES           += src/pc/djui/djui_panel_host_mods.c
-
 C_FILES           := $(filter-out \
   src/pc/network/%.c \
   src/pc/network/%/%.c \

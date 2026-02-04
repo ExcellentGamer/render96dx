@@ -8,6 +8,7 @@
 #include "djui_panel_misc.h"
 #include "djui_panel_menu.h"
 #include "djui_panel_dynos.h"
+#include "djui_panel_mods.h"
 #include "pc/network/network.h"
 #include "pc/utils/misc.h"
 #include "pc/pc_main.h"
@@ -27,6 +28,8 @@ void djui_panel_options_create(struct DjuiBase* caller) {
                 djui_button_left_create(&rect1->base, DLANG(PAUSE, PLAYER), DJUI_BUTTON_STYLE_NORMAL, djui_panel_player_create);
                 djui_button_right_create(&rect1->base, DLANG(PAUSE, DYNOS_PACKS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_dynos_create);
             }
+
+            djui_button_create(body, DLANG(HOST_MODS, MODS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_mods_create);
         }
         djui_button_create(body, DLANG(OPTIONS, CAMERA), DJUI_BUTTON_STYLE_NORMAL, djui_panel_camera_create);
         djui_button_create(body, DLANG(OPTIONS, CONTROLS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_controls_create);

@@ -206,9 +206,6 @@ struct Object *spawn_default_star(f32 x, f32 y, f32 z) {
     star = spawn_star(star, x, y, z);
     if (star != NULL) {
         star->oBehParams2ndByte = 0;
-        if (gNetworkType != NT_NONE) {
-            network_send_spawn_star(star, 0, x, y, z, behParams, UNKNOWN_GLOBAL_INDEX);
-        }
     }
     return star;
 }
@@ -226,9 +223,6 @@ struct Object *spawn_red_coin_cutscene_star(f32 x, f32 y, f32 z) {
     star = spawn_star(star, x, y, z);
     if (star != NULL) {
         star->oBehParams2ndByte = 1;
-        if (gNetworkType != NT_NONE) {
-            network_send_spawn_star(star, 1, x, y, z, behParams, UNKNOWN_GLOBAL_INDEX);
-        }
     }
     return star;
 }
@@ -247,9 +241,6 @@ struct Object *spawn_no_exit_star(f32 x, f32 y, f32 z) {
     if (star != NULL) {
         star->oBehParams2ndByte = 1;
         star->oInteractionSubtype |= INT_SUBTYPE_NO_EXIT;
-        if (gNetworkType != NT_NONE) {
-            network_send_spawn_star(star, 2, x, y, z, behParams, UNKNOWN_GLOBAL_INDEX);
-        }
     }
     return star;
 }

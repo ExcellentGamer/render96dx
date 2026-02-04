@@ -21,7 +21,6 @@
 #include "game/level_update.h"
 #include "pc/djui/djui_console.h"
 #include "pc/djui/djui_hud_utils.h"
-#include "pc/djui/djui_panel_playerlist.h"
 #include "pc/djui/djui_theme.h"
 #include "game/skybox.h"
 #include "pc/gfx/gfx_pc.h"
@@ -34,10 +33,6 @@
 
 #ifdef DISCORD_SDK
 #include "pc/discord/discord.h"
-#endif
-
-#ifdef COOPNET
-#include "pc/network/coopnet/coopnet.h"
 #endif
 
 static struct DateTime sDateTime;
@@ -72,7 +67,6 @@ s32 deref_s32_pointer(s32* pointer) {
 
 void djui_popup_create_global(const char* message, int lines) {
     djui_popup_create(message, lines);
-    network_send_global_popup(message, lines);
 }
 
 struct AllowDjuiPopupOverride {
@@ -100,16 +94,15 @@ void djui_reset_popup_disabled_override(void) {
 }
 
 bool djui_is_playerlist_open(void) {
-    return gDjuiPlayerList->base.visible;
+    return false;
 }
 
 bool djui_attempting_to_open_playerlist(void) {
-    return gAttemptingToOpenPlayerlist;
+    return false;
 }
 
 u8 djui_get_playerlist_page_index(void) {
-    extern u8 sPageIndex;
-    return sPageIndex;
+    return 0;
 }
 
 bool djui_is_chatbox_open(void) {
@@ -505,18 +498,8 @@ const char* get_local_discord_id(void) {
 }
 
 const char* get_coopnet_id(UNUSED s8 localIndex) {
-#ifdef COOPNET
-    if (!gNetworkSystem || gNetworkSystem != &gNetworkSystemCoopNet) { return "-1"; }
-    if (localIndex < 0 || localIndex >= MAX_PLAYERS) { return "-1"; }
-    struct NetworkPlayer* np = &gNetworkPlayers[localIndex];
-    if (np == NULL || !np->connected) { return "-1"; }
-    return gNetworkSystem->get_id_str(np->localIndex);
-#else
     return "-1";
-#endif
 }
-
-///
 
 f32 get_volume_master(void) {
     return gLuaVolumeMaster;

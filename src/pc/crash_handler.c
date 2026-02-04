@@ -23,7 +23,6 @@ char gLastRemoteBhv[256] = "";
 #include "gfx_dimensions.h"
 #include "pc/djui/djui.h"
 #include "pc/djui/djui_unicode.h"
-#include "pc/network/network.h"
 #include "pc/gfx/gfx_rendering_api.h"
 #include "pc/mods/mods.h"
 #include "pc/debuglog.h"
@@ -578,9 +577,6 @@ static void crash_handler(const int signalNum, siginfo_t *info, UNUSED ucontext_
 
     // Info
     crash_handler_add_info_str(&pText, 315, -4 + (8 * 0), "Arch", ARCHITECTURE_STR);
-    crash_handler_add_info_str(&pText, 315, -4 + (8 * 1), "Network", (gNetworkType == NT_SERVER) ? "Server" : "Client");
-    crash_handler_add_info_str(&pText, 315, -4 + (8 * 2), "System", (gNetworkSystem == NULL) ? "null" : gNetworkSystem->name);
-    crash_handler_add_info_int(&pText, 315, -4 + (8 * 3), "Players", network_player_connected_count());
 
     s32 syncObjects = 0;
     if (gGameInited) {
@@ -609,28 +605,6 @@ static void crash_handler(const int signalNum, siginfo_t *info, UNUSED ucontext_
             u8 g = (gPcDebug.lastModRun == mod) ? 0 : 0xFF;
             crash_handler_set_text(x, y, 0xFF, g, 200, "%.21s", mod->name);
             y += 8;
-        }
-    }
-
-    // Packets
-    crash_handler_set_text(335, 64, 0xFF, 0xFF, 0xFF, "%s", "Packets:");
-    {
-        s32 x = 335;
-        s32 y = 72;
-        u8 index = gDebugPacketOnBuffer;
-        for (s32 i = 0; i < 128; i++) {
-            u8 brightness = (gDebugPacketIdBuffer[index] * 5) % 200;
-            if (gDebugPacketSentBuffer[index]) {
-                crash_handler_set_text(x, y, 0xFF, 0xFF, brightness, "%02X", gDebugPacketIdBuffer[index]);
-            } else {
-                crash_handler_set_text(x, y, brightness, 0xFF, 0xFF, "%02X", gDebugPacketIdBuffer[index]);
-            }
-            index--;
-            y += 8;
-            if (y >= 72 + (16 * 8)) {
-                y = 72;
-                x += 10;
-            }
         }
     }
 

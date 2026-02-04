@@ -36,7 +36,6 @@ extern struct MarioState gMarioStates[];
 
 enum NetworkSystemType {
     NS_SOCKET,
-    NS_COOPNET,
     NS_MAX,
 };
 
@@ -107,9 +106,6 @@ extern struct ServerSettings gServerSettings;
 extern struct NametagsSettings gNametagsSettings;
 extern bool gNetworkSentJoin;
 extern u16 gNetworkRequestLocationTimer;
-extern u8 gDebugPacketIdBuffer[];
-extern u8 gDebugPacketSentBuffer[];
-extern u8 gDebugPacketOnBuffer;
 extern u32 gNetworkStartupTimer;
 
 // network.c
@@ -129,7 +125,6 @@ void network_rehost_begin(void);
 bool network_allow_mod_dev_mode(void);
 void network_mod_dev_mode_reload(void);
 void network_restart_game(void);
-void network_update(void);
 void network_shutdown(bool sendLeaving, bool exiting, bool popup, bool reconnecting);
 
 void enable_queued_dynos_packs(void);

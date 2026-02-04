@@ -241,6 +241,14 @@ void bully_act_level_death(void) {
                     lllTumblingBridge->oIntangibleTimer = 0;
                 }
             }
+
+            if (gCurrCourseNum == COURSE_LLL) {
+                f32* starPos = gLevelValues.starPositions.BigBullyTrioStarPos;
+                spawn_default_star(starPos[0], starPos[1], starPos[2]);
+            } else if (o->oBullySubtype == BULLY_STYPE_CHILL) {
+                f32* starPos = gLevelValues.starPositions.ChillBullyStarPos;
+                spawn_default_star(starPos[0], starPos[1], starPos[2]);
+            }
         }
     }
 }
@@ -324,6 +332,11 @@ void bhv_big_bully_with_minions_init(void) {
 void big_bully_spawn_star(void) {
     if (obj_lava_death() == 1) {
         spawn_mist_particles();
+
+        if (gCurrCourseNum == COURSE_LLL) {
+            f32* starPos = gLevelValues.starPositions.BigBullyStarPos;
+            spawn_default_star(starPos[0], starPos[1], starPos[2]);
+        }
     }
 }
 

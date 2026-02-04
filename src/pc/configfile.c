@@ -14,9 +14,7 @@
 #include "controller/controller_api.h"
 #include "fs/fs.h"
 #include "mods/mods.h"
-#include "pc/network/ban_list.h"
 #include "crash_handler.h"
-#include "pc/network/moderator_list.h"
 #include "debuglog.h"
 #include "djui/djui_hud_utils.h"
 #include "game/save_file.h"
@@ -160,11 +158,6 @@ struct PlayerPalette configPlayerPalette          = { { { 0x00, 0x00, 0xff }, { 
 // coop settings
 unsigned int configAmountOfPlayers                = 1;
 bool         configBubbleDeath                    = true;
-unsigned int configHostPort                       = DEFAULT_PORT;
-unsigned int configHostSaveSlot                   = 1;
-char         configJoinIp[MAX_CONFIG_STRING]      = "";
-unsigned int configJoinPort                       = DEFAULT_PORT;
-unsigned int configNetworkSystem                  = 0;
 unsigned int configPlayerInteraction              = 1;
 unsigned int configPlayerKnockbackStrength        = 25;
 unsigned int configStayInLevelAfterStar           = 0;
@@ -183,11 +176,6 @@ char         configLanguage[MAX_CONFIG_STRING]    = "";
 bool         configForce4By3                      = false;
 bool         configDynosLocalPlayerModelOnly      = false;
 unsigned int configPvpType                        = PLAYER_PVP_CLASSIC;
-// CoopNet settings
-char         configCoopNetIp[MAX_CONFIG_STRING]   = DEFAULT_COOPNET_IP;
-unsigned int configCoopNetPort                    = DEFAULT_COOPNET_PORT;
-char         configPassword[MAX_CONFIG_STRING]    = "";
-char         configDestId[MAX_CONFIG_STRING]      = "0";
 // DJUI settings
 unsigned int configDjuiTheme                      = DJUI_THEME_DARK;
 #ifdef HANDHELD
@@ -373,24 +361,18 @@ static bool configfile_read_legacy_multiplayer_option(char** tokens, int numToke
         return true;
     }
     if (strcmp(tokens[0], "coop_host_port") == 0) {
-        sscanf(tokens[1], "%u", &configHostPort);
         return true;
     }
     if (strcmp(tokens[0], "coop_host_save_slot") == 0) {
-        sscanf(tokens[1], "%u", &configHostSaveSlot);
         return true;
     }
     if (strcmp(tokens[0], "coop_join_ip") == 0) {
-        memset(configJoinIp, '\0', MAX_CONFIG_STRING);
-        snprintf(configJoinIp, MAX_CONFIG_STRING, "%s", tokens[1]);
         return true;
     }
     if (strcmp(tokens[0], "coop_join_port") == 0) {
-        sscanf(tokens[1], "%u", &configJoinPort);
         return true;
     }
     if (strcmp(tokens[0], "coop_network_system") == 0) {
-        sscanf(tokens[1], "%u", &configNetworkSystem);
         return true;
     }
     if (strcmp(tokens[0], "coop_player_interaction") == 0) {
@@ -418,22 +400,23 @@ static bool configfile_read_legacy_multiplayer_option(char** tokens, int numToke
         return true;
     }
     if (strcmp(tokens[0], "coopnet_ip") == 0) {
-        memset(configCoopNetIp, '\0', MAX_CONFIG_STRING);
-        snprintf(configCoopNetIp, MAX_CONFIG_STRING, "%s", tokens[1]);
         return true;
     }
     if (strcmp(tokens[0], "coopnet_port") == 0) {
-        sscanf(tokens[1], "%u", &configCoopNetPort);
         return true;
     }
     if (strcmp(tokens[0], "coopnet_password") == 0) {
-        memset(configPassword, '\0', MAX_CONFIG_STRING);
-        snprintf(configPassword, MAX_CONFIG_STRING, "%s", tokens[1]);
         return true;
     }
     if (strcmp(tokens[0], "coopnet_dest") == 0) {
-        memset(configDestId, '\0', MAX_CONFIG_STRING);
-        snprintf(configDestId, MAX_CONFIG_STRING, "%s", tokens[1]);
+        return true;
+    }
+
+    if (strcmp(tokens[0], "ban:") == 0) {
+        return true;
+    }
+
+    if (strcmp(tokens[0], "moderator:") == 0) {
         return true;
     }
 
@@ -480,32 +463,6 @@ static void enable_mod_write(FILE* file) {
         if (mod == NULL) { continue; }
         if (!mod->enabled) { continue; }
         fprintf(file, "%s %s\n", "enable-mod:", mod->relativePath);
-    }
-}
-
-static void ban_read(char** tokens, UNUSED int numTokens) {
-    ban_list_add(tokens[1], true);
-}
-
-static void ban_write(FILE* file) {
-    for (unsigned int i = 0; i < gBanCount; i++) {
-        if (gBanAddresses == NULL) { break; }
-        if (gBanAddresses[i] == NULL) { continue; }
-        if (!gBanPerm[i]) { continue; }
-        fprintf(file, "%s %s\n", "ban:", gBanAddresses[i]);
-    }
-}
-
-static void moderator_read(char** tokens, UNUSED int numTokens) {
-    moderator_list_add(tokens[1], true);
-}
-
-static void moderator_write(FILE* file) {
-    for (unsigned int i = 0; i < gModeratorCount; i++) {
-        if (gModeratorAddresses == NULL) { break; }
-        if (gModeratorAddresses[i] == NULL) { continue; }
-        if (!gModerator[i]) { continue; }
-        fprintf(file, "%s %s\n", "moderator:", gModeratorAddresses[i]);
     }
 }
 
@@ -588,8 +545,6 @@ static void save_name_write(FILE* file) {
 
 static const struct FunctionConfigOption functionOptions[] = {
     { .name = "enable-mod:", .read = enable_mod_read, .write = enable_mod_write },
-    { .name = "ban:",        .read = ban_read,        .write = ban_write        },
-    { .name = "moderator:",  .read = moderator_read,  .write = moderator_write  },
     { .name = "dynos-pack:", .read = dynos_pack_read, .write = dynos_pack_write },
     { .name = "save-name:",  .read = save_name_read,  .write = save_name_write  }
 };
@@ -842,10 +797,6 @@ NEXT_OPTION:
     free(gCLIOpts.enableMods);
 
     configAmountOfPlayers = 1;
-
-#ifndef COOPNET
-    configNetworkSystem = NS_SOCKET;
-#endif
 }
 
 void configfile_load(void) {

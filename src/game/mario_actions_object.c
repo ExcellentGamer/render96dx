@@ -343,7 +343,6 @@ s32 act_picking_up_bowser(struct MarioState *m) {
             queue_rumble_data_mario(m, 5, 80);
             play_character_sound(m, CHAR_SOUND_HRMM);
             if (m->playerIndex == 0) {
-                network_send_object(m->heldObj);
             } else {
                 set_mario_action(m, ACT_IDLE, 0);
                 return FALSE;

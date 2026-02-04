@@ -12,7 +12,6 @@
 #include "rumble_init.h"
 #include "hardcoded.h"
 #include "macros.h"
-#include "pc/network/network.h"
 #include "pc/lua/utils/smlua_level_utils.h"
 #include "pc/utils/misc.h"
 
@@ -404,10 +403,7 @@ static void save_file_bswap(struct SaveBuffer *buf) {
 
 void save_file_do_save(s32 fileIndex, s8 forceSave) {
     if (INVALID_FILE_INDEX(fileIndex)) { return; }
-    if (gNetworkType != NT_SERVER) {
-        if (gNetworkType == NT_CLIENT) { network_send_save_file(fileIndex); return; }
-        else if (gNetworkType == NT_NONE && !forceSave) { return; }
-    }
+    (void)forceSave;
 
     if (fileIndex < 0 || fileIndex >= NUM_SAVE_FILES)
         return;
@@ -453,7 +449,6 @@ void save_file_reload(u8 loadAll) {
 
 void save_file_erase_current_backup_save(void) {
     if (INVALID_FILE_INDEX(gCurrSaveFileNum-1)) { return; }
-    if (gNetworkType != NT_SERVER) { return; }
 
     bzero(&gSaveBuffer.files[gCurrSaveFileNum - 1][1], sizeof(gSaveBuffer.files[gCurrSaveFileNum - 1][1]));
     save_file_reload(FALSE);
@@ -660,7 +655,6 @@ void save_file_set_flags(u32 flags) {
 
     gSaveBuffer.files[gCurrSaveFileNum - 1][gSaveFileUsingBackupSlot].flags |= (flags | SAVE_FLAG_FILE_EXISTS);
     gSaveFileModified = TRUE;
-    network_send_save_set_flag(gCurrSaveFileNum - 1, 0, 0, (flags | SAVE_FLAG_FILE_EXISTS));
 }
 
 void save_file_clear_flags(u32 flags) {
@@ -707,10 +701,8 @@ void save_file_set_star_flags(s32 fileIndex, s32 courseIndex, u32 starFlags) {
     if (INVALID_SRC_SLOT(gSaveFileUsingBackupSlot)) { return; }
     if (courseIndex == -1) {
         gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].flags |= STAR_FLAG_TO_SAVE_FLAG(starFlags);
-        network_send_save_set_flag(fileIndex, courseIndex, 0, (STAR_FLAG_TO_SAVE_FLAG(starFlags) | SAVE_FLAG_FILE_EXISTS));
     } else if (!INVALID_COURSE_STAR_INDEX(courseIndex)) {
         gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].courseStars[courseIndex] |= starFlags;
-        network_send_save_set_flag(fileIndex, courseIndex, starFlags, SAVE_FLAG_FILE_EXISTS);
     }
 
     gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].flags |= SAVE_FLAG_FILE_EXISTS;
@@ -723,11 +715,9 @@ void save_file_remove_star_flags(s32 fileIndex, s32 courseIndex, u32 starFlagsTo
 
     if (courseIndex == -1) {
         gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].flags &= ~STAR_FLAG_TO_SAVE_FLAG(starFlagsToRemove);
-        network_send_save_remove_flag(fileIndex, courseIndex, 0, STAR_FLAG_TO_SAVE_FLAG(starFlagsToRemove));
     }
     else if (!INVALID_COURSE_STAR_INDEX(courseIndex)) {
         gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].courseStars[courseIndex] &= ~starFlagsToRemove;
-        network_send_save_remove_flag(fileIndex, courseIndex, starFlagsToRemove, 0);
     }
 
     gSaveFileModified = TRUE;
@@ -777,7 +767,6 @@ void save_file_set_cannon_unlocked(void) {
     gSaveBuffer.files[gCurrSaveFileNum - 1][gSaveFileUsingBackupSlot].courseStars[gCurrCourseNum] |= 0x80;
     gSaveBuffer.files[gCurrSaveFileNum - 1][gSaveFileUsingBackupSlot].flags |= SAVE_FLAG_FILE_EXISTS;
     gSaveFileModified = TRUE;
-    network_send_save_set_flag(gCurrSaveFileNum - 1, gCurrCourseNum, 0x80, SAVE_FLAG_FILE_EXISTS);
 }
 
 void save_file_set_cap_pos(s16 x, s16 y, s16 z) {

@@ -349,10 +349,6 @@ void *audio_thread(UNUSED void *arg) {
 }
 
 void produce_one_frame(void) {
-    if (gNetworkType != NT_NONE) {
-        CTX_EXTENT(CTX_NETWORK, network_update);
-    }
-
     CTX_EXTENT(CTX_INTERP, patch_interpolations_before);
 
     CTX_EXTENT(CTX_GAME_LOOP, game_loop_one_iteration);
@@ -452,7 +448,7 @@ void* main_game_init(UNUSED void* dummy) {
     enable_queued_dynos_packs();
     sync_objects_init_system();
 
-    if (gCLIOpts.network != NT_SERVER && !gCLIOpts.skipUpdateCheck) {
+    if (!gCLIOpts.skipUpdateCheck) {
         check_for_updates();
     }
 

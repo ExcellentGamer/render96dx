@@ -36,7 +36,7 @@ static void smlua_sync_table_create(u16 modRemoteIndex, enum LuaSyncTableType ls
     lua_pop(L, 1); // pop global table
 }
 
-static bool smlua_sync_table_unwind(int syncTableIndex, int keyIndex) {
+static UNUSED bool smlua_sync_table_unwind(int syncTableIndex, int keyIndex) {
     lua_State* L = gLuaState;
     LUA_STACK_CHECK_BEGIN(L);
     sUnwoundLntsCount = 0;
@@ -71,7 +71,7 @@ static bool smlua_sync_table_unwind(int syncTableIndex, int keyIndex) {
         if (lst == LST_PLAYER) {
             struct LSTNetworkType* n = &sUnwoundLnts[sUnwoundLntsCount - 1];
             SOFT_ASSERT_RETURN(n->type == LST_NETWORK_TYPE_INTEGER, false);
-            n->value.integer = network_global_index_from_local(n->value.integer);
+            n->value.integer = n->value.integer;
         }
 
         lua_pop(L, 1); // pop _name value
@@ -165,6 +165,8 @@ static bool smlua_sync_table_send_field(u8 toLocalIndex, int stackIndex, bool al
     lua_State* L = gLuaState;
     LUA_STACK_CHECK_BEGIN(L);
 
+    (void)toLocalIndex;
+
     int syncTableIndex = stackIndex + 1;
     int keyIndex       = stackIndex + 2;
     int valueIndex     = stackIndex + 3;
@@ -237,6 +239,7 @@ static bool smlua_sync_table_send_field(u8 toLocalIndex, int stackIndex, bool al
         LOG_LUA_LINE("Error: tried to alter sync table with an invalid value");
         goto CLEANUP_STACK;
     }
+    (void)lntValue;
 
     // set value
     lua_getfield(L, syncTableIndex, "_table");
@@ -259,32 +262,12 @@ static bool smlua_sync_table_send_field(u8 toLocalIndex, int stackIndex, bool al
 
     // set seq number
     if (alterSeq) {
-        seq += MAX_PLAYERS + (MAX_PLAYERS - gNetworkPlayers[0].globalIndex);
+        seq += 1;
         lua_pushvalue(L, keyIndex);
         lua_pushinteger(L, seq);
         lua_settable(L, -3);
     }
     lua_pop(L, 1); // pop seq table
-
-
-      /////////////
-     // network //
-    /////////////
-
-    // unwind key + parent tables
-    if (!smlua_sync_table_unwind(syncTableIndex, keyIndex)) {
-        LOG_LUA_LINE("Error: failed to unwind sync table for sending over the network");
-        goto CLEANUP_STACK;
-    }
-
-    // send over the network
-    if (!gLuaInitializingScript) {
-        if (sUnwoundLntsCount < 2) {
-            LOG_ERROR("Sent sync table field packet with an invalid key count: %u", sUnwoundLntsCount);
-        } else {
-            network_send_lua_sync_table(toLocalIndex, seq, modRemoteIndex, sUnwoundLntsCount, sUnwoundLnts, &lntValue);
-        }
-    }
 
 
       ///////////////
@@ -379,7 +362,7 @@ void smlua_set_sync_table_field_from_network(u64 seq, u16 modRemoteIndex, u16 ln
             if (smlua_get_integer_field(-1, "_type") == LST_PLAYER) {
                 lua_pop(L, 1); // pop wrong table
                 SOFT_ASSERT(lntKeys[i].type == LST_NETWORK_TYPE_INTEGER);
-                lua_pushinteger(L, network_local_index_from_global(lntKeys[i].value.integer));
+                lua_pushinteger(L, lntKeys[i].value.integer);
                 lua_gettable(L, -2);
             }
         }
@@ -501,10 +484,12 @@ void smlua_bind_sync_table(void) {
 ////////////////////////////////////////////////
 
 
-static void smlua_sync_table_send_table(u8 toLocalIndex) {
+static UNUSED void smlua_sync_table_send_table(u8 toLocalIndex) {
     lua_State* L = gLuaState;
     LUA_STACK_CHECK_BEGIN(L);
     int tableIndex = lua_gettop(L);
+
+    (void)toLocalIndex;
 
     lua_getfield(L, -1, "_table");
     int internalIndex = lua_gettop(L);
@@ -530,11 +515,11 @@ static void smlua_sync_table_send_table(u8 toLocalIndex) {
     LUA_STACK_CHECK_END(L);
 }
 
-static void smlua_sync_table_send_all_file(u8 toLocalIndex, const char* path) {
+static UNUSED void smlua_sync_table_send_all_file(u8 toLocalIndex, const char* path) {
     lua_State* L = gLuaState;
     LUA_STACK_CHECK_BEGIN(L);
 
-    LOG_INFO("sending sync table for file %s to %u", path, toLocalIndex);
+    (void)toLocalIndex;
 
     lua_getfield(L, LUA_REGISTRYINDEX, path); // get the file's "global" table
     if (lua_type(L, -1) == LUA_TNIL) {
@@ -569,11 +554,5 @@ static void smlua_sync_table_send_all_file(u8 toLocalIndex, const char* path) {
 }
 
 void smlua_sync_table_send_all(u8 toLocalIndex) {
-    SOFT_ASSERT(gNetworkType == NT_SERVER);
-    LUA_STACK_CHECK_BEGIN(gLuaState);
-    for (int i = 0; i < gActiveMods.entryCount; i++) {
-        struct Mod* mod = gActiveMods.entries[i];
-        smlua_sync_table_send_all_file(toLocalIndex, mod->relativePath);
-    }
-    LUA_STACK_CHECK_END(gLuaState);
+    (void)toLocalIndex;
 }

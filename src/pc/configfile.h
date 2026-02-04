@@ -13,10 +13,6 @@
 #define MAX_CONFIG_STRING 64
 #define MAX_SAVE_NAME_STRING 32
 
-#define DEFAULT_PORT 7777
-#define DEFAULT_COOPNET_IP "net.coop64.us"
-#define DEFAULT_COOPNET_PORT 34197
-
 typedef struct {
     unsigned int x, y, w, h;
     bool vsync;
@@ -125,11 +121,6 @@ extern struct PlayerPalette configPlayerPalette;
 // coop settings
 extern unsigned int configAmountOfPlayers;
 extern bool         configBubbleDeath;
-extern unsigned int configHostPort;
-extern unsigned int configHostSaveSlot;
-extern char         configJoinIp[MAX_CONFIG_STRING];
-extern unsigned int configJoinPort;
-extern unsigned int configNetworkSystem;
 extern unsigned int configPlayerInteraction;
 extern unsigned int configPlayerKnockbackStrength;
 extern unsigned int configStayInLevelAfterStar;
@@ -148,11 +139,6 @@ extern char         configLanguage[MAX_CONFIG_STRING];
 extern bool         configForce4By3;
 extern bool         configDynosLocalPlayerModelOnly;
 extern unsigned int configPvpType;
-// CoopNet settings
-extern char         configCoopNetIp[MAX_CONFIG_STRING];
-extern unsigned int configCoopNetPort;
-extern char         configPassword[MAX_CONFIG_STRING];
-extern char         configDestId[MAX_CONFIG_STRING];
 // DJUI settings
 extern unsigned int configDjuiTheme;
 extern bool         configDjuiThemeCenter;

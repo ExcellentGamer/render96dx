@@ -157,9 +157,7 @@ void mod_activate(struct Mod* mod) {
         mod_cache_add(mod, file, false);
 
         // forcefully update md5 hash
-        if (gNetworkType == NT_SERVER) {
-            mod_cache_update(mod, file);
-        }
+        mod_cache_update(mod, file);
 
         if (path_ends_with(file->relativePath, ".bin")) {
             mod_activate_bin(mod, file);

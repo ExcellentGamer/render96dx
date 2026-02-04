@@ -202,10 +202,6 @@ static void djui_panel_player_active_palette_export(UNUSED struct DjuiBase* call
 
 static void (*sSavedDestroy)(struct DjuiBase*);
 static void djui_panel_player_edit_palette_destroy(struct DjuiBase* caller) {
-    if (gNetworkType != NT_NONE) {
-        network_send_player_settings();
-    }
-
     sColorRect = NULL;
     gDjuiPaletteToggle = NULL;
 

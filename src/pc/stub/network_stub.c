@@ -77,23 +77,6 @@ struct NetworkSystem gNetworkSystemSocket = {
     .name = "Stub",
 };
 
-struct NetworkSystem gNetworkSystemCoopNet = {
-    .initialize = ns_stub_initialize,
-    .get_id = ns_stub_get_id,
-    .get_id_str = ns_stub_get_id_str,
-    .save_id = ns_stub_save_id,
-    .clear_id = ns_stub_clear_id,
-    .dup_addr = ns_stub_dup_addr,
-    .match_addr = ns_stub_match_addr,
-    .update = ns_stub_update,
-    .send = ns_stub_send,
-    .get_lobby_id = ns_stub_get_lobby_id,
-    .get_lobby_secret = ns_stub_get_lobby_secret,
-    .shutdown = ns_stub_shutdown,
-    .requireServerBroadcast = false,
-    .name = "Stub",
-};
-
 struct NetworkSystem* gNetworkSystem = &gNetworkSystemSocket;
 
 bool gNetworkAreaLoaded = true;
@@ -125,10 +108,6 @@ struct NametagsSettings gNametagsSettings = {
 
 bool gNetworkSentJoin = false;
 u16 gNetworkRequestLocationTimer = 0;
-
-u8 gDebugPacketIdBuffer[256] = { 0xFF };
-u8 gDebugPacketSentBuffer[256] = { 0 };
-u8 gDebugPacketOnBuffer = 0;
 
 u32 gNetworkStartupTimer = 0;
 
@@ -248,10 +227,6 @@ void network_restart_game(void) {
     gChangeLevelTransition = -1;
 
     sNetworkRestarting = false;
-}
-
-void network_update(void) {
-    network_apply_config_to_server_settings();
 }
 
 void network_shutdown(UNUSED bool sendLeaving, bool exiting, UNUSED bool popup, UNUSED bool reconnecting) {

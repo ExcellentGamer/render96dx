@@ -160,7 +160,5 @@ void bhv_spawn_star_no_level_exit(struct Object* object, u32 params, u8 networkS
         star->oInteractionSubtype = INT_SUBTYPE_NO_EXIT;
         obj_set_angle(star, 0, 0, 0);
     }
-    if (networkSendEvent && gNetworkType != NT_NONE) {
-        network_send_spawn_star_nle(object, params);
-    }
+    (void)networkSendEvent;
 }

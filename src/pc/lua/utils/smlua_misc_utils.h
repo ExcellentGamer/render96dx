@@ -214,6 +214,7 @@ s32 get_dialog_response(void);
 
 /* |description|Gets the local discord ID if it isn't disabled, otherwise "0" is returned|descriptionEnd| */
 const char* get_local_discord_id(void);
+
 /* |description|Gets the CoopNet ID of a player with `localIndex` if CoopNet is being used and the player is connected, otherwise "-1" is returned|descriptionEnd| */
 const char* get_coopnet_id(s8 localIndex);
 

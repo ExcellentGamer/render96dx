@@ -25,9 +25,6 @@ static void print_help(void) {
     printf("--width WIDTH             Sets the window width.\n");
     printf("--height HEIGHT           Sets the window height.\n");
     printf("--skip-intro              Skips the Peach and Lakitu intros when on a zero star save.\n");
-    printf("--server PORT             Starts the game and creates a new server on PORT.\n");
-    printf("--client IP PORT          Starts the game and joins an existing server.\n");
-    printf("--coopnet PASSWORD        Starts the game and creates a new CoopNet server.\n");
     printf("--playername PLAYERNAME   Starts the game with a specific playername.\n");
     printf("--playercount PLAYERCOUNT Starts the game with a specific player count limit.\n");
     printf("--skip-update-check       Skips the update check when loading the game.\n");
@@ -81,24 +78,19 @@ bool parse_cli_opts(int argc, char* argv[]) {
             arg_uint("--height <height>", argv[++i], &gCLIOpts.height);
         } else if (!strcmp(argv[i], "--skip-intro")) {
             gCLIOpts.skipIntro = true;
-        } else if (!strcmp(argv[i], "--server") && (i + 1) < argc) {
-            gCLIOpts.network = NT_NONE;
-            arg_uint("--server <port>", argv[++i], &gCLIOpts.networkPort);
-        } else if (!strcmp(argv[i], "--client") && (((i + 1) < argc) || (i + 2) < argc)) {
-            gCLIOpts.network = NT_NONE;
-            arg_string("--client <ip>", argv[++i], gCLIOpts.joinIp, IP_MAX_LEN);
-            if ((i + 2) < argc) {
-                arg_uint("--client <port>", argv[++i], &gCLIOpts.networkPort);
-            } else {
-                gCLIOpts.networkPort = 7777;
-            }
-        } else if (!strcmp(argv[i], "--coopnet") && (i + 1) < argc && argv[i + 1][0] != '-') {
-            gCLIOpts.coopnet = true;
-            arg_string("--coopnet <password>", argv[++i], gCLIOpts.coopnetPassword, MAX_CONFIG_STRING);
         } else if (!strcmp(argv[i], "--playername") && (i + 1) < argc) {
             arg_string("--playername <playername>", argv[++i], gCLIOpts.playerName, MAX_CONFIG_STRING);
         } else if (!strcmp(argv[i], "--playercount") && (i + 1) < argc) {
             arg_uint("--playercount <playercount>", argv[++i], &gCLIOpts.playerCount);
+        } else if (!strcmp(argv[i], "--server") && (i + 1) < argc) {
+            i++;
+        } else if (!strcmp(argv[i], "--client") && (i + 1) < argc) {
+            i++;
+            if ((i + 1) < argc && argv[i + 1][0] != '-') {
+                i++;
+            }
+        } else if (!strcmp(argv[i], "--coopnet") && (i + 1) < argc) {
+            i++;
         } else if (!strcmp(argv[i], "--skip-update-check")) {
             gCLIOpts.skipUpdateCheck = true;
         } else if (!strcmp(argv[i], "--no-discord")) {

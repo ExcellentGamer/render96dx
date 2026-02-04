@@ -258,11 +258,6 @@ bool mod_import_file(char* path) {
     bool isPalette = false;
     bool ret = false;
 
-    if (gNetworkType != NT_NONE && !path_ends_with(path, ".ini")) {
-        djui_popup_create(DLANG(NOTIF, IMPORT_FAIL_INGAME), 2);
-        return false;
-    }
-
     if (path_ends_with(path, ".lua") || path_ends_with(path, ".luac")) {
         isLua = true;
         ret = mod_import_lua(path);

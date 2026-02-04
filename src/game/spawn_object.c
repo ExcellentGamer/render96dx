@@ -229,11 +229,7 @@ void unload_object(struct Object *obj) {
     }
 
     struct SyncObject* so = sync_object_get(obj->oSyncID);
-    if (so && gNetworkType != NT_NONE) {
-        if (so->syncDeathEvent) {
-            network_send_object(obj);
-        }
-
+    if (so) {
         // forget sync object
         if ((obj == so->o) && (obj->behavior == so->behavior)) {
             sync_object_forget(so->id);

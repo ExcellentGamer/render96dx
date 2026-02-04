@@ -550,6 +550,7 @@ C_FILES           := $(filter-out \
   src/pc/djui/djui_panel_join%.c \
   src/pc/djui/djui_panel_join_message%.c \
   src/pc/djui/djui_lobby_entry.c \
+  src/pc/djui/djui_panel_playerlist.c \
   src/pc/djui/djui_panel_rules.c \
 ,$(C_FILES))
 
@@ -564,8 +565,7 @@ C_FILES           := $(filter-out \
 C_FILES           += \
   src/pc/stub/version.c \
   src/pc/stub/network_stub.c \
-  src/pc/stub/ban_list.c \
-  src/pc/stub/moderator_list.c
+  
 
 #ifeq ($(TARGET_N64),0)
 #  GENERATED_C_FILES += $(addprefix $(BUILD_DIR)/bin/,$(addsuffix _skybox.c,$(notdir $(basename $(wildcard textures/skyboxes/*.png)))))

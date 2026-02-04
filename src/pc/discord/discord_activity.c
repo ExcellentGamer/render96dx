@@ -73,8 +73,6 @@ void discord_activity_update(void) {
 
     if ((sCurActivity.party.size.current_size > 1 || configAmountOfPlayers == 1) && !gDjuiInMainMenu) {
         strcpy(sCurActivity.state, "Playing!");
-    } else if (gNetworkType == NT_SERVER) {
-        strcpy(sCurActivity.state, "Waiting for players...");
     } else {
         strcpy(sCurActivity.state, "In the menus.");
         sCurActivity.party.size.current_size = 1;
@@ -104,7 +102,6 @@ void discord_activity_update(void) {
 }
 
 void discord_activity_update_check(void) {
-    if (gNetworkType == NT_NONE) { return; }
     bool shouldUpdate = false;
     u8 connectedCount = network_player_connected_count();
 

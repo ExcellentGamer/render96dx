@@ -10,7 +10,6 @@
 #include "pc/cliopts.h"
 #include "game/level_update.h"
 #include "pc/lua/smlua_hooks.h"
-#include "djui_panel_playerlist.h"
 #include "djui_hud_utils.h"
 #include "engine/math_util.h"
 #include "pc/utils/misc.h"

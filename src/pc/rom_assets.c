@@ -1,4 +1,5 @@
 #include <PR/ultratypes.h>
+#include <assert.h>
 #include "rom_assets.h"
 #include "pc/debuglog.h"
 #include "rom_checker.h"

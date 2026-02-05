@@ -1,6 +1,7 @@
 #include "smlua.h"
 #include "pc/mods/mods.h"
 #include "audio/external.h"
+#include "game/level_update.h"
 
 u8 gSmLuaConvertSuccess = false;
 

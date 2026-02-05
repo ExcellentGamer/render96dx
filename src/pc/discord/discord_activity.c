@@ -103,7 +103,7 @@ void discord_activity_update(void) {
 
 void discord_activity_update_check(void) {
     bool shouldUpdate = false;
-    u8 connectedCount = network_player_connected_count();
+    u8 connectedCount = 1;
 
     if (connectedCount > 0) {
         if (connectedCount != sCurActivity.party.size.current_size) {

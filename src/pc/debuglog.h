@@ -2,8 +2,9 @@
 #define DEBUGLOG_H
 
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
-#include "pc/network/network.h"
+#include "pc/cliopts.h"
 #include "pc/djui/djui_console.h"
 
 static void _debuglog_print_timestamp(void) {
@@ -19,7 +20,7 @@ static void _debuglog_print_timestamp(void) {
 }
 
 static void _debuglog_print_network_type(void) {
-    printf(" [%02d] ", (gNetworkPlayerLocal != NULL) ? gNetworkPlayerLocal->globalIndex : -1);
+    printf(" [%02d] ", 0);
 }
 
 static void _debuglog_print_log_type(const char* logType) {

@@ -784,7 +784,7 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
         } else {
             set_mario_action(m, isInWater ? ACT_WATER_IDLE : (m->pos[1] <= m->floorHeight ? ACT_IDLE : ACT_FREEFALL), 0);
         }
-        if (gServerSettings.stayInLevelAfterStar) {
+        if (configStayInLevelAfterStar) {
             if (m->statusForCamera) { m->statusForCamera->action = m->action; }
             soft_reset_camera(m->area->camera);
         }
@@ -1989,10 +1989,6 @@ static void intro_cutscene_peach_lakitu_scene(struct MarioState *m) {
     if ((s16) m->statusForCamera->cameraEvent != CAM_EVENT_START_INTRO) {
         if (m->actionTimer++ == TIMER_SPAWN_PIPE) {
             u8 globalIndex = 0;
-            if (gNetworkType != NT_NONE) {
-                globalIndex = gNetworkPlayers[m->playerIndex].globalIndex;
-                if (globalIndex == UNKNOWN_GLOBAL_INDEX) { globalIndex = 0; }
-            }
             sIntroWarpPipeObj[globalIndex] =
                 spawn_object_abs_with_rot(gCurrentObject, 0, MODEL_CASTLE_GROUNDS_WARP_PIPE,
                                           bhvStaticObject, -1328 - (350 * globalIndex), 60, 4664, 0, 180, 0);
@@ -2012,10 +2008,6 @@ static void intro_cutscene_peach_lakitu_scene(struct MarioState *m) {
 static void intro_cutscene_raise_pipe(struct MarioState* m) {
     if (!m) { return; }
     u8 globalIndex = 0;
-    if (gNetworkType != NT_NONE) {
-        globalIndex = gNetworkPlayers[m->playerIndex].globalIndex;
-        if (globalIndex == UNKNOWN_GLOBAL_INDEX) { globalIndex = 0; }
-    }
 
     if (sIntroWarpPipeObj[globalIndex] != NULL) {
         sIntroWarpPipeObj[globalIndex]->oPosY = camera_approach_f32_symmetric(sIntroWarpPipeObj[globalIndex]->oPosY, 260.0f, 10.0f);
@@ -2034,10 +2026,6 @@ static void intro_cutscene_raise_pipe(struct MarioState* m) {
 static void intro_cutscene_raise_pipe_main_menu(struct MarioState* m) {
     if (!m) { return; }
     u8 globalIndex = 0;
-    if (gNetworkType != NT_NONE) {
-        globalIndex = gNetworkPlayers[m->playerIndex].globalIndex;
-        if (globalIndex == UNKNOWN_GLOBAL_INDEX) { globalIndex = 0; }
-    }
     if (sIntroWarpPipeObj[globalIndex] == NULL) {
         sIntroWarpPipeObj[globalIndex] =
             spawn_object_abs_with_rot(gCurrentObject, 0, MODEL_CASTLE_GROUNDS_WARP_PIPE,
@@ -2058,10 +2046,6 @@ static void intro_cutscene_jump_out_of_pipe(struct MarioState *m) {
     if (!m) { return; }
     if (m->actionTimer <= 1) {
         u8 globalIndex = 0;
-        if (gNetworkType != NT_NONE) {
-            globalIndex = gNetworkPlayers[m->playerIndex].globalIndex;
-            if (globalIndex == UNKNOWN_GLOBAL_INDEX) { globalIndex = 0; }
-        }
         if (sIntroWarpPipeObj[globalIndex] != NULL) {
             m->pos[0] = sIntroWarpPipeObj[globalIndex]->oPosX;
             m->pos[1] = sIntroWarpPipeObj[globalIndex]->oPosY;
@@ -2113,10 +2097,6 @@ static void intro_cutscene_land_outside_pipe(struct MarioState *m) {
 static void intro_cutscene_lower_pipe(struct MarioState *m) {
     if (!m) { return; }
     u8 globalIndex = 0;
-    if (gNetworkType != NT_NONE) {
-        globalIndex = gNetworkPlayers[m->playerIndex].globalIndex;
-        if (globalIndex == UNKNOWN_GLOBAL_INDEX) { globalIndex = 0; }
-    }
     if (m->actionTimer++ == 0) {
         if (sIntroWarpPipeObj[globalIndex] != NULL) {
             play_sound(SOUND_MENU_ENTER_PIPE, sIntroWarpPipeObj[globalIndex]->header.gfx.cameraToObject);
@@ -2797,7 +2777,7 @@ static void end_peach_cutscene_kiss_from_peach(struct MarioState *m) {
 
 static void end_peach_cutscene_star_dance(struct MarioState *m) {
     if (!m) { return; }
-    u8 nonMario = (gNetworkType != NT_NONE) ? (gNetworkPlayers[m->playerIndex].globalIndex != 0) : (m->playerIndex != 0);
+    u8 nonMario = (m->playerIndex != 0);
     s32 animFrame = set_character_animation(m, nonMario ? CHAR_ANIM_START_SLEEP_SITTING : CHAR_ANIM_CREDITS_PEACE_SIGN);
 
     if (animFrame == (nonMario ? 0 : 77)) {
@@ -2852,7 +2832,7 @@ static void end_peach_cutscene_star_dance(struct MarioState *m) {
 // "...for Mario..."
 static void end_peach_cutscene_dialog_3(struct MarioState *m) {
     if (!m) { return; }
-    u8 nonMario = (gNetworkType != NT_NONE) ? (gNetworkPlayers[m->playerIndex].globalIndex != 0) : (m->playerIndex != 0);
+    u8 nonMario = (m->playerIndex != 0);
     set_character_animation(m, nonMario ? CHAR_ANIM_SLEEP_IDLE : CHAR_ANIM_FIRST_PERSON);
     if (m->playerIndex != 0) { return; }
     sEndPeachObj->oPosY = end_obj_set_visual_pos(sEndPeachObj);
@@ -2891,7 +2871,7 @@ static void end_peach_cutscene_dialog_3(struct MarioState *m) {
 // "Mario!"
 static void end_peach_cutscene_run_to_castle(struct MarioState *m) {
     if (!m) { return; }
-    u8 nonMario = (gNetworkType != NT_NONE) ? (gNetworkPlayers[m->playerIndex].globalIndex != 0) : (m->playerIndex != 0);
+    u8 nonMario = (m->playerIndex != 0);
     if (nonMario) {
         set_character_animation(m, m->actionState == 0 ? CHAR_ANIM_SLEEP_START_LYING
                                                    : CHAR_ANIM_SLEEP_LYING);

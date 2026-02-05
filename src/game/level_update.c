@@ -40,7 +40,6 @@
 #include "pc/pc_main.h"
 #include "pc/cliopts.h"
 #include "pc/configfile.h"
-#include "pc/network/network.h"
 #include "pc/djui/djui.h"
 // used for getting gMainMenuSounds
 #include "pc/djui/djui_panel_menu_options.h"
@@ -211,11 +210,8 @@ u32 gControlTimerStartNat = 0;
 u32 gControlTimerStopNat = 0;
 
 static u32 level_control_timer_now(void) {
-    if (gNetworkType == NT_NONE) {
-        if (gCurrentArea == NULL) { return 0; }
-        return gCurrentArea->localAreaTimer;
-    }
-    return gNetworkAreaTimer;
+    if (gCurrentArea == NULL) { return 0; }
+    return gCurrentArea->localAreaTimer;
 }
 
 u8 level_control_timer_running(void) {
@@ -259,7 +255,7 @@ u16 level_control_timer(s32 timerOp) {
 }
 
 bool pressed_pause(void) {
-    if (gServerSettings.pauseAnywhere) {
+    if (configPauseAnywhere) {
         if (get_dialog_id() == DIALOG_NONE && sCurrPlayMode == PLAY_MODE_NORMAL && sDelayedWarpOp == WARP_OP_NONE) {
             return gPlayer1Controller->buttonPressed & START_BUTTON;
         }
@@ -451,7 +447,7 @@ void init_mario_after_warp(void) {
             }
 
             // enforce bubble on area change
-            if (gServerSettings.bubbleDeath) {
+            if (configBubbleDeath) {
                 if (i == 0 && gMarioStates[i].numLives == -1) {
                     mario_set_bubbled(&gMarioStates[i]);
                     gMarioStates[i].health = 0xFF;
@@ -548,10 +544,6 @@ void init_mario_after_warp(void) {
             play_sound(SOUND_MENU_MARIO_CASTLE_WARP, gGlobalSoundSource);
         }
 #endif
-    }
-
-    if (gNetworkPlayerLocal != NULL) {
-        network_player_update_course_level(gNetworkPlayerLocal, gCurrCourseNum, gCurrActStarNum, gCurrLevelNum, gCurrAreaIndex);
     }
 
     if (gMarioState && gMarioState->health <= 0x110) {
@@ -1145,10 +1137,11 @@ void update_hud_values(void) {
                 gHudDisplay.coins += 1;
                 play_sound(coinSound, gMarioState->marioObj->header.gfx.cameraToObject);
 
-                if (gServerSettings.stayInLevelAfterStar > 0 && gCurrCourseNum != COURSE_NONE) {
+                if (configStayInLevelAfterStar > 0 && gCurrCourseNum != COURSE_NONE) {
                     // retain vanilla behavior
                     if (gLevelValues.numCoinsToLife == 50) {
                         if (gHudDisplay.coins == 50 || gHudDisplay.coins == 100 || gHudDisplay.coins == 150) {
+                            gMarioState->health = MIN(gMarioState->health + 0x100, 0x880);
                             gMarioState->numLives++;
                             play_sound(SOUND_GENERAL_COLLECT_1UP, gGlobalSoundSource);
                         }
@@ -1268,7 +1261,7 @@ void stop_demo(UNUSED struct DjuiBase* caller) {
         gCurrDemoInput = NULL;
         gChangeLevel = gCurrLevelNum;
         gDemoCountdown = 0;
-        if (gDjuiInMainMenu || gNetworkType == NT_NONE) {
+        if (gDjuiInMainMenu) {
             update_menu_level();
         }
     }
@@ -1294,13 +1287,12 @@ s32 play_mode_normal(void) {
             configMenuDemos &&
             !gDjuiInPlayerMenu &&
             (++gDemoCountdown) == PRESS_START_DEMO_TIMER &&
-            (find_demo_number() && (sDemoNumber <= 6 && sDemoNumber > -1)) &&
-            gNetworkType == NT_NONE) {
+            (find_demo_number() && (sDemoNumber <= 6 && sDemoNumber > -1))) {
             start_demo();
         }
 
         if (((gCurrDemoInput != NULL) &&
-            (gPlayer1Controller->buttonPressed & END_DEMO || !gIsDemoActive || !gDjuiInMainMenu || gNetworkType != NT_NONE || gDjuiInPlayerMenu)) ||
+            (gPlayer1Controller->buttonPressed & END_DEMO || !gIsDemoActive || !gDjuiInMainMenu || gDjuiInPlayerMenu)) ||
             (gCurrDemoInput == NULL && gIsDemoActive)) {
             gPlayer1Controller->buttonPressed &= ~END_DEMO;
             stop_demo(NULL);
@@ -1396,7 +1388,10 @@ s32 play_mode_paused(void) {
         game_exit();
     }*/
 
-    if (!gLevelValues.zoomOutCameraOnPause || !network_check_singleplayer_pause()) {
+    extern s16 gMenuMode;
+    bool canStayPaused = ((gMenuMode != -1) || (gCameraMovementFlags & CAM_MOVE_PAUSE_SCREEN)) &&
+        !gDjuiInPlayerMenu && mods_get_all_pausable();
+    if (!gLevelValues.zoomOutCameraOnPause || !canStayPaused) {
         gCameraMovementFlags &= ~CAM_MOVE_PAUSE_SCREEN;
     }
     return 0;
@@ -1435,11 +1430,6 @@ void level_set_transition(s16 length, void (*updateFunction)(s16 *)) {
  * Play the transition and then return to normal play mode.
  */
 s32 play_mode_change_area(void) {
-    // fade out all players
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        gNetworkPlayers[i].fadeOpacity = 0;
-    }
-
     //! This maybe was supposed to be sTransitionTimer == -1? sTransitionUpdate
     // is never set to -1.
     if (sTransitionUpdate == (void (*)(s16 *)) - 1) {
@@ -1464,11 +1454,6 @@ s32 play_mode_change_area(void) {
  * Play the transition and then return to normal play mode.
  */
 s32 play_mode_change_level(void) {
-    // fade out all players
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        gNetworkPlayers[i].fadeOpacity = 0;
-    }
-
     if (sTransitionUpdate != NULL) {
         sTransitionUpdate(&sTransitionTimer);
     }
@@ -1761,7 +1746,6 @@ s32 update_level(void) {
 }
 
 s32 init_level(void) {
-    sync_objects_clear();
     geo_clear_interp_data();
     reset_dialog_render_state();
 
@@ -1812,8 +1796,8 @@ s32 init_level(void) {
                 set_mario_action(gMarioState, ACT_IDLE, 0);
             } else if (!gDebugLevelSelect) {
                 if (gMarioState && gMarioState->action != ACT_UNINITIALIZED) {
-                    bool skipIntro = (gNetworkType == NT_NONE) ? (configSkipIntro != 0) : (gServerSettings.skipIntro != 0);
-                    if (gDjuiInMainMenu && gNetworkType == NT_NONE) {
+                    bool skipIntro = (configSkipIntro != 0);
+                    if (gDjuiInMainMenu) {
                         // pick random main menu level
                         if (configMenuRandom) {
                             srand(time(0));
@@ -1863,9 +1847,6 @@ s32 init_level(void) {
         sound_banks_disable(SEQ_PLAYER_SFX, SOUND_BANKS_DISABLED_DURING_INTRO_CUTSCENE);
     }
 
-    if (gNetworkPlayerLocal != NULL) {
-        network_player_update_course_level(gNetworkPlayerLocal, gCurrCourseNum, gCurrActStarNum, gCurrLevelNum, gCurrAreaIndex);
-    }
     smlua_call_event_hooks(HOOK_ON_LEVEL_INIT, sWarpDest.type, sWarpDest.levelNum, sWarpDest.areaIdx, sWarpDest.nodeId, sWarpDest.arg);
 
     // clear texture 1 on level init -- can linger and corrupt textures otherwise
@@ -1922,7 +1903,7 @@ s32 lvl_init_from_save_file(UNUSED s16 arg0, s16 levelNum) {
 #endif
     sWarpDest.type = WARP_TYPE_NOT_WARPING;
     sDelayedWarpOp = WARP_OP_NONE;
-    gNeverEnteredCastle = !save_file_exists(gCurrSaveFileNum - 1) && (gServerSettings.skipIntro == 0);
+    gNeverEnteredCastle = !save_file_exists(gCurrSaveFileNum - 1) && (configSkipIntro == 0);
 
     gCurrLevelNum = levelNum;
     gCurrCourseNum = COURSE_NONE;
@@ -2014,7 +1995,7 @@ s32 lvl_exiting_credits(UNUSED s16 arg0, UNUSED s32 arg1) {
 void fake_lvl_init_from_save_file(void) {
     sWarpDest.type = WARP_TYPE_NOT_WARPING;
     sDelayedWarpOp = WARP_OP_NONE;
-    gNeverEnteredCastle = !save_file_exists(gCurrSaveFileNum - 1) && (gServerSettings.skipIntro == 0);
+    gNeverEnteredCastle = !save_file_exists(gCurrSaveFileNum - 1) && (configSkipIntro == 0);
 
     gCurrCreditsEntry = NULL;
     gMarioStates[0].specialTripleJump = false;

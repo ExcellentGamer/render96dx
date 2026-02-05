@@ -23,11 +23,11 @@
 #include "level_table.h"
 #include "gfx_dimensions.h"
 #include "game/ingame_menu.h"
-#include "pc/network/network.h"
 #include "pc/lua/smlua_hooks.h"
 #include "pc/djui/djui.h"
 #include "pc/djui/djui_panel_pause.h"
 #include "pc/nametags.h"
+#include "pc/configfile.h"
 #include "engine/lighting_engine.h"
 
 struct SpawnInfo gPlayerSpawnInfos[MAX_PLAYERS];
@@ -217,12 +217,6 @@ void load_obj_warp_nodes(void) {
 void clear_areas(void) {
     smlua_call_event_hooks(HOOK_ON_CLEAR_AREAS);
 
-    struct NetworkPlayer* np = gNetworkPlayerLocal;
-    if (np != NULL) {
-        np->currAreaSyncValid = false;
-        np->currLevelSyncValid = false;
-    }
-
     gCurrentArea = NULL;
     gWarpTransition.isActive = FALSE;
     gWarpTransition.pauseRendering = FALSE;
@@ -294,12 +288,6 @@ void load_area(s32 index) {
 }
 
 void unload_area(void) {
-    struct NetworkPlayer* np = gNetworkPlayerLocal;
-    if (np != NULL) {
-        np->currAreaSyncValid = false;
-    }
-
-    sync_objects_clear();
     if (gCurrentArea != NULL) {
         unload_objects_from_area(0, gCurrentArea->index);
         geo_call_global_function_nodes(&gCurrentArea->root->node, GEO_CONTEXT_AREA_UNLOAD);
@@ -455,7 +443,7 @@ void render_game(void) {
             djui_reset_hud_params();
             create_dl_ortho_matrix();
             djui_gfx_displaylist_begin();
-            if (gServerSettings.nametags && !gDjuiInMainMenu) {
+            if (configNametags && !gDjuiInMainMenu) {
                 nametags_render();
             }
             smlua_call_event_hooks(HOOK_ON_HUD_RENDER_BEHIND, djui_reset_hud_params);

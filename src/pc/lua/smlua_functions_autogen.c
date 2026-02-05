@@ -13,7 +13,6 @@
 #include "src/game/mario.h"
 #include "src/game/rumble_init.h"
 #include "src/pc/djui/djui_popup.h"
-#include "pc/network/network_utils.h"
 #include "src/pc/djui/djui_console.h"
 #include "src/pc/djui/djui_chat_message.h"
 #include "src/pc/djui/djui_language.h"
@@ -23,8 +22,6 @@
 #include "src/game/sound_init.h"
 #include "src/pc/djui/djui_hud_utils.h"
 #include "src/pc/djui/djui_panel_menu.h"
-#include "pc/network/network_player.h"
-#include "pc/network/lag_compensation.h"
 #include "include/behavior_table.h"
 #include "src/pc/lua/utils/smlua_obj_utils.h"
 #include "src/pc/lua/utils/smlua_misc_utils.h"
@@ -15242,6 +15239,7 @@ int smlua_func_determine_interaction(lua_State* L) {
  // lag_compensation.h //
 ////////////////////////
 
+#if 0
 int smlua_func_lag_compensation_store(UNUSED lua_State* L) {
     if (L == NULL) { return 0; }
 
@@ -15303,6 +15301,8 @@ int smlua_func_lag_compensation_get_local_state_index(UNUSED lua_State* L) {
 
     return 1;
 }
+
+#endif
 
   //////////////////
  // level_info.h //
@@ -23340,6 +23340,8 @@ int smlua_func_mod_storage_clear(UNUSED lua_State* L) {
  // network_player.h //
 //////////////////////
 
+#if 0
+
 int smlua_func_network_player_connected_count(UNUSED lua_State* L) {
     if (L == NULL) { return 0; }
 
@@ -23576,9 +23578,13 @@ int smlua_func_network_player_is_override_palette_same(lua_State* L) {
     return 1;
 }
 
+#endif
+
   /////////////////////
  // network_utils.h //
 /////////////////////
+
+#if 0
 
 int smlua_func_network_global_index_from_local(lua_State* L) {
     if (L == NULL) { return 0; }
@@ -23692,6 +23698,8 @@ int smlua_func_network_discord_id_from_local_index(lua_State* L) {
 
     return 1;
 }
+
+#endif
 
   /////////////////////
  // obj_behaviors.c //
@@ -37887,10 +37895,12 @@ void smlua_bind_functions_autogen(void) {
     smlua_bind_function(L, "determine_interaction", smlua_func_determine_interaction);
 
     // lag_compensation.h
+#if 0
     smlua_bind_function(L, "lag_compensation_store", smlua_func_lag_compensation_store);
     smlua_bind_function(L, "lag_compensation_get_local_state", smlua_func_lag_compensation_get_local_state);
     smlua_bind_function(L, "lag_compensation_get_local_state_ready", smlua_func_lag_compensation_get_local_state_ready);
     smlua_bind_function(L, "lag_compensation_get_local_state_index", smlua_func_lag_compensation_get_local_state_index);
+#endif
 
     // level_info.h
     smlua_bind_function(L, "get_level_name_ascii", smlua_func_get_level_name_ascii);
@@ -38317,28 +38327,7 @@ void smlua_bind_functions_autogen(void) {
     smlua_bind_function(L, "mod_storage_remove", smlua_func_mod_storage_remove);
     smlua_bind_function(L, "mod_storage_clear", smlua_func_mod_storage_clear);
 
-    // network_player.h
-    smlua_bind_function(L, "network_player_connected_count", smlua_func_network_player_connected_count);
-    smlua_bind_function(L, "network_player_set_description", smlua_func_network_player_set_description);
-    smlua_bind_function(L, "network_player_set_override_location", smlua_func_network_player_set_override_location);
-    smlua_bind_function(L, "network_player_from_global_index", smlua_func_network_player_from_global_index);
-    smlua_bind_function(L, "get_network_player_from_level", smlua_func_get_network_player_from_level);
-    smlua_bind_function(L, "get_network_player_from_area", smlua_func_get_network_player_from_area);
-    smlua_bind_function(L, "get_network_player_smallest_global", smlua_func_get_network_player_smallest_global);
-    smlua_bind_function(L, "network_player_get_palette_color_channel", smlua_func_network_player_get_palette_color_channel);
-    smlua_bind_function(L, "network_player_get_override_palette_color_channel", smlua_func_network_player_get_override_palette_color_channel);
-    smlua_bind_function(L, "network_player_set_override_palette_color", smlua_func_network_player_set_override_palette_color);
-    smlua_bind_function(L, "network_player_reset_override_palette", smlua_func_network_player_reset_override_palette);
-    smlua_bind_function(L, "network_player_is_override_palette_same", smlua_func_network_player_is_override_palette_same);
 
-    // network_utils.h
-    smlua_bind_function(L, "network_global_index_from_local", smlua_func_network_global_index_from_local);
-    smlua_bind_function(L, "network_local_index_from_global", smlua_func_network_local_index_from_global);
-    smlua_bind_function(L, "network_is_server", smlua_func_network_is_server);
-    smlua_bind_function(L, "network_is_moderator", smlua_func_network_is_moderator);
-    smlua_bind_function(L, "network_get_player_text_color_string", smlua_func_network_get_player_text_color_string);
-    smlua_bind_function(L, "network_check_singleplayer_pause", smlua_func_network_check_singleplayer_pause);
-    smlua_bind_function(L, "network_discord_id_from_local_index", smlua_func_network_discord_id_from_local_index);
 
     // obj_behaviors.c
     smlua_bind_function(L, "set_yoshi_as_not_dead", smlua_func_set_yoshi_as_not_dead);

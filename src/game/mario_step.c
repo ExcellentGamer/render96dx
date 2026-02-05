@@ -10,6 +10,7 @@
 #include "mario_step.h"
 #include "pc/lua/smlua.h"
 #include "game/hardcoded.h"
+#include "pc/configfile.h"
 
 static s16 sMovingSandSpeeds[] = { 12, 8, 4, 0 };
 
@@ -321,9 +322,9 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
     mario_update_wall(m, &upperWcd);
 
     if (floor == NULL) {
-        if (gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) {
+        if (configBouncyLevelBounds != 0) {
             m->faceAngle[1] += 0x8000;
-            mario_set_forward_vel(m, gServerSettings.bouncyLevelBounds == BOUNCY_LEVEL_BOUNDS_ON_CAP ? clamp(1.5f * m->forwardVel, -500, 500) : 1.5f * m->forwardVel);
+            mario_set_forward_vel(m, configBouncyLevelBounds == 2 ? clamp(1.5f * m->forwardVel, -500, 500) : 1.5f * m->forwardVel);
         }
         smlua_call_event_hooks(HOOK_ON_COLLIDE_LEVEL_BOUNDS, m);
         return GROUND_STEP_HIT_WALL_STOP_QSTEPS;
@@ -510,9 +511,9 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
         }
 
         m->pos[1] = nextPos[1];
-        if (gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) {
+        if (configBouncyLevelBounds != 0) {
             m->faceAngle[1] += 0x8000;
-            mario_set_forward_vel(m, gServerSettings.bouncyLevelBounds == BOUNCY_LEVEL_BOUNDS_ON_CAP ? clamp(1.5f * m->forwardVel, -500, 500) : 1.5f * m->forwardVel);
+            mario_set_forward_vel(m, configBouncyLevelBounds == 2 ? clamp(1.5f * m->forwardVel, -500, 500) : 1.5f * m->forwardVel);
         }
         smlua_call_event_hooks(HOOK_ON_COLLIDE_LEVEL_BOUNDS, m);
         return AIR_STEP_HIT_WALL;

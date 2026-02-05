@@ -3,6 +3,7 @@
 #include "object_fields.h"
 #include "game/object_helpers.h"
 #include "game/interaction.h"
+#include "game/level_update.h"
 #include "engine/math_util.h"
 
 #include "pc/lua/smlua.h"
@@ -15,8 +16,7 @@ static struct Object* spawn_object_internal(enum BehaviorId behaviorId, enum Mod
     if (gLuaLoadingMod != NULL) { return NULL; }
 
     if (doSync) {
-        // prevent spawning objects before area is synchronized
-        if (gNetworkPlayerLocal == NULL || !gNetworkPlayerLocal->currAreaSyncValid) { return NULL; }
+        // singleplayer: allow spawning regardless of network synchronization state
     }
 
     const BehaviorScript* behavior = get_behavior_from_id(behaviorId);
@@ -30,12 +30,6 @@ static struct Object* spawn_object_internal(enum BehaviorId behaviorId, enum Mod
 
     if (obj == NULL) {
         LOG_ERROR("failed to allocate object");
-        return NULL;
-    }
-
-    if (doSync && !sync_object_set_id(obj)) {
-        obj->activeFlags = ACTIVE_FLAG_DEACTIVATED;
-        LOG_ERROR("failed to set sync id");
         return NULL;
     }
 
@@ -60,17 +54,6 @@ static struct Object* spawn_object_internal(enum BehaviorId behaviorId, enum Mod
         if (0 != smlua_pcall(L, 1, 0, 0)) {
             LOG_LUA("Failed to call the object setup callback: %u", objSetupFunction);
         }
-    }
-
-    struct SyncObject* so = sync_object_get(obj->oSyncID);
-    if (doSync && so) {
-        so->extendedModelId = modelId;
-        so->o = obj;
-        so->behavior = (BehaviorScript*) behavior;
-
-        struct Object* spawn_objects[] = { obj };
-        u32 models[] = { loadedModelId };
-        network_send_spawn_objects(spawn_objects, models, 1);
     }
 
     return obj;

@@ -228,13 +228,7 @@ void unload_object(struct Object *obj) {
         }
     }
 
-    struct SyncObject* so = sync_object_get(obj->oSyncID);
-    if (so) {
-        // forget sync object
-        if ((obj == so->o) && (obj->behavior == so->behavior)) {
-            sync_object_forget(so->id);
-        }
-
+    if (obj->oSyncID != 0) {
         smlua_call_event_hooks(HOOK_ON_SYNC_OBJECT_UNLOAD, obj);
     }
 

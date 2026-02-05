@@ -147,8 +147,7 @@ static void djui_chat_box_input_enter(struct DjuiInputbox* chatInput) {
                 djui_chat_message_create(extendedUnknownCommandMessage);
             }
         } else {
-            djui_chat_message_create_from(gNetworkPlayerLocal->globalIndex, chatInput->buffer);
-            network_send_chat(chatInput->buffer, gNetworkPlayerLocal->globalIndex);
+            djui_chat_message_create_from(0, chatInput->buffer);
         }
     }
 

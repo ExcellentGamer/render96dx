@@ -100,11 +100,7 @@ void bhv_treasure_chest_bottom_loop(void) {
                             play_sound(SOUND_MENU_CAMERA_BUZZ, gGlobalSoundSource);
                             o->parentObj->oTreasureChestSound = 2;
                         }
-                        if (gNetworkType == NT_NONE) {
-                            o->parentObj->oTreasureChestLastNetworkPlayerIndex = 0;
-                        } else {
-                            o->parentObj->oTreasureChestLastNetworkPlayerIndex = gNetworkPlayers[player->playerIndex].globalIndex;
-                        }
+                        o->parentObj->oTreasureChestLastNetworkPlayerIndex = 0;
                         o->parentObj->oTreasureChestSound = 0;
                     }
                 }
@@ -150,7 +146,7 @@ void bhv_treasure_chest_ship_init(void) {
     // Therefore this object must already be loaded for it to be set
     // and if it wasn't. You couldn't of possibly been the one
     // who last interacted to begin with.
-    o->oTreasureChestLastNetworkPlayerIndex = (gNetworkType == NT_NONE) ? 0 : UNKNOWN_GLOBAL_INDEX;
+    o->oTreasureChestLastNetworkPlayerIndex = 0;
 }
 
 void bhv_treasure_chest_ship_loop(void) {
@@ -197,7 +193,7 @@ void bhv_treasure_chest_jrb_init(void) {
     // Therefore this object must already be loaded for it to be set
     // and if it wasn't. You couldn't of possibly been the one
     // who last interacted to begin with.
-    o->oTreasureChestLastNetworkPlayerIndex = (gNetworkType == NT_NONE) ? 0 : UNKNOWN_GLOBAL_INDEX;
+    o->oTreasureChestLastNetworkPlayerIndex = 0;
 }
 
 void bhv_treasure_chest_jrb_loop(void) {
@@ -239,7 +235,7 @@ void bhv_treasure_chest_init(void) {
     // Therefore this object must already be loaded for it to be set
     // and if it wasn't. You couldn't of possibly been the one
     // who last interacted to begin with.
-    o->oTreasureChestLastNetworkPlayerIndex = (gNetworkType == NT_NONE) ? 0 : UNKNOWN_GLOBAL_INDEX;
+    o->oTreasureChestLastNetworkPlayerIndex = 0;
 }
 
 void bhv_treasure_chest_loop(void) {

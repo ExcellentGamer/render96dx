@@ -247,20 +247,14 @@ void bhv_mario_update(void) {
     for (s32 i = 0; i < MAX_PLAYERS; i++) {
         if (gMarioStates[i].marioObj == NULL) { continue; }
         gMarioStates[i].marioObj->oBehParams = i + 1;
-        if (gNetworkType == NT_NONE) {
-            gMarioStates[i].marioObj->globalPlayerIndex = i;
-        } else {
-            u8 globalIndex = gNetworkPlayers[i].globalIndex;
-            if (globalIndex == UNKNOWN_GLOBAL_INDEX) { globalIndex = 0; }
-            gMarioStates[i].marioObj->globalPlayerIndex = globalIndex;
-        }
+        gMarioStates[i].marioObj->globalPlayerIndex = i;
     }
 
     // set mario state to the current player
     s32 stateIndex = (gCurrentObject->oBehParams - 1);
     if (stateIndex >= MAX_PLAYERS || stateIndex < 0) { return; }
 
-    if (gNetworkType == NT_NONE && stateIndex != 0) {
+    if (stateIndex != 0) {
         gCurrentObject->header.gfx.node.flags |= GRAPH_RENDER_INVISIBLE;
         gCurrentObject->oIntangibleTimer = -1;
         return;
@@ -541,7 +535,6 @@ void spawn_objects_from_info(UNUSED s32 unused, struct SpawnInfo *spawnInfo) {
                 // set the sync id
                 if (spawnInfo->syncID) {
                     object->oSyncID = spawnInfo->syncID;
-                    sync_object_set_id(object);
                 }
 
                 // Record death/collection in the SpawnInfo
@@ -586,7 +579,6 @@ void spawn_objects_from_info(UNUSED s32 unused, struct SpawnInfo *spawnInfo) {
  */
 void clear_objects(void) {
     s32 i;
-    sync_objects_clear();
     gTHIWaterDrained = 0;
     gTimeStopState = 0;
     gMarioObject = NULL;

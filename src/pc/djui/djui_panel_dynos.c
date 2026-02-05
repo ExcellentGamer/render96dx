@@ -4,7 +4,6 @@
 #include "pc/utils/misc.h"
 #include "pc/configfile.h"
 #include "data/dynos.c.h"
-#include "pc/network/network.h"
 #include "djui_panel_main.h"
 #include "djui_panel_options.h"
 #include "djui_panel_pause.h"
@@ -17,9 +16,7 @@ static void djui_panel_dynos_apply(struct DjuiBase* caller) {
 }
 
 static void djui_panel_dynos_local_player_model_only(UNUSED struct DjuiBase* caller) {
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        network_player_update_model(i);
-    }
+    (void)caller;
 }
 
 static void djui_panel_dynos_refresh(UNUSED struct DjuiBase* base) {

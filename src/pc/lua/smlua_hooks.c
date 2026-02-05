@@ -893,33 +893,9 @@ s32 sort_alphabetically(const void *a, const void *b) {
 }
 
 char** smlua_get_chat_player_list(void) {
-    char* playerNames[MAX_PLAYERS] = { NULL };
-    s32 playerCount = 0;
-
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        struct NetworkPlayer* np = &gNetworkPlayers[i];
-        if (!np->connected) continue;
-
-        bool isDuplicate = false;
-        for (s32 j = 0; j < playerCount; j++) {
-            if (strcmp(playerNames[j], np->name) == 0) {
-                isDuplicate = true;
-                break;
-            }
-        }
-
-        if (!isDuplicate) {
-            playerNames[playerCount++] = np->name;
-        }
-    }
-
-    qsort(playerNames, playerCount, sizeof(char*), sort_alphabetically);
-
-    char** sortedPlayers = (char**) malloc((playerCount + 1) * sizeof(char*));
-    for (s32 i = 0; i < playerCount; i++) {
-        sortedPlayers[i] = strdup(playerNames[i]);
-    }
-    sortedPlayers[playerCount] = NULL;
+    char** sortedPlayers = (char**) malloc(2 * sizeof(char*));
+    sortedPlayers[0] = strdup(gCLIOpts.playerName[0] ? gCLIOpts.playerName : "Player");
+    sortedPlayers[1] = NULL;
     return sortedPlayers;
 }
 
@@ -935,7 +911,7 @@ char** smlua_get_chat_maincommands_list(void) {
     for (s32 i = 0; i < defaultCmdsCount; i++) {
         if (defaultCmds[i] != NULL) {
             defaultCmdsCountNew++;
-        } else if (gServerSettings.nametags && defaultCmds[i] == NULL) {
+        } else if (configNametags && defaultCmds[i] == NULL) {
             defaultCmds[i] = "nametags";
             defaultCmdsCountNew++;
             break;
@@ -957,7 +933,7 @@ char** smlua_get_chat_maincommands_list(void) {
 }
 
 char** smlua_get_chat_subcommands_list(const char* maincommand) {
-    if (gServerSettings.nametags && strcmp(maincommand, "nametags") == 0) {
+    if (configNametags && strcmp(maincommand, "nametags") == 0) {
         s32 count = 2;
         char** subcommands = (char**) malloc((count + 1) * sizeof(char*));
         subcommands[0] = strdup("show-tag");

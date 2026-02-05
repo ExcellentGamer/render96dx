@@ -40,7 +40,7 @@ static struct DateTime sDateTime;
 ///
 
 u32 get_network_area_timer(void) {
-    return gNetworkAreaTimer;
+    return 0;
 }
 
 u16 get_area_update_counter(void) {
@@ -409,15 +409,12 @@ s16 get_water_level(u8 index) {
 }
 
 void set_water_level(u8 index, s16 height, bool sync) {
-    if (sync && (!gNetworkPlayerLocal || !gNetworkPlayerLocal->currAreaSyncValid)) { return; }
+    (void)sync;
 
     u8 id = 6 * (index + 1);
     if (gEnvironmentRegions && index < gEnvironmentRegions[0] && gEnvironmentRegionsLength > id) {
         if (gEnvironmentRegions[id] == height) {
             return;
-        }
-        if (sync) {
-            network_send_change_water_level(id, height);
         }
         gEnvironmentRegions[id] = height;
     }

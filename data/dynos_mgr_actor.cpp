@@ -219,8 +219,7 @@ void DynOS_Actor_Override(struct Object* obj, void** aSharedChild) {
             obj->behavior == smlua_override_behavior(bhvWingCap) ||
             obj->behavior == smlua_override_behavior(bhvMetalCap) ||
             obj->behavior == smlua_override_behavior(bhvVanishCap))) {
-        struct NetworkPlayer* np = network_player_from_global_index(obj->globalPlayerIndex);
-        if (np && np->localIndex > 0 && configDynosLocalPlayerModelOnly) {
+        if (configDynosLocalPlayerModelOnly && obj->globalPlayerIndex > 0) {
             return;
         }
     }

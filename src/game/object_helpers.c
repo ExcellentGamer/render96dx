@@ -3061,9 +3061,6 @@ void enable_time_stop(void) {
 }
 
 void enable_time_stop_if_alone(void) {
-    if (network_player_connected_count() > 1) {
-        return;
-    }
     gTimeStopState |= TIME_STOP_ENABLED;
 }
 
@@ -3076,9 +3073,6 @@ void set_time_stop_flags(s32 flags) {
 }
 
 void set_time_stop_flags_if_alone(s32 flags) {
-    if (network_player_connected_count() > 1) {
-        return;
-    }
     gTimeStopState |= flags;
 }
 

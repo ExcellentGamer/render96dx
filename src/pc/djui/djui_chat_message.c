@@ -1,13 +1,16 @@
 #include <stdio.h>
-#include "pc/network/network.h"
+#include "types.h"
 #include "pc/utils/misc.h"
 #include "sounds.h"
 #include "audio/external.h"
 #include "game/mario_misc.h"
+#include "game/level_update.h"
 #include "djui.h"
 #include "djui_hud_utils.h"
 #include "pc/debuglog.h"
 #include "pc/lua/smlua_hooks.h"
+
+extern struct MarioState gMarioStates[];
 
 #define DJUI_CHAT_LIFE_TIME 10.0f
 
@@ -49,24 +52,15 @@ static void djui_chat_message_destroy(struct DjuiBase* base) {
 }
 
 void djui_chat_message_create_from(u8 globalIndex, const char* message) {
-    struct NetworkPlayer* np = network_player_from_global_index(globalIndex);
-    if (np == NULL) {
-        LOG_ERROR("Could not find network player, global index: %u", globalIndex);
-        return;
-    }
-
     bool allowMessage = true;
-    smlua_call_event_hooks(HOOK_ON_CHAT_MESSAGE, &gMarioStates[np->localIndex], message, &allowMessage);
+    smlua_call_event_hooks(HOOK_ON_CHAT_MESSAGE, &gMarioStates[0], message, &allowMessage);
     if (!allowMessage) {
         return;
     }
 
-    const char* playerColorString = network_get_player_text_color_string(np->localIndex);
-    char chatMsg[MAX_CHAT_PACKET_LENGTH] = { 0 };
-    snprintf(chatMsg, MAX_CHAT_PACKET_LENGTH, "%s%s\\#dcdcdc\\: %s", playerColorString, (np != NULL) ? np->name : "Player", message);
-
-    play_sound((globalIndex == gNetworkPlayerLocal->globalIndex) ? SOUND_MENU_MESSAGE_DISAPPEAR : SOUND_MENU_MESSAGE_APPEAR, gGlobalSoundSource);
-    djui_chat_message_create(chatMsg);
+    (void)globalIndex;
+    play_sound(SOUND_MENU_MESSAGE_DISAPPEAR, gGlobalSoundSource);
+    djui_chat_message_create(message);
 }
 
 void djui_chat_message_create(const char* message) {

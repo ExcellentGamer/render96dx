@@ -1318,7 +1318,7 @@ u8 passes_pvp_interaction_checks(struct MarioState* attacker, struct MarioState*
         return false;
     }
 
-    if (gServerSettings.pvpType == PLAYER_PVP_REVAMPED &&
+    if (configPvpType == 1 &&
         (attacker->action == ACT_PUNCHING || attacker->action == ACT_MOVE_PUNCHING) &&
         (victim->action == ACT_BACKWARD_GROUND_KB || victim->action == ACT_FORWARD_GROUND_KB ||
         victim->action == ACT_SOFT_BACKWARD_GROUND_KB || victim->action == ACT_SOFT_FORWARD_GROUND_KB)) {
@@ -1336,7 +1336,7 @@ u32 interact_player(struct MarioState* m, UNUSED u32 interactType, struct Object
 
     if (!m || !o) { return FALSE; }
     if (!is_player_active(m)) { return FALSE; }
-    if (gServerSettings.playerInteractions == PLAYER_INTERACTIONS_NONE) { return FALSE; }
+    if (configPlayerInteraction == 0) { return FALSE; }
     if (m->action & ACT_FLAG_INTANGIBLE) { return FALSE; }
 
     struct MarioState* m2 = NULL;
@@ -1371,7 +1371,7 @@ u32 interact_player_pvp(struct MarioState* attacker, struct MarioState* victim) 
     if (!attacker || !victim) { return false; }
     if (!is_player_active(attacker)) { return FALSE; }
     if (!is_player_active(victim)) { return FALSE; }
-    if (gServerSettings.playerInteractions == PLAYER_INTERACTIONS_NONE) { return FALSE; }
+    if (configPlayerInteraction == 0) { return FALSE; }
     if (attacker->action == ACT_JUMBO_STAR_CUTSCENE) { return FALSE; }
     if (victim->action   == ACT_JUMBO_STAR_CUTSCENE) { return FALSE; }
 
@@ -1388,14 +1388,11 @@ u32 interact_player_pvp(struct MarioState* attacker, struct MarioState* victim) 
 
     // grab the lag compensation version of the victim
     struct MarioState* cVictim = NULL;
-    if (victim->playerIndex == 0) {
-        cVictim = lag_compensation_get_local_state(&gNetworkPlayers[attacker->playerIndex]);
-    }
-    if (cVictim == NULL) { cVictim = victim; }
+    cVictim = victim;
 
     // make sure we overlap
     f32 overlapScale = (attacker->playerIndex == 0) ? 0.6f : 1.0f;
-    if (gServerSettings.pvpType == PLAYER_PVP_REVAMPED && attacker->action == ACT_GROUND_POUND_LAND) {
+    if (configPvpType == 1 && attacker->action == ACT_GROUND_POUND_LAND) {
         overlapScale += 0.3f;
     }
     if (!detect_player_hitbox_overlap(attacker, cVictim, overlapScale)) {
@@ -1428,7 +1425,7 @@ u32 interact_player_pvp(struct MarioState* attacker, struct MarioState* victim) 
         //Vec3f velDiff;
         //vec3f_dif(velDiff, attacker->vel, cVictim->vel);
         // Allow groundpounds to always hit sliding/fast attacks
-        if (gServerSettings.pvpType == PLAYER_PVP_REVAMPED && attacker->action == ACT_GROUND_POUND) {
+        if (configPvpType == 1 && attacker->action == ACT_GROUND_POUND) {
             // do nothing
         } else {
             if (attacker->action == ACT_SLIDE_KICK_SLIDE || attacker->action == ACT_SLIDE_KICK) {
@@ -1440,7 +1437,7 @@ u32 interact_player_pvp(struct MarioState* attacker, struct MarioState* victim) 
             }
 
             u8 forceAllowAttack = FALSE;
-            if (gServerSettings.pvpType == PLAYER_PVP_REVAMPED) {
+            if (configPvpType == 1) {
                 // Give slidekicks trade immunity by making them (almost) invincible
                 // Also give rollout flips immunity to dives
                 if ((cVictim->action == ACT_SLIDE_KICK && attacker->action != ACT_SLIDE_KICK) ||
@@ -1486,7 +1483,7 @@ u32 interact_player_pvp(struct MarioState* attacker, struct MarioState* victim) 
 
     victim->invincTimer = max(victim->invincTimer, 3);
     take_damage_and_knock_back(victim, attacker->marioObj);
-    if (gServerSettings.pvpType != PLAYER_PVP_REVAMPED || !(attacker->flags & MARIO_PUNCHING)) {
+    if (configPvpType != 1 || !(attacker->flags & MARIO_PUNCHING)) {
         bounce_back_from_attack(attacker, interaction);
     }
     victim->interactObj = NULL;

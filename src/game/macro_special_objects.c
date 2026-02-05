@@ -181,7 +181,6 @@ void spawn_macro_objects(s16 areaIndex, s16 *macroObjList) {
                 newObj->respawnInfo = macroObjList - 1;
                 newObj->parentObj = newObj;
                 newObj->oSyncID = gAreas[areaIndex].nextSyncID;
-                sync_object_set_id(newObj);
             }
         }
 
@@ -256,7 +255,6 @@ void spawn_macro_objects_hardcoded(s16 areaIndex, s16 *macroObjList) {
 
         if (obj != NULL) {
             obj->oSyncID = gAreas[areaIndex].nextSyncID;
-            sync_object_set_id(obj);
         }
 
         gAreas[areaIndex].nextSyncID += 10;
@@ -351,7 +349,6 @@ void spawn_special_objects(s16 areaIndex, s16 **specialObjList) {
 
         if (obj != NULL) {
             obj->oSyncID = gAreas[areaIndex].nextSyncID;
-            sync_object_set_id(obj);
         }
 
         gAreas[areaIndex].nextSyncID += 10;

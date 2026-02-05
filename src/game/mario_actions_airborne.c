@@ -18,7 +18,6 @@
 #include "object_helpers.h"
 #include "pc/debuglog.h"
 #include "pc/configfile.h"
-#include "pc/network/network.h"
 #include "pc/lua/smlua.h"
 #include "hardcoded.h"
 
@@ -492,7 +491,7 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation, 
             set_character_animation(m, animation);
 
             if (m->forwardVel > 16.0f) {
-                if (gServerSettings.bouncyLevelBounds == BOUNCY_LEVEL_BOUNDS_OFF || m->wall != NULL) {
+                if (configBouncyLevelBounds == 0 || m->wall != NULL) {
                     queue_rumble_data_mario(m, 5, 40);
                     mario_bonk_reflection(m, FALSE);
                     m->faceAngle[1] += 0x8000;
@@ -514,7 +513,7 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation, 
                     // wall collision, or by rising into the top of a wall such
                     // that the final quarter step detects a ledge, but you are
                     // not able to ledge grab it.
-                    if (gServerSettings.bouncyLevelBounds == BOUNCY_LEVEL_BOUNDS_OFF) {
+                    if (configBouncyLevelBounds == 0) {
                         if (m->forwardVel >= 38.0f) {
                             set_mario_particle_flags(m, PARTICLE_VERTICAL_STAR, FALSE);
                             set_mario_action(m, ACT_BACKWARD_AIR_KB, 0);
@@ -888,7 +887,7 @@ s32 act_dive(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
             mario_bonk_reflection(m, TRUE);
             m->faceAngle[0] = 0;
@@ -1270,7 +1269,7 @@ u32 common_air_knockback_step(struct MarioState *m, u32 landAction, u32 hardFall
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
             set_character_animation(m, CHAR_ANIM_BACKWARD_AIR_KB);
             mario_bonk_reflection(m, FALSE);
@@ -1533,7 +1532,7 @@ s32 act_forward_rollout(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
             mario_set_forward_vel(m, 0.0f);
             break;
 
@@ -1576,7 +1575,7 @@ s32 act_backward_rollout(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
             mario_set_forward_vel(m, 0.0f);
             break;
 
@@ -1611,7 +1610,7 @@ s32 act_butt_slide_air(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
             if (m->vel[1] > 0.0f) {
                 m->vel[1] = 0.0f;
@@ -1653,7 +1652,7 @@ s32 act_hold_butt_slide_air(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
             if (m->vel[1] > 0.0f) {
                 m->vel[1] = 0.0f;
@@ -1789,7 +1788,7 @@ s32 act_slide_kick(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
             if (m->vel[1] > 0.0f) {
                 m->vel[1] = 0.0f;
@@ -1837,7 +1836,7 @@ s32 act_jump_kick(struct MarioState *m) {
             break;
 
         case AIR_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
             mario_set_forward_vel(m, 0.0f);
             break;
     }

@@ -155,11 +155,6 @@ int smlua_func_table_deepcopy(lua_State *L) {
 //////////
 
 int smlua_func_init_mario_after_warp(lua_State* L) {
-    if (network_player_connected_count() >= 2) {
-        LOG_LUA_LINE("init_mario_after_warp() can only be used in singleplayer");
-        return 0;
-    }
-
     if(!smlua_functions_valid_param_count(L, 0)) { return 0; }
 
     extern void init_mario_after_warp(void);
@@ -169,11 +164,6 @@ int smlua_func_init_mario_after_warp(lua_State* L) {
 }
 
 int smlua_func_reset_level(lua_State* L) {
-    if (network_player_connected_count() >= 2) {
-        LOG_LUA_LINE("reset_level() can only be used in singleplayer");
-        return 0;
-    }
-
     if(!smlua_functions_valid_param_count(L, 0)) { return 0; }
 
     gChangeLevel = gCurrLevelNum;
@@ -181,112 +171,34 @@ int smlua_func_reset_level(lua_State* L) {
     return 1;
 }
 
-int smlua_func_network_init_object(lua_State* L) {
-    if (!smlua_functions_valid_param_count(L, 3)) { return 0; }
-
-    struct Object* obj = smlua_to_cobject(L, 1, LOT_OBJECT);
-    if (!gSmLuaConvertSuccess || obj == NULL) { LOG_LUA("network_init_object: Failed to convert parameter 1"); return 0; }
-
-    bool standardSync = smlua_to_boolean(L, 2);
-    if (!gSmLuaConvertSuccess) { LOG_LUA("network_init_object: Failed to convert parameter 2"); return 0; }
-
-    if (lua_type(L, 3) != LUA_TNIL && lua_type(L, 3) != LUA_TTABLE) {
-        LOG_LUA_LINE("network_init_object() called with an invalid type for param 3: %s", luaL_typename(L, 3));
-        return 0;
-    }
-
-    struct SyncObject* so = sync_object_init(obj, standardSync ? 4000.0f : SYNC_DISTANCE_ONLY_EVENTS);
-    if (so == NULL) {
-        LOG_LUA_LINE("network_init_object: Failed to allocate sync object.");
-        return 0;
-    }
-
-    if (lua_type(L, 3) == LUA_TTABLE) {
-        lua_pushnil(L);  // first key
-
-        while (lua_next(L, 3) != 0) {
-            // uses 'key' (at index -2) and 'value' (at index -1)
-            if (lua_type(L, -1) != LUA_TSTRING) {
-                LOG_LUA_LINE("Invalid type passed to network_init_object(): %s", luaL_typename(L, -1));
-                lua_pop(L, 1); // pop value
-                continue;
-            }
-            const char* fieldIdentifier = smlua_to_string(L, -1);
-            if (!gSmLuaConvertSuccess) {
-                LOG_LUA_LINE("Invalid field passed to network_init_object()");
-                lua_pop(L, 1); // pop value
-                continue;
-            }
-
-            struct LuaObjectField* data = smlua_get_object_field(LOT_OBJECT, fieldIdentifier);
-            if (data == NULL) {
-                data = smlua_get_custom_field(L, LOT_OBJECT, lua_gettop(L));
-            }
-
-            u8 lvtSize = 0;
-            if ((data->valueType == LVT_U32) || (data->valueType == LVT_S32) || (data->valueType == LVT_F32)) { lvtSize = 32; }
-            if ((data->valueType == LVT_U16) || (data->valueType == LVT_S16)) { lvtSize = 16; }
-            if ((data->valueType == LVT_U8) || (data->valueType == LVT_S8)) { lvtSize = 8; }
-
-            if (data == NULL || lvtSize == 0) {
-                LOG_LUA_LINE("Invalid field passed to network_init_object(): %s", fieldIdentifier);
-                lua_pop(L, 1); // pop value
-                continue;
-            }
-
-            u8* field = ((u8*)(intptr_t)obj) + data->valueOffset;
-            sync_object_init_field_with_size(obj, field, lvtSize);
-
-            lua_pop(L, 1); // pop value
-        }
-        lua_pop(L, 1); // pop key
-    }
-
-    return 1;
+int smlua_func_network_init_object(UNUSED lua_State* L) {
+    LOG_LUA_LINE("network_init_object() is unsupported (singleplayer build)");
+    return 0;
 }
 
-int smlua_func_network_send_object(lua_State* L) {
-    if (!smlua_functions_valid_param_count(L, 2)) { return 0; }
-
-    struct Object* obj = smlua_to_cobject(L, 1, LOT_OBJECT);
-    if (!gSmLuaConvertSuccess || obj == NULL) { LOG_LUA("network_send_object: Failed to convert parameter 1"); return 0; }
-
-    bool reliable = smlua_to_boolean(L, 2);
-    if (!gSmLuaConvertSuccess) { LOG_LUA("network_send_object: Failed to convert parameter 2"); return 0; }
-
-    struct SyncObject* so = sync_object_get(obj->oSyncID);
-    if (!so || so->o != obj) {
-        LOG_LUA_LINE("network_send_object: Failed to retrieve sync object.");
-        return 0;
-    }
-
-    network_send_object_reliability(obj, reliable);
-
-    return 1;
+int smlua_func_network_send_object(UNUSED lua_State* L) {
+    LOG_LUA_LINE("network_send_object() is unsupported (singleplayer build)");
+    return 0;
 }
 
-int smlua_func_network_send(lua_State* L) {
-    if (!smlua_functions_valid_param_count(L, 2)) { return 0; }
-    network_send_lua_custom(true);
-    return 1;
+int smlua_func_network_send(UNUSED lua_State* L) {
+    LOG_LUA_LINE("network_send() is unsupported (singleplayer build)");
+    return 0;
 }
 
-int smlua_func_network_send_to(lua_State* L) {
-    if (!smlua_functions_valid_param_count(L, 3)) { return 0; }
-    network_send_lua_custom(false);
-    return 1;
+int smlua_func_network_send_to(UNUSED lua_State* L) {
+    LOG_LUA_LINE("network_send_to() is unsupported (singleplayer build)");
+    return 0;
 }
 
-int smlua_func_network_send_bytestring(lua_State* L) {
-    if (!smlua_functions_valid_param_count(L, 2)) { return 0; }
-    network_send_lua_custom_bytestring(true);
-    return 1;
+int smlua_func_network_send_bytestring(UNUSED lua_State* L) {
+    LOG_LUA_LINE("network_send_bytestring() is unsupported (singleplayer build)");
+    return 0;
 }
 
-int smlua_func_network_send_bytestring_to(lua_State* L) {
-    if (!smlua_functions_valid_param_count(L, 3)) { return 0; }
-    network_send_lua_custom_bytestring(false);
-    return 1;
+int smlua_func_network_send_bytestring_to(UNUSED lua_State* L) {
+    LOG_LUA_LINE("network_send_bytestring_to() is unsupported (singleplayer build)");
+    return 0;
 }
 
 int smlua_func_set_exclamation_box_contents(lua_State* L) {

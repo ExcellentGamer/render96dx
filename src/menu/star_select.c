@@ -358,56 +358,10 @@ void print_act_selector_strings(void) {
             print_menu_generic_string(x, 38, starNumbers);
         }
 #endif
-        // display player HUD head if they're in that act
-        if ((gOverrideHideActSelectHud & ACT_SELECT_HUD_PLAYERS_IN_LEVEL) == 0 && gServerSettings.enablePlayersInLevelDisplay) {
-            for (int j = 0; j < MAX_PLAYERS; j++) {
-                struct NetworkPlayer* np = &gNetworkPlayers[j];
-                if (np == NULL || !np->connected) { continue; }
-                if (np->currCourseNum != gCurrCourseNum) { continue; }
-                if (np->currActNum != i) { continue; }
-
-                gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
-                render_hud_icon(NULL, gMarioStates[j].character->hudHeadTexture.texture, G_IM_FMT_RGBA, G_IM_SIZ_16b, 16, 16, x - 4, 223, 16, 16, 0, 0, 16, 16);
-                break;
-            }
-        }
+        (void)0;
     }
 
-    // print the number of players in the selected act
-    if ((gOverrideHideActSelectHud & ACT_SELECT_HUD_PLAYERS_IN_LEVEL) == 0 && sVisibleStars > 0) {
-        u8 playersInAct = 0;
-        for (int j = 0; j < MAX_PLAYERS; j++) {
-            struct NetworkPlayer* np = &gNetworkPlayers[j];
-            if (np == NULL || !np->connected) { continue; }
-            if (np->currCourseNum != gCurrCourseNum) { continue; }
-            if (np->currActNum != sSelectedActIndex + 1) { continue; }
-            playersInAct++;
-        }
-
-        if (playersInAct > 0 && gServerSettings.enablePlayersInLevelDisplay) {
-            char message[16] = { 0 };
-            if (playersInAct == 1) {
-                if (snprintf(message, 16, "     Join      ") < 0) {
-                    // do nothing
-                }
-            } else {
-                if (snprintf(message, 16, "%d Players", playersInAct) < 0) {
-                    // do nothing
-                }
-            }
-
-            gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
-            f32 textWidth = get_generic_ascii_string_width(message);
-
-            f32 xPos = (sSelectedActIndex + 1) * 34 - sVisibleStars * 17 + 139 - (textWidth / 2.0f) + 4;
-            f32 yPos = 224;
-
-            gDPSetEnvColor(gDisplayListHead++, 100, 100, 100, 255);
-            print_generic_ascii_string(xPos, yPos, message);
-
-            gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
-        }
-    }
+    (void)0;
 
     gSPDisplayList(gDisplayListHead++, dl_menu_ia8_text_end);
 }

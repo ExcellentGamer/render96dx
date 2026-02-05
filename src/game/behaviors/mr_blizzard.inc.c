@@ -226,7 +226,7 @@ static void mr_blizzard_act_death(void) {
 
                 cap = spawn_object_relative(0, 5, 105, 0, o, gMarioStates[0].character->capModelId, bhvNormalCap);
                 if (cap != NULL) {
-                    cap->globalPlayerIndex = (gNetworkType == NT_NONE) ? 0 : o->globalPlayerIndex;
+                    cap->globalPlayerIndex = 0;
                     cap->oMoveAngleYaw = o->oFaceAngleYaw + (o->oFaceAngleRoll < 0 ? 0x4000 : -0x4000);
                     cap->oForwardVel = 10.0f;
                 }

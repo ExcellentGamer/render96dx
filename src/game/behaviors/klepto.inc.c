@@ -387,7 +387,7 @@ void bhv_klepto_update(void) {
 
                 struct Object* cap = spawn_object(o, capModel, bhvNormalCap);
                 if (cap != NULL) {
-                    cap->globalPlayerIndex = (gNetworkType == NT_NONE) ? 0 : o->globalPlayerIndex;
+                    cap->globalPlayerIndex = 0;
                 }
 
             } else if (o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_STAR) {

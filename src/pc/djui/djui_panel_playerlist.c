@@ -7,7 +7,6 @@
 #include "game/level_info.h"
 #include "game/mario_misc.h"
 #include "pc/configfile.h"
-#include "pc/network/network.h"
 #include "pc/utils/misc.h"
 
 extern ALIGNED8 const u8 texture_hud_char_mario_head[];
@@ -34,80 +33,17 @@ const u8 sPlayerListSize = 16;
 u8 sPageIndex = 0;
 static u8 sPlayer = 0; // all player slots always exist this switches their visibility on and off if they're connected or not
 
-static void playerlist_update_row(u8 i, struct NetworkPlayer *np) {
-    u8 charIndex = np->overrideModelIndex;
-    char sActNum[7];
-    if (np->currActNum != 99 && np->currActNum != 0) {
-        snprintf(sActNum, 7, "# %d", np->currActNum);
-    } else if (np->currActNum == 0) {
-        snprintf(sActNum, 7, " ");
-    } else {
-        snprintf(sActNum, 7, "Done");
-    }
-    if (charIndex >= CT_MAX) { charIndex = 0; }
-    djuiHeadIconImages[i]->textureInfo.texture = gCharacters[charIndex].hudHeadTexture.texture;
-
-    s16 pingValue = np->ping / 150;
-    switch (pingValue) {
-        case 0:  djuiPingImages[i]->textureInfo.texture = texture_ping_full;  break;
-        case 1:  djuiPingImages[i]->textureInfo.texture = texture_ping_four;  break;
-        case 2:  djuiPingImages[i]->textureInfo.texture = texture_ping_three; break;
-        case 3:  djuiPingImages[i]->textureInfo.texture = texture_ping_two;   break;
-        case 4:  djuiPingImages[i]->textureInfo.texture = texture_ping_one;   break;
-        default: djuiPingImages[i]->textureInfo.texture = texture_ping_empty; break;
-    }
-
-    u8 visible = np->connected;
-    if (np == gNetworkPlayerServer && gServerSettings.headlessServer) {
-        visible = false;
-    } else if (sPlayer < sPlayerListSize * sPageIndex) {
-        visible = false;
-        sPlayer++;
-    }
-
-    djui_base_set_visible(&djuiRow[i]->base, visible);
-    djui_base_set_visible(&djuiPingImages[i]->base, true);
-
-    u8* rgb = network_get_player_text_color(np->localIndex);
-    djui_base_set_color(&djuiTextNames[i]->base, rgb[0], rgb[1], rgb[2], 255);
-    djui_text_set_text(djuiTextNames[i], np->name);
-
-    djui_base_set_color(&djuiTextDescriptions[i]->base, np->descriptionR, np->descriptionG, np->descriptionB, np->descriptionA);
-    djui_text_set_text(djuiTextDescriptions[i], np->description);
-
-    djui_text_set_text(djuiTextLocations[i],
-        np->overrideLocation[0] == '\0'
-          ? get_level_name(np->currCourseNum, np->currLevelNum, np->currAreaIndex)
-          : np->overrideLocation
-    );
-    djui_text_set_text(djuiTextAct[i], sActNum);
-    djui_base_set_size(&djuiTextAct[i]->base, 65, 32.0f);
+static void playerlist_update_row(UNUSED u8 i, UNUSED void* np) {
 }
 
 void djui_panel_playerlist_on_render_pre(UNUSED struct DjuiBase* base, UNUSED bool* skipRender) {
-    if (gDjuiInMainMenu || gNetworkType == NT_NONE) {
-        if (gDjuiPlayerList != NULL) {
-            djui_base_set_visible(&gDjuiPlayerList->base, false);
-        }
-        if (gDjuiModList != NULL) {
-            djui_base_set_visible(&gDjuiModList->base, false);
-        }
-        return;
+    if (gDjuiPlayerList != NULL) {
+        djui_base_set_visible(&gDjuiPlayerList->base, false);
     }
-
-    s32 j = 0;
-    sPlayer = 0;
-
-    for (s32 i = 0; i < MAX_PLAYERS; i++) {
-        struct NetworkPlayer *np = &gNetworkPlayers[i];
-        if (!np->connected) { continue; }
-        playerlist_update_row(j++, np);
+    if (gDjuiModList != NULL) {
+        djui_base_set_visible(&gDjuiModList->base, false);
     }
-
-    while (j < MAX_PLAYERS) {
-        djui_base_set_visible(&djuiRow[j]->base, false);
-        j++;
-    }
+    return;
 }
 
 void djui_panel_playerlist_create(UNUSED struct DjuiBase* caller) {

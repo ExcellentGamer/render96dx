@@ -24,9 +24,9 @@
 #include "skybox.h"
 #include "hardcoded.h"
 #include "sound_init.h"
-#include "pc/network/network.h"
 #include "pc/lua/smlua_hooks.h"
 #include "pc/mods/mods.h"
+#include "pc/configfile.h"
 
 #define TOAD_STAR_1_REQUIREMENT gBehaviorValues.ToadStar1Requirement
 #define TOAD_STAR_2_REQUIREMENT gBehaviorValues.ToadStar2Requirement
@@ -346,17 +346,11 @@ static u8 geo_get_processing_object_index(void) {
     }
     if (gCurGraphNodeProcessingObject == NULL) { return 0; }
 
-    if (gNetworkType == NT_NONE) {
-        if (gCurGraphNodeProcessingObject->behavior == bhvMario) {
-            index = gCurGraphNodeProcessingObject->oBehParams - 1;
-            return (index >= MAX_PLAYERS || index < 0) ? 0 : index;
-        }
-        return 0;
+    if (gCurGraphNodeProcessingObject->behavior == bhvMario) {
+        index = gCurGraphNodeProcessingObject->oBehParams - 1;
+        return (index >= MAX_PLAYERS || index < 0) ? 0 : index;
     }
-
-    struct NetworkPlayer* np = network_player_from_global_index(gCurGraphNodeProcessingObject->globalPlayerIndex);
-    index = (np == NULL) ? 0 : np->localIndex;
-    return (index >= MAX_PLAYERS) ? 0 : index;
+    return 0;
 }
 
 s8 geo_get_processing_mario_index(void) {
@@ -454,7 +448,7 @@ Gfx* geo_mario_tilt_torso(s32 callContext, struct GraphNode* node, Mat4* mtx) {
     s32 action = bodyState->action;
     bodyState->mirrorMario = gCurGraphNodeObject == &gMirrorMario[plrIdx];
 
-    u8 charIndex = gNetworkPlayers[plrIdx].overrideModelIndex;
+    u8 charIndex = configPlayerModel;
     if (charIndex >= CT_MAX) { charIndex = 0; }
     struct Character* character = &gCharacters[charIndex];
 
@@ -689,7 +683,6 @@ Gfx* geo_render_mirror_mario(s32 callContext, struct GraphNode* node, UNUSED Mat
     for (s32 i = 0; i < MAX_PLAYERS; i++) {
         f32 mirroredX;
         struct MarioState* marioState = &gMarioStates[i];
-        struct NetworkPlayer* np = &gNetworkPlayers[i];
         struct Object* mario = marioState->marioObj;
 
         switch (callContext) {
@@ -703,7 +696,7 @@ Gfx* geo_render_mirror_mario(s32 callContext, struct GraphNode* node, UNUSED Mat
                 geo_remove_child_from_parent(node, &gMirrorMario[i].node);
                 break;
             case GEO_CONTEXT_RENDER:
-                if (mario && (((struct GraphNode*)&mario->header.gfx)->flags & GRAPH_RENDER_ACTIVE) && np->connected) {
+                if (mario && (((struct GraphNode*)&mario->header.gfx)->flags & GRAPH_RENDER_ACTIVE) && i == 0) {
                     // TODO: Is this a geo layout copy or a graph node copy?
                     gMirrorMario[i].sharedChild = mario->header.gfx.sharedChild;
                     dynos_actor_override(mario, (void*)&gMirrorMario[i].sharedChild);
@@ -791,7 +784,8 @@ static struct PlayerColor geo_mario_get_player_color(const struct PlayerPalette 
 }
 
 void get_player_color(u8 index, u8 part, f32 *out) {
-    const struct PlayerPalette *palette = &gNetworkPlayers[index].overridePalette;
+    (void)index;
+    const struct PlayerPalette *palette = &configPlayerPalette;
     out[0] = palette->parts[part][0] / 255.0f;
     out[1] = palette->parts[part][1] / 255.0f;
     out[2] = palette->parts[part][2] / 255.0f;
@@ -824,7 +818,7 @@ Gfx* geo_mario_set_player_colors(s32 callContext, struct GraphNode* node, UNUSED
     Gfx* gfx = NULL;
     u8 index = geo_get_processing_object_index();
 
-    struct PlayerColor color = geo_mario_get_player_color(&gNetworkPlayers[index].overridePalette);
+    struct PlayerColor color = geo_mario_get_player_color(&configPlayerPalette);
     gNetworkPlayerColors[index] = color;
 
     struct MarioBodyState* bodyState = &gBodyStates[index];
@@ -852,10 +846,10 @@ Gfx* geo_mario_cap_display_list(s32 callContext, struct GraphNode* node, UNUSED 
     if (callContext != GEO_CONTEXT_RENDER) { return NULL; }
     u8 globalIndex = geo_get_processing_object_index();
 
-    struct PlayerColor color = geo_mario_get_player_color(&gNetworkPlayers[globalIndex].overridePalette);
+    struct PlayerColor color = geo_mario_get_player_color(&configPlayerPalette);
     gNetworkPlayerColors[globalIndex] = color;
 
-    u8 charIndex = gNetworkPlayers[globalIndex].overrideModelIndex;
+    u8 charIndex = configPlayerModel;
     if (charIndex >= CT_MAX) { charIndex = 0; }
     struct Character* character = &gCharacters[charIndex];
 

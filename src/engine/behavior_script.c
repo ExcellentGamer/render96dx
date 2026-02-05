@@ -14,7 +14,6 @@
 #include "game/object_list_processor.h"
 #include "graph_node.h"
 #include "surface_collision.h"
-#include "pc/network/network.h"
 #include "pc/mods/mods.h"
 #include "pc/lua/smlua.h"
 #include "pc/lua/smlua_hooks.h"
@@ -48,19 +47,10 @@ static void goto_behavior_unused(const BehaviorScript *bhvAddr) {
 // Generate a pseudorandom integer from 0 to 65535 from the random seed, and update the seed.
 u16 random_u16(void) {
     u16 savedSeed = gRandomSeed16;
-    struct SyncObject* so = NULL;
 
     if (gOverrideRngPosition != NULL) {
         // override this function for rng positions
         gRandomSeed16 = gOverrideRngPosition->seed;
-    } else if (gCurrentObject && gCurrentObject->oSyncID != 0) {
-        // override this function for synchronized entities
-        so = sync_object_get(gCurrentObject->oSyncID);
-        if (so != NULL && so->o == gCurrentObject) {
-            gRandomSeed16 = so->randomSeed;
-        } else {
-            so = NULL;
-        }
     }
 
     u16 temp1, temp2;
@@ -92,10 +82,6 @@ u16 random_u16(void) {
         gOverrideRngPosition->seed = gRandomSeed16;
         gRandomSeed16 = savedSeed;
         return gOverrideRngPosition->seed;
-    } else if (so != NULL) {
-        so->randomSeed = gRandomSeed16;
-        gRandomSeed16 = savedSeed;
-        return so->randomSeed;
     }
 
     return gRandomSeed16;
@@ -1300,42 +1286,6 @@ void cur_obj_update(void) {
     }
 
     // handle network area timer
-    if (gNetworkType != NT_NONE && gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !network_check_singleplayer_pause()) {
-        // make sure the area is valid
-        if (gNetworkPlayerLocal == NULL || !gNetworkPlayerLocal->currAreaSyncValid) {
-            goto cur_obj_update_end;
-        }
-
-        // catch up the timer in total loop increments
-        if (gCurrentObject->areaTimerType == AREA_TIMER_TYPE_LOOP) {
-            u32 difference = (gNetworkAreaTimer - gCurrentObject->areaTimer);
-            if (difference >= gCurrentObject->areaTimerDuration && gCurrentObject->areaTimerDuration) {
-                u32 catchup = difference / gCurrentObject->areaTimerDuration;
-                catchup *= gCurrentObject->areaTimerDuration;
-                gCurrentObject->areaTimer += catchup;
-            }
-        }
-
-        // catch up the timer for maximum
-        if (gCurrentObject->areaTimerType == AREA_TIMER_TYPE_MAXIMUM) {
-            u32 difference = (gNetworkAreaTimer - gCurrentObject->areaTimer);
-            if (difference >= gCurrentObject->areaTimerDuration) {
-                if (gCurrentObject->areaTimer < 10) {
-                    gCurrentObject->areaTimer = gNetworkAreaTimer;
-                } else {
-                    gCurrentObject->areaTimer = (gNetworkAreaTimer - gCurrentObject->areaTimerDuration);
-                }
-            }
-        }
-
-        // cancel object update if it's running faster than the timer
-        if (gCurrentObject->areaTimer > gNetworkAreaTimer) {
-            goto cur_obj_update_end;
-        }
-    }
-
-cur_obj_update_begin:;
-
     UNUSED u32 unused;
 
     s16 objFlags = gCurrentObject->oFlags;
@@ -1450,15 +1400,13 @@ cur_obj_update_begin:;
     }
 
     // update network area timer
-    if (gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !network_check_singleplayer_pause()) {
+    extern s16 gMenuMode;
+    bool paused = (gMenuMode != -1) || (gCameraMovementFlags & CAM_MOVE_PAUSE_SCREEN);
+    if (gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE && !paused) {
         gCurrentObject->areaTimer++;
-        if (gCurrentObject->areaTimer < gNetworkAreaTimer) {
-            goto cur_obj_update_begin;
-        }
     }
 
     // call the network area timer's run-once callback
-cur_obj_update_end:;
     if (gCurrentObject->areaTimerType != AREA_TIMER_TYPE_NONE) {
         if (gCurrentObject->areaTimerRunOnceCallback != NULL) {
             gCurrentObject->areaTimerRunOnceCallback();

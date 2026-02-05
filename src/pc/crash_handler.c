@@ -579,11 +579,6 @@ static void crash_handler(const int signalNum, siginfo_t *info, UNUSED ucontext_
     crash_handler_add_info_str(&pText, 315, -4 + (8 * 0), "Arch", ARCHITECTURE_STR);
 
     s32 syncObjects = 0;
-    if (gGameInited) {
-        for (struct SyncObject* so = sync_object_get_first(); so != NULL; so = sync_object_get_next()) {
-            if (so->o != NULL) { syncObjects++; }
-        }
-    }
     crash_handler_add_info_int(&pText, 315, -4 + (8 * 4), "SyncObj", syncObjects);
 
     crash_handler_add_info_int(&pText, 380, -4 + (8 * 0), "Id", (int)gPcDebug.id & 0xFF);

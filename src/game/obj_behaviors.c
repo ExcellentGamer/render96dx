@@ -542,21 +542,7 @@ s8 is_point_within_radius_of_any_player(f32 x, f32 y, f32 z, s32 dist) {
 /* |description|Checks if `m` is in the current course/act/level/area and isn't bubbled|descriptionEnd| */
 u8 is_player_active(struct MarioState* m) {
     if (!m) { return FALSE; }
-    if (gNetworkType == NT_NONE) { return (m == &gMarioStates[0]); }
-    if (m->action == ACT_BUBBLED) { return FALSE; }
-    struct NetworkPlayer* np = &gNetworkPlayers[m->playerIndex];
-    if (np == gNetworkPlayerServer && gServerSettings.headlessServer) { return FALSE; }
-    if (np->type != NPT_LOCAL) {
-        if (!np->connected) { return FALSE; }
-        if (gNetworkPlayerLocal == NULL) { return FALSE; }
-        bool levelAreaMismatch =
-            (np->currCourseNum   != gNetworkPlayerLocal->currCourseNum
-            || np->currActNum    != gNetworkPlayerLocal->currActNum
-            || np->currLevelNum  != gNetworkPlayerLocal->currLevelNum
-            || np->currAreaIndex != gNetworkPlayerLocal->currAreaIndex);
-        if (levelAreaMismatch) { return FALSE; }
-    }
-    return TRUE;
+    return (m == &gMarioStates[0]);
 }
 
 /* |description|Checks if any player besides the local player is in the current course/act/level/area|descriptionEnd| */
@@ -571,20 +557,7 @@ u8 is_other_player_active(void) {
 /* |description|Checks if `m` is in the current course/act/level/area|descriptionEnd| */
 u8 is_player_in_local_area(struct MarioState* m) {
     if (!m) { return FALSE; }
-    if (gNetworkType == NT_NONE) { return (m == &gMarioStates[0]); }
-    struct NetworkPlayer* np = &gNetworkPlayers[m->playerIndex];
-    if (np == gNetworkPlayerServer && gServerSettings.headlessServer) { return FALSE; }
-    if (np->type != NPT_LOCAL) {
-        if (!np->connected) { return FALSE; }
-        if (gNetworkPlayerLocal == NULL) { return FALSE; }
-        bool levelAreaMismatch =
-            (np->currCourseNum   != gNetworkPlayerLocal->currCourseNum
-            || np->currActNum    != gNetworkPlayerLocal->currActNum
-            || np->currLevelNum  != gNetworkPlayerLocal->currLevelNum
-            || np->currAreaIndex != gNetworkPlayerLocal->currAreaIndex);
-        if (levelAreaMismatch) { return FALSE; }
-    }
-    return TRUE;
+    return (m == &gMarioStates[0]);
 }
 
 /* |description|Gets the nearest active Mario who isn't bubbled to `obj`|descriptionEnd| */

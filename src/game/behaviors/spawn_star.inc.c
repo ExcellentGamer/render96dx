@@ -266,12 +266,11 @@ struct Object *spawn_networked_default_star(f32 x, f32 y, f32 z, u8 networkPlaye
     if (star != NULL) {
         star->oBehParams2ndByte = 0;
         //printf("spawn_networked_default_star: Network Player Index is %i, Our Global Index is %i.\n", networkPlayerIndex, gNetworkPlayers[0].globalIndex);
-        if (networkPlayerIndex == gNetworkPlayers[0].globalIndex) {
+        if (networkPlayerIndex == 0) {
             star->oStarSpawnExtCutsceneFlags = 1;
         } else {
             star->oStarSpawnExtCutsceneFlags = 0;
         }
-        network_send_spawn_star(star, 0, x, y, z, behParams, networkPlayerIndex);
     }
     return star;
 }
@@ -314,11 +313,7 @@ void bhv_hidden_red_coin_star_loop(void) {
             if (o->oTimer >= 3) {
                 struct Object *obj = spawn_red_coin_cutscene_star(o->oPosX, o->oPosY, o->oPosZ);
                 if (obj != NULL) {
-                    if (gNetworkType == NT_NONE || o->oHiddenStarLastInteractedObject == &gMarioStates[0]) {
-                        obj->oStarSpawnExtCutsceneFlags = 1;
-                    } else {
-                        obj->oStarSpawnExtCutsceneFlags = 0;
-                    }
+                    obj->oStarSpawnExtCutsceneFlags = 1;
                     spawn_mist_particles();
                 }
                 o->activeFlags = ACTIVE_FLAG_DEACTIVATED;

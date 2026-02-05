@@ -75,10 +75,7 @@ void bhv_spawned_star_loop(void) {
     if (o->oAction == 0) {
         // All of these are for checking if we spawned the star, If 
         // we didn't. We don't need the time stop.
-        u8 playExclamationBoxCutscene = (o->oStarSpawnExtCutsceneFlags && (gNetworkType == NT_NONE || is_nearest_mario_state_to_object(gMarioState, o)));
-        if (gNetworkType == NT_NONE) {
-            playExclamationBoxCutscene = o->oStarSpawnExtCutsceneFlags;
-        }
+        u8 playExclamationBoxCutscene = o->oStarSpawnExtCutsceneFlags;
         u8 playGenericSpawnCutscene = (o->parentObj != NULL && o->parentObj == gMarioStates[0].marioObj);
         u8 playCutscene = (playExclamationBoxCutscene || playGenericSpawnCutscene);
         

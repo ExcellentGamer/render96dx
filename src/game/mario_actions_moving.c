@@ -15,7 +15,6 @@
 #include "hardcoded.h"
 #include "pc/debuglog.h"
 #include "pc/configfile.h"
-#include "pc/network/network.h"
 #include "pc/lua/smlua.h"
 
 struct LandingAction {
@@ -1548,7 +1547,7 @@ void common_slide_action(struct MarioState *m, u32 endAction, u32 airAction, s32
 
         case GROUND_STEP_HIT_WALL:
             if (!mario_floor_is_slippery(m)) {
-                if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+                if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
 #ifdef VERSION_JP
                 set_mario_particle_flags(m, PARTICLE_VERTICAL_STAR, FALSE);
@@ -1678,7 +1677,7 @@ s32 act_slide_kick_slide(struct MarioState *m) {
             break;
 
         case GROUND_STEP_HIT_WALL:
-            if (m->wall == NULL && gServerSettings.bouncyLevelBounds != BOUNCY_LEVEL_BOUNDS_OFF) { break; }
+            if (m->wall == NULL && configBouncyLevelBounds != 0) { break; }
 
             mario_bonk_reflection(m, TRUE);
             set_mario_particle_flags(m, PARTICLE_VERTICAL_STAR, FALSE);

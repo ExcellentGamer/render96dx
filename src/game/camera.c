@@ -10030,10 +10030,6 @@ s32 intro_peach_move_camera_start_to_pipe(struct Camera *c, struct CutsceneSplin
      */
     posReturn = move_point_along_spline(c->pos, positionSpline, &sCutsceneSplineSegment, &sCutsceneSplineSegmentProgress);
     focusReturn = move_point_along_spline(c->focus, focusSpline, &sCutsceneSplineSegment, &sCutsceneSplineSegmentProgress);
-    if (gNetworkType != NT_NONE) {
-        c->pos[0]   += gNetworkPlayers[0].globalIndex * 350.f;
-        c->focus[0] += gNetworkPlayers[0].globalIndex * 350.f;
-    }
 
     // The two splines used by this function are reflected in the horizontal plane for some reason,
     // so they are rotated every frame. Why do this, Nintendo?
@@ -10090,10 +10086,6 @@ BAD_RETURN(s32) cutscene_intro_peach_follow_pipe_spline(struct Camera *c) {
     if (!c) { return; }
     move_point_along_spline(c->pos, sIntroPipeToDialogPosition, &sCutsceneSplineSegment, &sCutsceneSplineSegmentProgress);
     move_point_along_spline(c->focus, sIntroPipeToDialogFocus, &sCutsceneSplineSegment, &sCutsceneSplineSegmentProgress);
-    if (gNetworkType != NT_NONE) {
-        c->pos[0]   -= gNetworkPlayers[0].globalIndex * 350.f;
-        c->focus[0] -= gNetworkPlayers[0].globalIndex * 350.f;
-    }
 }
 
 BAD_RETURN(s32) cutscene_intro_peach_clear_cutscene_status(UNUSED struct Camera *c) {

@@ -613,11 +613,7 @@ void cap_ukiki_held_loop(void) {
             if (mario_lose_cap_to_enemy(heldByMario, 2)) {
                 o->oUkikiTextState = UKIKI_TEXT_STEAL_CAP;
                 o->oUkikiHasCap |= UKIKI_CAP_ON;
-                if (gNetworkType == NT_NONE) {
-                    o->globalPlayerIndex = 0;
-                } else {
-                    o->globalPlayerIndex = gNetworkPlayers[heldByMario->playerIndex].globalIndex;
-                }
+                o->globalPlayerIndex = 0;
             } else {}
             break;
 

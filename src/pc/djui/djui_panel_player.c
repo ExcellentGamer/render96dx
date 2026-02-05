@@ -5,7 +5,6 @@
 #include "djui_panel_main.h"
 #include "djui_panel_pause.h"
 #include "djui_panel_options.h"
-#include "pc/network/network_player.h"
 #include "pc/platform.h"
 #include "game/level_update.h"
 #include "game/area.h"
@@ -59,11 +58,7 @@ static void djui_panel_player_edit_palette_update_hex_code_box(void) {
 }
 
 static void djui_panel_player_edit_palette_update_palette_display(void) {
-    if (memcmp(&gNetworkPlayers[0].overridePalette, &gNetworkPlayers[0].palette, sizeof(struct PlayerPalette)) == 0) {
-        gNetworkPlayers[0].overridePalette = configPlayerPalette;
-    }
-
-    gNetworkPlayers[0].palette = configPlayerPalette;
+    (void)0;
 }
 
 static void djui_panel_player_update_color_rect(void) {
@@ -194,7 +189,6 @@ static void djui_panel_player_edit_palette_export(UNUSED struct DjuiBase* caller
 }
 
 static void djui_panel_player_active_palette_export(UNUSED struct DjuiBase* caller) {
-    configPlayerPalette = gNetworkPlayers[0].overridePalette;
     player_palette_export(sPalettePresetNameTextBox->buffer);
     sReloadPalettePresetSelection = true;
     djui_panel_menu_back(caller);
@@ -390,10 +384,6 @@ static void djui_panel_player_prevent_demo(struct DjuiBase* caller) {
 
 static void djui_panel_player_value_changed(UNUSED struct DjuiBase* caller) {
     if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
-    if (gNetworkPlayers[0].overrideModelIndex == gNetworkPlayers[0].modelIndex) { gNetworkPlayers[0].overrideModelIndex = configPlayerModel; }
-
-    gNetworkPlayers[0].modelIndex = configPlayerModel;
-    network_player_update_model(0);
 }
 
 static void djui_panel_player_destroy(UNUSED struct DjuiBase* caller) {

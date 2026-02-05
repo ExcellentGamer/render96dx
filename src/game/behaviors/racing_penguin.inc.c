@@ -144,7 +144,6 @@ static void racing_penguin_act_race(void) {
     if (isInAir) {
         if (o->oTimer > 60 && !o->oRacingPenguinMarioCheated) {
             o->oRacingPenguinMarioCheated = TRUE;
-            network_send_object(o);
         }
     } else {
         o->oTimer = 0;

@@ -101,12 +101,16 @@ static u8 eyerok_boss_act_show_intro_text_continue_dialog(void) {
 }
 
 static void eyerok_boss_act_show_intro_text(void) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    if (marioState && should_start_or_continue_dialog(marioState, o)
+        && cur_obj_update_dialog_with_cutscene(&gMarioStates[0], 2, 0, CUTSCENE_DIALOG, gBehaviorValues.dialogs.EyerokIntroDialog, eyerok_boss_act_show_intro_text_continue_dialog)) {
+        o->oAction = EYEROK_BOSS_ACT_FIGHT;
+    }
     // todo: get dialog working properly again
     /*struct MarioState* marioState = nearest_mario_state_to_object(o);
     if (should_start_or_continue_dialog(marioState, o) && cur_obj_update_dialog_with_cutscene(&gMarioStates[0], 2, 0, CUTSCENE_DIALOG, gBehaviorValues.dialogs.EyerokIntroDialog, eyerok_boss_act_show_intro_text_continue_dialog)) {
         o->oAction = EYEROK_BOSS_ACT_FIGHT;
     }*/
-    o->oAction = EYEROK_BOSS_ACT_FIGHT;
 }
 
 static void eyerok_boss_act_fight(void) {
@@ -162,6 +166,19 @@ static void eyerok_boss_act_fight(void) {
 u8 eyerok_boss_act_die_continue_dialog(void) { return o->oAction == EYEROK_BOSS_ACT_DIE; }
 
 static void eyerok_boss_act_die(void) {
+    struct MarioState* marioState = nearest_mario_state_to_object(o);
+    if (o->oTimer == 60) {
+        if (marioState && should_start_or_continue_dialog(marioState, o)
+            && cur_obj_update_dialog_with_cutscene(&gMarioStates[0], 2, 0, CUTSCENE_DIALOG, gBehaviorValues.dialogs.EyerokDefeatedDialog, eyerok_boss_act_die_continue_dialog)) {
+            f32* starPos = gLevelValues.starPositions.EyerockStarPos;
+            spawn_default_star(starPos[0], starPos[1], starPos[2]);
+        } else {
+            o->oTimer -= 1;
+        }
+    } else if (o->oTimer > 120) {
+        stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
+        obj_mark_for_deletion(o);
+    }
     // todo: get dialog working again
     /*struct MarioState* marioState = nearest_mario_state_to_object(o);
     if (o->oTimer == 60) {
@@ -175,12 +192,6 @@ static void eyerok_boss_act_die(void) {
         stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
         obj_mark_for_deletion(o);
     }*/
-    stop_background_music(SEQUENCE_ARGS(4, SEQ_EVENT_BOSS));
-
-    f32* starPos = gLevelValues.starPositions.EyerockStarPos;
-    spawn_default_star(starPos[0], starPos[1], starPos[2]);
-
-    o->oAction = EYEROK_BOSS_ACT_DEAD;
 }
 
 void bhv_eyerok_boss_loop(void) {

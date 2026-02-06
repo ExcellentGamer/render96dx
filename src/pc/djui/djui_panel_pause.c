@@ -13,6 +13,7 @@
 #include "game/object_helpers.h"
 #include "behavior_table.h"
 #include "game/level_update.h"
+#include "data/dynos.c.h"
 
 bool gDjuiPanelPauseCreated = false;
 
@@ -46,7 +47,17 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
         struct DjuiButton* button1 = djui_button_create(body, DLANG(PLAYER, MODEL), DJUI_BUTTON_STYLE_NORMAL, djui_panel_character_create);
         defaultBase = &button1->base;
 
-        djui_button_create(body, DLANG(PAUSE, DYNOS_PACKS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_dynos_create);
+        bool dynosExists = false;
+        int packCount = dynos_pack_get_count();
+        for (int i = 0; i < packCount; i++) {
+            if (dynos_pack_get_exists(i)) {
+                dynosExists = true;
+                break;
+            }
+        }
+        if (dynosExists) {
+            djui_button_create(body, DLANG(PAUSE, DYNOS_PACKS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_dynos_create);
+        }
 
         djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
 

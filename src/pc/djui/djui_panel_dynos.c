@@ -15,10 +15,6 @@ static void djui_panel_dynos_apply(struct DjuiBase* caller) {
     dynos_pack_set_enabled(caller->tag, caller->bTag);
 }
 
-static void djui_panel_dynos_local_player_model_only(UNUSED struct DjuiBase* caller) {
-    (void)caller;
-}
-
 static void djui_panel_dynos_refresh(UNUSED struct DjuiBase* base) {
     dynos_gfx_init();
 
@@ -57,8 +53,6 @@ void djui_panel_dynos_create(struct DjuiBase* caller) {
         djui_base_set_size_type(&space->base, DJUI_SVT_ABSOLUTE, DJUI_SVT_ABSOLUTE);
         djui_base_set_size(&space->base, 0, 32);
         djui_base_set_color(&space->base, 0, 0, 0, 0);
-
-        djui_checkbox_create(body, DLANG(DYNOS, LOCAL_PLAYER_MODEL_ONLY), &configDynosLocalPlayerModelOnly, djui_panel_dynos_local_player_model_only);
         struct DjuiRect* rect1 = djui_rect_container_create(body, 64);
         {
             djui_button_left_create(&rect1->base, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_menu_back);

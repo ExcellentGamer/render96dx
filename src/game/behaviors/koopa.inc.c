@@ -285,6 +285,11 @@ void shelled_koopa_attack_handler(s32 attackType) {
         o->oAction = KOOPA_UNSHELLED_ACT_LYING;
         o->oForwardVel = 20.0f;
 
+        struct Object* shell = spawn_object(o, MODEL_KOOPA_SHELL, bhvKoopaShell);
+        if (shell != NULL) {
+            shell->oFaceAngleYaw = o->oFaceAngleYaw;
+        }
+
         // If attacked from the side, get knocked away from mario
         if (attackType != ATTACK_FROM_ABOVE && attackType != ATTACK_GROUND_POUND_OR_TWIRL) {
             struct Object* player = nearest_player_to_object(o);

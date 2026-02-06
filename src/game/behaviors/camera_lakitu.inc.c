@@ -81,12 +81,6 @@ static u8 camera_lakitu_intro_act_spawn_cloud_continue_dialog(void) {
 static void camera_lakitu_intro_act_spawn_cloud(void) {
     struct MarioState* marioState = nearest_mario_state_to_object(o);
     if (marioState && should_start_or_continue_dialog(marioState, o) && set_mario_npc_dialog(&gMarioStates[0], 2, camera_lakitu_intro_act_spawn_cloud_continue_dialog) == 2) {
-        // Play music when Lakitu spawns in the cloud
-        if (!o->oCameraLakituUnk104) {
-            play_music(SEQ_PLAYER_LEVEL, SEQUENCE_ARGS(15, SEQ_EVENT_CUTSCENE_LAKITU), 0);
-            o->oCameraLakituUnk104 = TRUE;
-        }
-        
         o->oAction = CAMERA_LAKITU_INTRO_ACT_UNK2;
 
         o->oPosX = 1800.0f;

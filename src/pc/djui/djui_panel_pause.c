@@ -43,12 +43,12 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
     struct DjuiThreePanel* panel = djui_panel_menu_create(DLANG(PAUSE, PAUSE_TITLE), false);
     struct DjuiBase* body = djui_three_panel_get_body(panel);
     {
-        djui_button_create(body, DLANG(PLAYER, MODEL), DJUI_BUTTON_STYLE_NORMAL, djui_panel_character_create);
+        struct DjuiButton* button1 = djui_button_create(body, DLANG(PLAYER, MODEL), DJUI_BUTTON_STYLE_NORMAL, djui_panel_character_create);
+        defaultBase = &button1->base;
 
         djui_button_create(body, DLANG(PAUSE, DYNOS_PACKS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_dynos_create);
 
-        struct DjuiButton* button3 = djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
-        defaultBase = &button3->base;
+        djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
 
         struct Mod* addedMods[MAX_HOOKED_MOD_MENU_ELEMENTS] = { 0 };
         int modCount = 0;

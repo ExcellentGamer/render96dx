@@ -14,6 +14,8 @@ extern LevelScript* gLevelScriptActive;
 
 extern u8 level_script_entry[];
 
+s32 lvl_set_permanent_model_loading(s16 mode, s32 reg);
+
 /* |description|
 Creates a warp node in the current level and area with id `id` that goes to the warp node `destNode` in level `destLevel` and area `destArea`, and attach it to the object `o`.
 To work properly, object `o` must be able to trigger a warp (for example, with interact type set to `INTERACT_WARP`.)

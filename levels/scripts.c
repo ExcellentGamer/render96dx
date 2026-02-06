@@ -4,6 +4,8 @@
 #include "level_commands.h"
 #include "game/area.h"
 
+#include "engine/level_script.h"
+
 #include "make_const_nonconst.h"
 
 #include "segment_symbols.h"
@@ -46,11 +48,11 @@ static const LevelScript script_exec_level_table[2
 #undef DEFINE_LEVEL
 #undef STUB_LEVEL
 
-static const LevelScript script_L1[4];
-static const LevelScript script_L2[4];
-static const LevelScript goto_mario_head_regular[4];
-static const LevelScript goto_mario_head_dizzy[4];
-static const LevelScript script_L5[4];
+static const LevelScript script_L1[6];
+static const LevelScript script_L2[6];
+static const LevelScript goto_mario_head_regular[6];
+static const LevelScript goto_mario_head_dizzy[6];
+static const LevelScript script_L5[6];
 
 #define STUB_LEVEL(_0, _1, _2, _3, _4, _5, _6, _7, _8)
 #define DEFINE_LEVEL(_0, _1, _2, folder, _4, _5, _6, _7, _8, _9, _10) static const LevelScript script_exec_ ## folder [4 + 1];
@@ -66,6 +68,7 @@ const LevelScript level_main_scripts_entry[] = {
     LOAD_RAW( /*seg*/ 0x17, _group0_geoSegmentRomStart, _group0_geoSegmentRomEnd),
     LOAD_RAW( /*seg*/ 0x16, _common1_geoSegmentRomStart, _common1_geoSegmentRomEnd),
     LOAD_RAW( /*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
+    CALL(/*arg*/ 1, /*func*/ lvl_set_permanent_model_loading),
     ALLOC_LEVEL_POOL(),
     LOAD_MODEL_FROM_GEO(MODEL_MARIO,                   mario_geo),
     LOAD_MODEL_FROM_GEO(MODEL_SMOKE,                   smoke_geo),
@@ -162,22 +165,32 @@ const LevelScript level_main_scripts_entry[] = {
 };
 
 static const LevelScript script_L1[] = {
+    CLEAR_LEVEL(),
+    SLEEP(/*frames*/ 2),
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_splash_screen),
 };
 
 static const LevelScript script_L2[] = {
+    CLEAR_LEVEL(),
+    SLEEP(/*frames*/ 2),
     EXIT_AND_EXECUTE(/*seg*/ 0x0E, _endingSegmentRomStart, _endingSegmentRomEnd, level_ending_entry),
 };
 
 static const LevelScript goto_mario_head_regular[] = {
+    CLEAR_LEVEL(),
+    SLEEP(/*frames*/ 2),
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
 };
 
 static const LevelScript goto_mario_head_dizzy[] = {
+    CLEAR_LEVEL(),
+    SLEEP(/*frames*/ 2),
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_dizzy),
 };
 
 static const LevelScript script_L5[] = {
+    CLEAR_LEVEL(),
+    SLEEP(/*frames*/ 2),
     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_entry_4),
 };
 

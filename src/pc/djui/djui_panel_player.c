@@ -8,6 +8,8 @@
 #include "pc/platform.h"
 #include "game/level_update.h"
 #include "game/area.h"
+#include "game/characters.h"
+#include "game/object_helpers.h"
 
 void djui_panel_player_create(struct DjuiBase* caller);
 void djui_panel_character_create(struct DjuiBase* caller);
@@ -384,6 +386,14 @@ static void djui_panel_player_prevent_demo(struct DjuiBase* caller) {
 
 static void djui_panel_player_value_changed(UNUSED struct DjuiBase* caller) {
     if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+
+    if (gMarioStates[0].marioObj != NULL) {
+        u8 modelIndex = configPlayerModel;
+        if (modelIndex >= CT_MAX) { modelIndex = CT_MARIO; }
+
+        gMarioStates[0].character = &gCharacters[modelIndex];
+        obj_set_model(gMarioStates[0].marioObj, gMarioStates[0].character->modelId);
+    }
 }
 
 static void djui_panel_player_destroy(UNUSED struct DjuiBase* caller) {

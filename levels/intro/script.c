@@ -45,6 +45,7 @@ const LevelScript level_intro_splash_screen[] = {
 
 const LevelScript level_intro_mario_head_regular[] = {
     INIT_LEVEL(),
+    CLEAR_DEMO_PTR(),
     BLACKOUT(/*active*/ TRUE),
     FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
     LOAD_MARIO_HEAD(/*loadHeadID*/ REGULAR_FACE),
@@ -64,13 +65,14 @@ const LevelScript level_intro_mario_head_regular[] = {
     SLEEP(/*frames*/ 20),
     CALL_LOOP(/*arg*/ 1, /*func*/ lvl_intro_update),
     // JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L4),
+    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
     JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
     JUMP(script_intro_L4),
 };
 
 const LevelScript level_intro_mario_head_dizzy[] = {
     INIT_LEVEL(),
+    CLEAR_DEMO_PTR(),
     BLACKOUT(/*active*/ TRUE),
     FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
     LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
@@ -90,7 +92,7 @@ const LevelScript level_intro_mario_head_dizzy[] = {
     SLEEP(/*frames*/ 20),
     CALL_LOOP(/*arg*/ 2, /*func*/ lvl_intro_update),
     // JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L4),
+    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
     JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
     JUMP(script_intro_L4),
 };
@@ -148,6 +150,7 @@ const LevelScript script_intro_L3[] = {
 const LevelScript script_intro_L4[] = {
     TRANSITION(/*transType*/ WARP_TRANSITION_FADE_INTO_COLOR, /*time*/ 16, /*color*/ 0xFF, 0xFF, 0xFF),
     SLEEP(/*frames*/ 16),
+    ADV_DEMO(),
     CLEAR_LEVEL(),
     SLEEP(/*frames*/ 2),
     EXIT_AND_EXECUTE(/*seg*/ 0x15, _scriptsSegmentRomStart, _scriptsSegmentRomEnd, level_main_scripts_entry),

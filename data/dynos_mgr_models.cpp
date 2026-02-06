@@ -5,6 +5,7 @@ extern "C" {
 #include "engine/geo_layout.h"
 #include "engine/graph_node.h"
 #include "model_ids.h"
+#include "game/memory.h"
 #include "pc/lua/utils/smlua_model_utils.h"
 }
 
@@ -59,7 +60,8 @@ void DynOS_Model_Dump() {
 static struct GraphNode *DynOS_Model_CheckMap(int index, u32* aId, void* aAsset, bool aDeDuplicate) {
     auto& map = sAssetMap[index];
     if (aDeDuplicate) {
-        auto it = map.find(aAsset);
+        void* assetKey = segmented_to_virtual(aAsset);
+        auto it = map.find(assetKey);
         if (it != map.end()) {
             auto& found = it->second;
 
@@ -83,6 +85,8 @@ static struct GraphNode *DynOS_Model_CheckMap(int index, u32* aId, void* aAsset,
 static struct GraphNode* DynOS_Model_LoadCommonInternal(u32* aId, enum ModelPool aModelPool, void* aAsset, u8 aLayer, struct GraphNode* aGraphNode, bool aDeDuplicate, enum ModelLoadType mlt) {
     // sanity check pool
     if (aModelPool >= MODEL_POOL_MAX) { return NULL; }
+
+    void* assetKey = segmented_to_virtual(aAsset);
 
     // allocate pool
     if (!sModelPools[aModelPool]) {
@@ -129,7 +133,7 @@ static struct GraphNode* DynOS_Model_LoadCommonInternal(u32* aId, enum ModelPool
 
     // store in maps
     sIdMap[*aId].push_back(info);
-    map[aAsset] = info;
+    map[assetKey] = info;
 
     return node;
 }
@@ -220,10 +224,11 @@ u32 DynOS_Model_GetIdFromGraphNode(struct GraphNode* aNode) {
 
 u32 DynOS_Model_GetIdFromAsset(void* asset) {
     if (!asset) { return MODEL_NONE; }
+    void* assetKey = segmented_to_virtual(asset);
     u32 lowest = 9999;
     for (int i = 0; i < MODEL_POOL_MAX; i++) {
         auto& map = sAssetMap[i];
-        auto assetIt = map.find(asset);
+        auto assetIt = map.find(assetKey);
         if (assetIt == map.end()) { continue; }
         u32 id = assetIt->second.id;
         if (id < lowest) { lowest = id; }
@@ -257,6 +262,7 @@ void DynOS_Model_ClearPool(enum ModelPool aModelPool) {
 
     // schedule pool to be freed
     dynamic_pool_free_pool(sModelPools[aModelPool]);
+    sModelPools[aModelPool] = NULL;
 
     // clear overwrite
     if (aModelPool == MODEL_POOL_LEVEL) {
@@ -273,7 +279,8 @@ void DynOS_Model_ClearPool(enum ModelPool aModelPool) {
 
         // preventing clearing permanent vanilla model slot
         if (info.id <= VANILLA_ID_END && idMap.size() <= 1) {
-            if (sAssetMap[MODEL_POOL_PERMANENT].count(info.asset) > 0) {
+            void* permKey = segmented_to_virtual(info.asset);
+            if (sAssetMap[MODEL_POOL_PERMANENT].count(permKey) > 0) {
                 continue;
             }
         }

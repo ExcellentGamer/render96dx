@@ -12,7 +12,7 @@
 
 extern const LevelScript level_intro_splash_screen[];
 const LevelScript level_script_entry[] = {
-#if 1
+#if 0
     SET_REG(/*value*/ LEVEL_CASTLE_GROUNDS),
     EXECUTE(/*seg*/ 0x14, /*script*/ _introSegmentRomStart, /*scriptEnd*/ _introSegmentRomEnd, /*entry*/ level_main_scripts_entry),
     JUMP(level_script_entry),

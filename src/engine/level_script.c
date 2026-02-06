@@ -65,7 +65,22 @@ static s16 sScriptStatus;
 static s32 sRegister;
 static struct LevelCommand *sCurrentCmd;
 
-static u8 sFinishedLoadingPerm = false;
+static u8 sFinishedLoadingPerm = true;
+
+s32 lvl_set_permanent_model_loading(s16 mode, s32 reg) {
+    // mode != 0: enable permanent model loading
+    // mode == 0: force level model loading
+    if (mode != 0) {
+        sFinishedLoadingPerm = false;
+    } else {
+        if (!sFinishedLoadingPerm) {
+            // make sure we don't free the pool with the permanent models
+            gLevelPool = NULL;
+        }
+        sFinishedLoadingPerm = true;
+    }
+    return reg;
+}
 
 static s32 eval_script_area(s32 arg) {
     return (sWarpDest.areaIdx == arg);
@@ -412,7 +427,6 @@ static void level_cmd_free_level_pool(void) {
         gMarioStates[i].floor = NULL;
     }
 
-
     if (!sFinishedLoadingPerm) {
         sFinishedLoadingPerm = true;
         // make sure we don't free the pool with the permanent models
@@ -476,7 +490,8 @@ static void level_cmd_load_model_from_geo(void) {
     void *arg1 = CMD_GET(void *, 4);
 
     u32 id = arg0;
-    dynos_model_load_geo(&id, sFinishedLoadingPerm ? MODEL_POOL_LEVEL : MODEL_POOL_PERMANENT, arg1, true);
+    enum ModelPool pool = sFinishedLoadingPerm ? MODEL_POOL_LEVEL : MODEL_POOL_PERMANENT;
+    dynos_model_load_geo(&id, pool, arg1, pool != MODEL_POOL_LEVEL);
 
     sCurrentCmd = CMD_NEXT;
 }

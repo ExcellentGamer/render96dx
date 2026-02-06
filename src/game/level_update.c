@@ -48,6 +48,8 @@
 #include "pc/mods/mods.h"
 #include "pc/nametags.h"
 
+#include "pc/debuglog.h"
+
 #include "game/screen_transition.h"
 
 #include "engine/level_script.h"
@@ -898,6 +900,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
         switch (warpOp) {
             case WARP_OP_DEMO_NEXT:
             case WARP_OP_DEMO_END: sDelayedWarpTimer = 20; // Must be one line to match on -O2
+                LOG_ERROR("DEMO WARP TRIGGER op=%d level=%d area=%d inMainMenu=%d isDemoActive=%d currDemoInput=%p", warpOp, gCurrLevelNum, gCurrAreaIndex, gDjuiInMainMenu, gIsDemoActive, gCurrDemoInput);
                 val04 = FALSE;
                 if (!gDjuiInMainMenu) {
                     sSourceWarpNodeId = WARP_NODE_F0;
@@ -906,6 +909,8 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
                 } else {
                     stop_demo(NULL);
                 }
+                gCurrDemoInput = NULL;
+                gIsDemoActive = false;
                 break;
 
             case WARP_OP_CREDITS_END:
@@ -1034,6 +1039,15 @@ void initiate_delayed_warp(void) {
 
         if (gDebugLevelSelect && (sDelayedWarpOp & WARP_OP_TRIGGERS_LEVEL_SELECT)) {
             warp_special(SPECIAL_WARP_LEVEL_SELECT);
+        } else if (sDelayedWarpOp == WARP_OP_DEMO_END || sDelayedWarpOp == WARP_OP_DEMO_NEXT) {
+            LOG_ERROR("DEMO WARP INITIATE op=%d level=%d area=%d inMainMenu=%d isDemoActive=%d currDemoInput=%p", sDelayedWarpOp, gCurrLevelNum, gCurrAreaIndex, gDjuiInMainMenu, gIsDemoActive, gCurrDemoInput);
+            stop_demo(NULL);
+            gCurrDemoInput = NULL;
+            if (sDelayedWarpOp == WARP_OP_DEMO_END) {
+                warp_special(SPECIAL_WARP_TITLE);
+            } else {
+                warp_special(SPECIAL_WARP_GODDARD);
+            }
         } else if (gCurrDemoInput != NULL) {
             if (sDelayedWarpOp == WARP_OP_DEMO_END) {
                 warp_special(SPECIAL_WARP_TITLE);
@@ -1248,7 +1262,7 @@ static void start_demo(void) {
             gCurrDemoInput = NULL;
             alloc_anim_dma_table(&gDemo, gDemoInputs, gDemoTargetAnim);
             load_patchable_table(&gDemo, sDemoNumber, false);
-            gCurrDemoInput = ((struct DemoInput *) gDemo.targetAnim);
+            gCurrDemoInput = ((struct DemoInput *) gDemo.targetAnim) + 1;
         } else {
             gIsDemoActive = false;
         }
@@ -1257,6 +1271,7 @@ static void start_demo(void) {
 
 void stop_demo(UNUSED struct DjuiBase* caller) {
     if (gIsDemoActive) {
+        LOG_ERROR("DEMO STOP level=%d area=%d inMainMenu=%d isDemoActive=%d currDemoInput=%p", gCurrLevelNum, gCurrAreaIndex, gDjuiInMainMenu, gIsDemoActive, gCurrDemoInput);
         gIsDemoActive = false;
         gCurrDemoInput = NULL;
         gChangeLevel = gCurrLevelNum;

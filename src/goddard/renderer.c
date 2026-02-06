@@ -27,6 +27,9 @@
 #include "config.h"
 #include "gfx_dimensions.h"
 
+#include "pc/controller/controller_mouse.h"
+#include "pc/gfx/gfx.h"
+
 #define MAX_GD_DLS 1000
 #define OS_MESG_SI_COMPLETE 0x33333333
 
@@ -2381,10 +2384,13 @@ void parse_p1_controller(void) {
     gdctrl->stickY      = currInputs->stick_y;
     gdctrl->stickDeltaX -= gdctrl->stickX;
     gdctrl->stickDeltaY -= gdctrl->stickY;
+
+    controller_mouse_read_window();
+    bool mouseLeftDown = (mouse_window_buttons & L_MOUSE_BUTTON) != 0;
     // button values (as bools)
     gdctrl->trgL   = (currInputs->button & L_TRIG) != 0;
     gdctrl->trgR   = (currInputs->button & R_TRIG) != 0;
-    gdctrl->btnA   = (currInputs->button & A_BUTTON) != 0;
+    gdctrl->btnA   = ((currInputs->button & A_BUTTON) != 0) || mouseLeftDown;
     gdctrl->btnB   = (currInputs->button & B_BUTTON) != 0;
     gdctrl->cleft  = (currInputs->button & L_CBUTTONS) != 0;
     gdctrl->cright = (currInputs->button & R_CBUTTONS) != 0;
@@ -2456,12 +2462,23 @@ void parse_p1_controller(void) {
         gdctrl->csrY -= gdctrl->stickY * 0.1;
     }
 
-    // clamp cursor position within screen view bounds
-    if (gdctrl->csrX < sScreenView->parent->upperLeft.x + (16.0f/aspect)) {
-        gdctrl->csrX = sScreenView->parent->upperLeft.x + (16.0f/aspect);
+    if (ABS(currInputs->stick_x) >= 6 || ABS(currInputs->stick_y) >= 6 || currInputs->button != 0) {
+        mouse_has_current_control = false;
+        mouse_prev_window_x = mouse_window_x;
+        mouse_prev_window_y = mouse_window_y;
     }
-    if (gdctrl->csrX > sScreenView->parent->upperLeft.x + sScreenView->parent->lowerRight.x - (48.0f/aspect)) {
-        gdctrl->csrX = sScreenView->parent->upperLeft.x + sScreenView->parent->lowerRight.x - (48.0f/aspect);
+
+    float screenScale = (float)gfx_current_dimensions.height / SCREEN_HEIGHT;
+    f32 mousePosX = (f32)((mouse_window_x - (gfx_current_dimensions.width - (screenScale * (float)SCREEN_WIDTH)) / 2) / screenScale);
+    f32 mousePosY = (f32)(mouse_window_y / screenScale);
+    controller_mouse_set_position(&gdctrl->csrX, &gdctrl->csrY, mousePosX, mousePosY, (sHandView->flags & VIEW_UPDATE), TRUE);
+
+    // clamp cursor position within screen view bounds
+    if (gdctrl->csrX < GFX_DIMENSIONS_FROM_LEFT_EDGE(16.0f/aspect)) {
+        gdctrl->csrX = GFX_DIMENSIONS_FROM_LEFT_EDGE(16.0f/aspect);
+    }
+    if (gdctrl->csrX > GFX_DIMENSIONS_FROM_RIGHT_EDGE(48.0f/aspect)) {
+        gdctrl->csrX = GFX_DIMENSIONS_FROM_RIGHT_EDGE(48.0f/aspect);
     }
     if (gdctrl->csrY < sScreenView->parent->upperLeft.y + 16.0f) {
         gdctrl->csrY = sScreenView->parent->upperLeft.y + 16.0f;

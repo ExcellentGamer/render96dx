@@ -21,6 +21,11 @@
 #include "game/rumble_init.h"
 #include "sm64.h"
 #include "menu/ingame_text.h"
+#include "pc/controller/controller_mouse.h"
+#include "pc/gfx/gfx.h"
+#include "gfx_dimensions.h"
+#include "game/rendering_graph_node.h"
+#include "engine/graph_node.h"
 
 #include "eu_translation.h"
 
@@ -70,6 +75,9 @@ static u8 sTextBaseAlpha = 0;
 // 2D position of the cursor on the screen.
 // sCursorPos[0]: X | sCursorPos[1]: Y
 f32 sCursorPos[] = {0, 0};
+
+static u32 sPrevMouseWindowButtons = 0;
+static u32 sMouseWindowButtonsPressed = 0;
 
 // Determines which graphic to use for the cursor.
 static s16 sCursorClickingTimer = 0;
@@ -305,7 +313,49 @@ void beh_yellow_background_menu_init(void) {
  * Properly scales the background in the main menu.
  */
 void beh_yellow_background_menu_loop(void) {
-    cur_obj_scale(9.0f);
+    f32 scaleX = 9.0f;
+    f32 scaleY = 9.0f;
+    if (GFX_DIMENSIONS_ASPECT_RATIO > (4.0f / 3.0f)) {
+        scaleX *= (GFX_DIMENSIONS_ASPECT_RATIO / (4.0f / 3.0f));
+    }
+    obj_scale_xyz(gCurrentObject, scaleX, scaleY, scaleY);
+}
+
+Gfx *geo_file_select_background_button_scale(s32 callContext, struct GraphNode *node, UNUSED Mat4 mtx) {
+    if (callContext != GEO_CONTEXT_RENDER) { return NULL; }
+
+    struct GraphNodeGenerated *asGenerated = (struct GraphNodeGenerated *) node;
+    struct GraphNodeScaleXYZ *scaleNode = (struct GraphNodeScaleXYZ *) node->next;
+    if (!scaleNode || scaleNode->node.type != GRAPH_NODE_TYPE_SCALE_XYZ) { return NULL; }
+
+    if (gCurGraphNodeProcessingObject == NULL) { return NULL; }
+    if (gCurGraphNodeProcessingObject->behavior != bhvMenuButton) { return NULL; }
+
+    f32 baseScale = scaleNode->scale[1];
+    f32 aspectFactor = 1.0f;
+    if (GFX_DIMENSIONS_ASPECT_RATIO > (4.0f / 3.0f)) {
+        aspectFactor = (GFX_DIMENSIONS_ASPECT_RATIO / (4.0f / 3.0f));
+    }
+
+    f32 t = 0.0f;
+    if (gCurGraphNodeProcessingObject->oMenuButtonState == MENU_BUTTON_STATE_FULLSCREEN) {
+        t = 1.0f;
+    } else if (gCurGraphNodeProcessingObject->oMenuButtonState == MENU_BUTTON_STATE_GROWING) {
+        t = (f32) gCurGraphNodeProcessingObject->oMenuButtonTimer / 16.0f;
+    } else if (gCurGraphNodeProcessingObject->oMenuButtonState == MENU_BUTTON_STATE_SHRINKING) {
+        t = 1.0f - ((f32) gCurGraphNodeProcessingObject->oMenuButtonTimer / 16.0f);
+    }
+
+    if (t < 0.0f) { t = 0.0f; }
+    if (t > 1.0f) { t = 1.0f; }
+    t = t * t * (3.0f - 2.0f * t);
+
+    scaleNode->scale[0] = baseScale * (1.0f + (aspectFactor - 1.0f) * t);
+    scaleNode->scale[1] = baseScale;
+    scaleNode->scale[2] = baseScale;
+
+    asGenerated->fnNode.node.flags |= GRAPH_RENDER_ACTIVE;
+    return NULL;
 }
 
 /**
@@ -541,6 +591,7 @@ void bhv_menu_button_loop(void) {
             sCursorClickingTimer = 4;
             break;
     }
+
     cur_obj_scale(gCurrentObject->oMenuButtonScale);
 }
 
@@ -1621,11 +1672,16 @@ void bhv_menu_button_manager_loop(void) {
  * If the cursor is clicked, sClickPos uses the same value as sCursorPos.
  */
 void handle_cursor_button_input(void) {
+    u16 buttonPressed = gPlayer1Controller->buttonPressed;
+    if (sMouseWindowButtonsPressed & L_MOUSE_BUTTON) {
+        buttonPressed |= A_BUTTON;
+    }
+
     // If scoring a file, pressing A just changes the coin score mode.
     if (sSelectedButtonID == MENU_BUTTON_SCORE_FILE_A || sSelectedButtonID == MENU_BUTTON_SCORE_FILE_B
         || sSelectedButtonID == MENU_BUTTON_SCORE_FILE_C
         || sSelectedButtonID == MENU_BUTTON_SCORE_FILE_D) {
-        if (gPlayer1Controller->buttonPressed
+        if (buttonPressed
 #ifdef VERSION_EU
             & (B_BUTTON | START_BUTTON | Z_TRIG)) {
 #else
@@ -1634,12 +1690,12 @@ void handle_cursor_button_input(void) {
             sClickPos[0] = sCursorPos[0];
             sClickPos[1] = sCursorPos[1];
             sCursorClickingTimer = 1;
-        } else if (gPlayer1Controller->buttonPressed & A_BUTTON) {
+        } else if (buttonPressed & A_BUTTON) {
             sScoreFileCoinScoreMode = 1 - sScoreFileCoinScoreMode;
             play_sound(SOUND_MENU_CLICK_FILE_SELECT, gGlobalSoundSource);
         }
     } else { // If cursor is clicked
-        if (gPlayer1Controller->buttonPressed
+        if (buttonPressed
 #ifdef VERSION_EU
             & (A_BUTTON | B_BUTTON | START_BUTTON | Z_TRIG)) {
 #else
@@ -1659,6 +1715,11 @@ void handle_controller_cursor_input(void) {
     s16 rawStickX = gPlayer1Controller->rawStickX;
     s16 rawStickY = gPlayer1Controller->rawStickY;
 
+    controller_mouse_read_window();
+
+    sMouseWindowButtonsPressed = ~sPrevMouseWindowButtons & mouse_window_buttons;
+    sPrevMouseWindowButtons = mouse_window_buttons;
+
     // Handle deadzone
     if (rawStickY > -2 && rawStickY < 2) {
         rawStickY = 0;
@@ -1667,16 +1728,27 @@ void handle_controller_cursor_input(void) {
         rawStickX = 0;
     }
 
+    if (rawStickX != 0 || rawStickY != 0 || gPlayer1Controller->buttonPressed != 0 || gPlayer1Controller->buttonDown != 0) {
+        mouse_has_current_control = false;
+        mouse_prev_window_x = mouse_window_x;
+        mouse_prev_window_y = mouse_window_y;
+    }
+
     // Move cursor
     sCursorPos[0] += rawStickX / 8;
     sCursorPos[1] += rawStickY / 8;
 
+    float screenScale = (float)gfx_current_dimensions.height / SCREEN_HEIGHT;
+    f32 mousePosX = (((mouse_window_x - (gfx_current_dimensions.width - (screenScale * 320)) / 2) / screenScale) - 160.0f);
+    f32 mousePosY = ((mouse_window_y / screenScale - 120.0f) * -1);
+    controller_mouse_set_position(&sCursorPos[0], &sCursorPos[1], mousePosX, mousePosY, sSelectedFileNum == 0, FALSE);
+
     // Stop cursor from going offscreen
-    if (sCursorPos[0] > 132.0f) {
-        sCursorPos[0] = 132.0f;
+    if (sCursorPos[0] > GFX_DIMENSIONS_FROM_RIGHT_EDGE(188.0f)) {
+        sCursorPos[0] = GFX_DIMENSIONS_FROM_RIGHT_EDGE(188.0f);
     }
-    if (sCursorPos[0] < -132.0f) {
-        sCursorPos[0] = -132.0f;
+    if (sCursorPos[0] < GFX_DIMENSIONS_FROM_LEFT_EDGE(-132.0f)) {
+        sCursorPos[0] = GFX_DIMENSIONS_FROM_LEFT_EDGE(-132.0f);
     }
 
     if (sCursorPos[1] > 90.0f) {

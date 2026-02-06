@@ -32,8 +32,15 @@ extern f32 mouse_scroll_y;
 
 extern bool mouse_relative_enabled;
 
+extern int mouse_prev_window_x;
+extern int mouse_prev_window_y;
+extern int mouse_has_current_control;
+
 void controller_mouse_read_window(void);
 void controller_mouse_read_relative(void);
+
+void controller_mouse_set_visible(void);
+int controller_mouse_set_position(void *cursorX, void *cursorY, f32 mPosX, f32 mPosY, int hasControlCondition, int isInteger);
 
 void controller_mouse_enter_relative(void);
 void controller_mouse_leave_relative(void);

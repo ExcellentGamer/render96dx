@@ -140,8 +140,9 @@ void print_intro_text(void) {
 #ifdef VERSION_EU
             print_text(20, 20, "START");
 #else
-            print_text_centered(60, 38, "PRESS");
-            print_text_centered(60, 20, "START");
+            s32 x = GFX_DIMENSIONS_FROM_LEFT_EDGE(20);
+            print_text(x, 38, "PRESS");
+            print_text(x, 20, "START");
 #endif
         }
     }

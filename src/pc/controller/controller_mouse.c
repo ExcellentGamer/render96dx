@@ -1,6 +1,7 @@
 #include "controller_mouse.h"
 #include "pc/gfx/gfx_pc.h"
 #include "pc/djui/djui.h"
+#include "pc/configfile.h"
 
 #ifdef WAPI_DXGI
 #define WIN32_LEAN_AND_MEAN
@@ -14,6 +15,10 @@ static bool mouse_relative_prev_cursor_state;
 #endif
 
 bool mouse_init_ok;
+
+int mouse_prev_window_x;
+int mouse_prev_window_y;
+int mouse_has_current_control;
 
 u32 mouse_buttons;
 s32 mouse_x;
@@ -30,6 +35,47 @@ f32 mouse_scroll_x;
 f32 mouse_scroll_y;
 
 bool mouse_relative_enabled;
+
+static void controller_mouse_is_visible(int visible) {
+#if defined(WAPI_DXGI)
+    ShowCursor(visible ? TRUE : FALSE);
+#elif defined(CAPI_SDL1) || defined(CAPI_SDL2)
+    SDL_ShowCursor(visible ? SDL_ENABLE : SDL_DISABLE);
+#endif
+}
+
+void controller_mouse_set_visible(void) {
+    if (configWindow.fullscreen) {
+        controller_mouse_is_visible(false);
+    } else {
+        controller_mouse_is_visible(!mouse_has_current_control);
+    }
+}
+
+int controller_mouse_set_position(void *cursorX, void *cursorY, f32 mPosX, f32 mPosY, int hasControlCondition, int isInteger) {
+    if (!hasControlCondition) {
+        mouse_has_current_control = false;
+    }
+
+    if ((mouse_window_x - mouse_prev_window_x != 0 || mouse_window_y - mouse_prev_window_y != 0) && hasControlCondition) {
+        mouse_has_current_control = true;
+    }
+
+    if (mouse_has_current_control) {
+        if (isInteger) {
+            *(s32*)cursorX = (s32)mPosX;
+            *(s32*)cursorY = (s32)mPosY;
+        } else {
+            *(f32*)cursorX = mPosX;
+            *(f32*)cursorY = mPosY;
+        }
+    }
+
+    controller_mouse_set_visible();
+    mouse_prev_window_x = mouse_window_x;
+    mouse_prev_window_y = mouse_window_y;
+    return mouse_has_current_control;
+}
 
 #ifdef WAPI_DXGI
 u32 mouse_relative_buttons_held_on_focus;

@@ -30,6 +30,8 @@
 #include "pc/lua/smlua.h"
 #include "pc/djui/djui.h"
 #include "pc/debug_context.h"
+#include "pc/configfile.h"
+#include "game/characters.h"
 #include "game/hardcoded.h"
 #include "menu/intro_geo.h"
 #include "game/envfx_snow.h"
@@ -857,6 +859,14 @@ static void level_cmd_get_or_set_var(void) {
         switch (CMD_GET(u8, 3)) {
             case 0:
                 gCurrSaveFileNum = sRegister;
+
+                if (gCurrSaveFileNum >= 1 && gCurrSaveFileNum <= NUM_SAVE_FILES) {
+                    u8 charIndex = save_file_get_last_character(gCurrSaveFileNum - 1);
+                    if (charIndex < CT_MAX) {
+                        configPlayerModel = charIndex;
+                        configfile_sync_player_palette();
+                    }
+                }
                 break;
             case 1:
                 gCurrCourseNum = sRegister;

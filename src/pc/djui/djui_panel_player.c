@@ -17,6 +17,7 @@
 #include "game/object_helpers.h"
 #include "game/object_list_processor.h"
 #include "game/player_palette.h"
+#include "game/save_file.h"
 
 #include "sm64.h"
 
@@ -505,6 +506,13 @@ static void djui_panel_player_prevent_demo(struct DjuiBase* caller) {
 static void djui_panel_player_value_changed(UNUSED struct DjuiBase* caller) {
     if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
     configfile_sync_player_palette();
+
+    if (gCurrSaveFileNum >= 1 && gCurrSaveFileNum <= NUM_SAVE_FILES) {
+        if (save_file_exists(gCurrSaveFileNum - 1)) {
+            save_file_set_last_character(gCurrSaveFileNum - 1, (u8)configPlayerModel);
+            save_file_do_save(gCurrSaveFileNum - 1, FALSE);
+        }
+    }
 
     if (gMarioStates[0].marioObj != NULL) {
         u8 modelIndex = configPlayerModel;

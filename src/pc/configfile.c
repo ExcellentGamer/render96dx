@@ -370,7 +370,6 @@ static const struct ConfigOption options[] = {
     {.name = "ctx_profiler",                   .type = CONFIG_TYPE_BOOL, .boolValue   = &configCtxProfiler},
 #endif
     // player settings
-    {.name = "coop_player_model",              .type = CONFIG_TYPE_UINT,   .uintValue   = &configPlayerModel},
     {.name = "player_palette_preset_mario",    .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetMario,   .maxStringLength = MAX_CONFIG_STRING},
     {.name = "player_palette_preset_luigi",    .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetLuigi,   .maxStringLength = MAX_CONFIG_STRING},
     {.name = "player_palette_preset_toad",     .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetToad,    .maxStringLength = MAX_CONFIG_STRING},

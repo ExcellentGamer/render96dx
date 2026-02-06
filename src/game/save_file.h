@@ -253,6 +253,9 @@ s32 save_file_get_cap_pos(VEC_OUT Vec3s capPos);
 
 void save_file_set_sound_mode(u16 mode);
 
+u8 save_file_get_last_character(s32 fileIndex);
+void save_file_set_last_character(s32 fileIndex, u8 characterIndex);
+
 /* |description|
 Returns the current sound mode (e.g., stereo, mono) stored in the save file.
 Useful for checking the audio output preferences when loading a save

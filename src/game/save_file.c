@@ -22,6 +22,9 @@
 #define MENU_DATA_MAGIC 0x4849
 #define SAVE_FILE_MAGIC 0x4441
 
+#define SAVE_FILE_LAST_CHAR_SHIFT 21
+#define SAVE_FILE_LAST_CHAR_MASK (0x7u << SAVE_FILE_LAST_CHAR_SHIFT)
+
 #define INVALID_FILE_INDEX(_fi) ((u32)_fi >= NUM_SAVE_FILES)
 #define INVALID_SRC_SLOT(_ss) ((u32)_ss >= 2)
 #define INVALID_LEVEL_NUM(_ln) ((u32)_ln >= LEVEL_COUNT)
@@ -582,6 +585,25 @@ void save_file_collect_star_or_key(s16 coinScore, s16 starIndex, u8 fromNetwork)
             }
             break;
     }
+}
+
+u8 save_file_get_last_character(s32 fileIndex) {
+    if (INVALID_FILE_INDEX(fileIndex)) { return 0; }
+    if (INVALID_SRC_SLOT(gSaveFileUsingBackupSlot)) { return 0; }
+
+    u32 flags = gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].flags;
+    return (u8)((flags & SAVE_FILE_LAST_CHAR_MASK) >> SAVE_FILE_LAST_CHAR_SHIFT);
+}
+
+void save_file_set_last_character(s32 fileIndex, u8 characterIndex) {
+    if (INVALID_FILE_INDEX(fileIndex)) { return; }
+    if (INVALID_SRC_SLOT(gSaveFileUsingBackupSlot)) { return; }
+
+    u32* flags = &gSaveBuffer.files[fileIndex][gSaveFileUsingBackupSlot].flags;
+    *flags &= ~SAVE_FILE_LAST_CHAR_MASK;
+    *flags |= (((u32)characterIndex << SAVE_FILE_LAST_CHAR_SHIFT) & SAVE_FILE_LAST_CHAR_MASK);
+    *flags |= SAVE_FLAG_FILE_EXISTS;
+    gSaveFileModified = TRUE;
 }
 
 s32 save_file_exists(s32 fileIndex) {

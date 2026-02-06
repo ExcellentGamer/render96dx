@@ -510,6 +510,7 @@ int main(int argc, char *argv[]) {
 #endif
 
     configfile_load();
+    configfile_init_player_palettes();
 
     legacy_folder_handler();
 

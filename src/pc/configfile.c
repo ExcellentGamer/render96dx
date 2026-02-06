@@ -17,9 +17,12 @@
 #include "crash_handler.h"
 #include "debuglog.h"
 #include "djui/djui_hud_utils.h"
+#include "pc/platform.h"
 #include "game/save_file.h"
 #include "pc/network/network_player.h"
 #include "pc/pc_main.h"
+#include "game/characters.h"
+#include "game/player_palette.h"
 
 #define ARRAY_LEN(arr) (sizeof(arr) / sizeof(arr[0]))
 
@@ -155,6 +158,14 @@ bool         configCtxProfiler                    = false;
 // player settings
 unsigned int configPlayerModel                    = 0;
 struct PlayerPalette configPlayerPalette          = { { { 0x00, 0x00, 0xff }, { 0xff, 0x00, 0x00 }, { 0xff, 0xff, 0xff }, { 0x72, 0x1c, 0x0e }, { 0x73, 0x06, 0x00 }, { 0xfe, 0xc1, 0x79 }, { 0xff, 0x00, 0x00 }, { 0xff, 0x00, 0x00 } } };
+struct PlayerPalette configPlayerPalettes[5]      = { 0 };
+bool configPlayerPaletteCustomEnabled[5]          = { false };
+struct PlayerPalette configPlayerPaletteCustom[5] = { 0 };
+char configPlayerPalettePresetMario[MAX_CONFIG_STRING]   = "Mario";
+char configPlayerPalettePresetLuigi[MAX_CONFIG_STRING]   = "Luigi";
+char configPlayerPalettePresetToad[MAX_CONFIG_STRING]    = "Toad";
+char configPlayerPalettePresetWaluigi[MAX_CONFIG_STRING] = "Waluigi";
+char configPlayerPalettePresetWario[MAX_CONFIG_STRING]   = "Wario";
 // coop settings
 unsigned int configAmountOfPlayers                = 1;
 bool         configBubbleDeath                    = true;
@@ -171,7 +182,6 @@ unsigned int configMenuLevel                      = 0;
 unsigned int configMenuSound                      = 0;
 bool         configMenuRandom                     = false;
 bool         configMenuDemos                      = false;
-bool         configDisablePopups                  = false;
 char         configLanguage[MAX_CONFIG_STRING]    = "";
 bool         configForce4By3                      = false;
 bool         configDynosLocalPlayerModelOnly      = false;
@@ -193,6 +203,81 @@ bool         configSkipPackGeneration             = false;
 
 // secrets
 bool configExCoopTheme = false;
+
+static char* configfile_get_character_preset_name(enum CharacterType c) {
+    switch (c) {
+        case CT_MARIO:   return configPlayerPalettePresetMario;
+        case CT_LUIGI:   return configPlayerPalettePresetLuigi;
+        case CT_TOAD:    return configPlayerPalettePresetToad;
+        case CT_WALUIGI: return configPlayerPalettePresetWaluigi;
+        case CT_WARIO:   return configPlayerPalettePresetWario;
+        default:         return configPlayerPalettePresetMario;
+    }
+}
+
+void configfile_set_character_palette_preset(unsigned int characterIndex, const char* presetName) {
+    if (presetName == NULL || presetName[0] == '\0') { return; }
+    if (characterIndex >= CT_MAX) { return; }
+
+    char* dst = configfile_get_character_preset_name((enum CharacterType)characterIndex);
+    snprintf(dst, MAX_CONFIG_STRING, "%s", presetName);
+
+    configPlayerPaletteCustomEnabled[characterIndex] = false;
+
+    struct PlayerPalette palette = DEFAULT_MARIO_PALETTE;
+    if (player_palette_get_preset(dst, &palette)) {
+        configPlayerPalettes[characterIndex] = palette;
+        configfile_sync_player_palette();
+    }
+}
+
+void configfile_reset_character_palette(unsigned int characterIndex) {
+    if (characterIndex >= CT_MAX) { return; }
+    configfile_set_character_palette_preset(characterIndex, gCharacters[characterIndex].name);
+}
+
+void configfile_reset_all_character_palettes(void) {
+    for (unsigned int c = 0; c < CT_MAX; c++) {
+        configfile_reset_character_palette(c);
+    }
+    configfile_sync_player_palette();
+}
+
+void configfile_sync_player_palette(void) {
+    u8 modelIndex = (u8)configPlayerModel;
+    if (modelIndex >= CT_MAX) { modelIndex = CT_MARIO; }
+    configPlayerPalette = configPlayerPalettes[modelIndex];
+}
+
+void configfile_init_player_palettes(void) {
+    player_palettes_reset();
+    player_palettes_read(sys_exe_path_dir(), true);
+    player_palettes_read(fs_get_write_path(PALETTES_DIRECTORY), false);
+
+    for (int c = 0; c < CT_MAX; c++) {
+        struct PlayerPalette palette = DEFAULT_MARIO_PALETTE;
+
+        char* presetName = configfile_get_character_preset_name((enum CharacterType)c);
+        if (presetName == NULL || presetName[0] == '\0') {
+            presetName = gCharacters[c].name;
+            snprintf(configfile_get_character_preset_name((enum CharacterType)c), MAX_CONFIG_STRING, "%s", presetName);
+        }
+
+        if (!player_palette_get_preset(presetName, &palette)) {
+            if (player_palette_get_preset(gCharacters[c].name, &palette)) {
+                snprintf(configfile_get_character_preset_name((enum CharacterType)c), MAX_CONFIG_STRING, "%s", gCharacters[c].name);
+            }
+        }
+
+        configPlayerPalettes[c] = palette;
+
+        if (configPlayerPaletteCustomEnabled[c]) {
+            configPlayerPalettes[c] = configPlayerPaletteCustom[c];
+        }
+    }
+
+    configfile_sync_player_palette();
+}
 
 static const struct ConfigOption options[] = {
     // window settings
@@ -287,6 +372,63 @@ static const struct ConfigOption options[] = {
 #endif
     // player settings
     {.name = "coop_player_model",              .type = CONFIG_TYPE_UINT,   .uintValue   = &configPlayerModel},
+    {.name = "player_palette_preset_mario",    .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetMario,   .maxStringLength = MAX_CONFIG_STRING},
+    {.name = "player_palette_preset_luigi",    .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetLuigi,   .maxStringLength = MAX_CONFIG_STRING},
+    {.name = "player_palette_preset_toad",     .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetToad,    .maxStringLength = MAX_CONFIG_STRING},
+    {.name = "player_palette_preset_waluigi",  .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetWaluigi, .maxStringLength = MAX_CONFIG_STRING},
+    {.name = "player_palette_preset_wario",    .type = CONFIG_TYPE_STRING, .stringValue = configPlayerPalettePresetWario,   .maxStringLength = MAX_CONFIG_STRING},
+
+    {.name = "player_palette_custom_enabled_mario",   .type = CONFIG_TYPE_BOOL,  .boolValue  = &configPlayerPaletteCustomEnabled[CT_MARIO]},
+    {.name = "player_palette_custom_enabled_luigi",   .type = CONFIG_TYPE_BOOL,  .boolValue  = &configPlayerPaletteCustomEnabled[CT_LUIGI]},
+    {.name = "player_palette_custom_enabled_toad",    .type = CONFIG_TYPE_BOOL,  .boolValue  = &configPlayerPaletteCustomEnabled[CT_TOAD]},
+    {.name = "player_palette_custom_enabled_waluigi", .type = CONFIG_TYPE_BOOL,  .boolValue  = &configPlayerPaletteCustomEnabled[CT_WALUIGI]},
+    {.name = "player_palette_custom_enabled_wario",   .type = CONFIG_TYPE_BOOL,  .boolValue  = &configPlayerPaletteCustomEnabled[CT_WARIO]},
+
+    {.name = "player_palette_custom_mario_pants",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[PANTS]},
+    {.name = "player_palette_custom_mario_shirt",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[SHIRT]},
+    {.name = "player_palette_custom_mario_gloves",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[GLOVES]},
+    {.name = "player_palette_custom_mario_shoes",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[SHOES]},
+    {.name = "player_palette_custom_mario_hair",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[HAIR]},
+    {.name = "player_palette_custom_mario_skin",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[SKIN]},
+    {.name = "player_palette_custom_mario_cap",     .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[CAP]},
+    {.name = "player_palette_custom_mario_emblem",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_MARIO].parts[EMBLEM]},
+
+    {.name = "player_palette_custom_luigi_pants",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[PANTS]},
+    {.name = "player_palette_custom_luigi_shirt",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[SHIRT]},
+    {.name = "player_palette_custom_luigi_gloves",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[GLOVES]},
+    {.name = "player_palette_custom_luigi_shoes",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[SHOES]},
+    {.name = "player_palette_custom_luigi_hair",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[HAIR]},
+    {.name = "player_palette_custom_luigi_skin",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[SKIN]},
+    {.name = "player_palette_custom_luigi_cap",     .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[CAP]},
+    {.name = "player_palette_custom_luigi_emblem",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_LUIGI].parts[EMBLEM]},
+
+    {.name = "player_palette_custom_toad_pants",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[PANTS]},
+    {.name = "player_palette_custom_toad_shirt",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[SHIRT]},
+    {.name = "player_palette_custom_toad_gloves",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[GLOVES]},
+    {.name = "player_palette_custom_toad_shoes",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[SHOES]},
+    {.name = "player_palette_custom_toad_hair",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[HAIR]},
+    {.name = "player_palette_custom_toad_skin",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[SKIN]},
+    {.name = "player_palette_custom_toad_cap",     .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[CAP]},
+    {.name = "player_palette_custom_toad_emblem",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_TOAD].parts[EMBLEM]},
+
+    {.name = "player_palette_custom_waluigi_pants",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[PANTS]},
+    {.name = "player_palette_custom_waluigi_shirt",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[SHIRT]},
+    {.name = "player_palette_custom_waluigi_gloves",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[GLOVES]},
+    {.name = "player_palette_custom_waluigi_shoes",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[SHOES]},
+    {.name = "player_palette_custom_waluigi_hair",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[HAIR]},
+    {.name = "player_palette_custom_waluigi_skin",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[SKIN]},
+    {.name = "player_palette_custom_waluigi_cap",     .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[CAP]},
+    {.name = "player_palette_custom_waluigi_emblem",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WALUIGI].parts[EMBLEM]},
+
+    {.name = "player_palette_custom_wario_pants",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[PANTS]},
+    {.name = "player_palette_custom_wario_shirt",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[SHIRT]},
+    {.name = "player_palette_custom_wario_gloves",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[GLOVES]},
+    {.name = "player_palette_custom_wario_shoes",   .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[SHOES]},
+    {.name = "player_palette_custom_wario_hair",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[HAIR]},
+    {.name = "player_palette_custom_wario_skin",    .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[SKIN]},
+    {.name = "player_palette_custom_wario_cap",     .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[CAP]},
+    {.name = "player_palette_custom_wario_emblem",  .type = CONFIG_TYPE_COLOR, .colorValue = &configPlayerPaletteCustom[CT_WARIO].parts[EMBLEM]},
+
     {.name = "skip_intro",                     .type = CONFIG_TYPE_BOOL,   .boolValue   = &configSkipIntro},
     {.name = "pause_anywhere",                 .type = CONFIG_TYPE_BOOL,   .boolValue   = &configPauseAnywhere},
     {.name = "coop_menu_staff_roll",           .type = CONFIG_TYPE_BOOL,   .boolValue   = &configMenuStaffRoll},
@@ -295,7 +437,6 @@ static const struct ConfigOption options[] = {
     {.name = "coop_menu_random",               .type = CONFIG_TYPE_BOOL,   .boolValue   = &configMenuRandom},
     {.name = "player_pvp_mode",                .type = CONFIG_TYPE_UINT,   .uintValue   = &configPvpType},
     // {.name = "coop_menu_demos",                .type = CONFIG_TYPE_BOOL,   .boolValue   = &configMenuDemos},
-    {.name = "disable_popups",                 .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDisablePopups},
     {.name = "language",                       .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configLanguage, .maxStringLength = MAX_CONFIG_STRING},
     {.name = "force_4by3",                     .type = CONFIG_TYPE_BOOL,   .boolValue   = &configForce4By3},
     {.name = "dynos_local_player_model_only",  .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDynosLocalPlayerModelOnly},

@@ -118,6 +118,14 @@ extern bool         configCtxProfiler;
 // player settings
 extern unsigned int configPlayerModel;
 extern struct PlayerPalette configPlayerPalette;
+extern struct PlayerPalette configPlayerPalettes[5];
+extern bool configPlayerPaletteCustomEnabled[5];
+extern struct PlayerPalette configPlayerPaletteCustom[5];
+extern char configPlayerPalettePresetMario[MAX_CONFIG_STRING];
+extern char configPlayerPalettePresetLuigi[MAX_CONFIG_STRING];
+extern char configPlayerPalettePresetToad[MAX_CONFIG_STRING];
+extern char configPlayerPalettePresetWaluigi[MAX_CONFIG_STRING];
+extern char configPlayerPalettePresetWario[MAX_CONFIG_STRING];
 // coop settings
 extern unsigned int configAmountOfPlayers;
 extern bool         configBubbleDeath;
@@ -134,7 +142,6 @@ extern unsigned int configMenuLevel;
 extern unsigned int configMenuSound;
 extern bool         configMenuRandom;
 extern bool         configMenuDemos;
-extern bool         configDisablePopups;
 extern char         configLanguage[MAX_CONFIG_STRING];
 extern bool         configForce4By3;
 extern bool         configDynosLocalPlayerModelOnly;
@@ -157,6 +164,11 @@ void enable_queued_mods(void);
 void enable_queued_dynos_packs(void);
 void configfile_load(void);
 void configfile_save(const char *filename);
+void configfile_init_player_palettes(void);
+void configfile_sync_player_palette(void);
+void configfile_set_character_palette_preset(unsigned int characterIndex, const char* presetName);
+void configfile_reset_character_palette(unsigned int characterIndex);
+void configfile_reset_all_character_palettes(void);
 const char *configfile_name(void);
 const char *configfile_backup_name(void);
 

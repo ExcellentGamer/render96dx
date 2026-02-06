@@ -1,22 +1,115 @@
-#include "djui.h"
-#include "djui_panel.h"
-#include "djui_panel_menu.h"
-#include "djui_unicode.h"
-#include "djui_panel_main.h"
-#include "djui_panel_pause.h"
-#include "djui_panel_options.h"
+#include "pc/djui/djui.h"
+#include "pc/djui/djui_panel.h"
+#include "pc/djui/djui_panel_main.h"
+#include "pc/djui/djui_panel_menu.h"
+#include "pc/djui/djui_panel_options.h"
+#include "pc/djui/djui_panel_pause.h"
+#include "pc/djui/djui_panel_player.h"
+#include "pc/djui/djui_unicode.h"
+
+#include "pc/configfile.h"
 #include "pc/platform.h"
-#include "game/level_update.h"
+
 #include "game/area.h"
 #include "game/characters.h"
+#include "game/level_update.h"
+#include "game/mario.h"
 #include "game/object_helpers.h"
+#include "game/object_list_processor.h"
+#include "game/player_palette.h"
+
+#include "sm64.h"
 
 void djui_panel_player_create(struct DjuiBase* caller);
 void djui_panel_character_create(struct DjuiBase* caller);
 
+static void djui_panel_player_edit_palette_create(struct DjuiBase* caller);
+static void djui_panel_player_destroy(struct DjuiBase* caller);
+
 struct DjuiText* gDjuiPaletteToggle = NULL;
 
-#if 0
+static unsigned int sPlayerPalettePresetIndex = 0;
+static struct DjuiSelectionbox* sPlayerPalettePresetSelection = NULL;
+
+static unsigned int djui_panel_player_find_preset_index_for_palette(struct PlayerPalette palette) {
+    for (int i = 0; i < gPresetPaletteCount; i++) {
+        if (memcmp(&palette, &gPresetPalettes[i].palette, sizeof(struct PlayerPalette)) == 0) {
+            return (unsigned int)(i + 1);
+        }
+    }
+    return 0;
+}
+
+static void djui_panel_player_update_preset_selectionbox(void) {
+    if (sPlayerPalettePresetSelection == NULL) { return; }
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    sPlayerPalettePresetIndex = djui_panel_player_find_preset_index_for_palette(configPlayerPalettes[configPlayerModel]);
+    djui_selectionbox_update_value(&sPlayerPalettePresetSelection->base);
+}
+
+static void djui_panel_player_palette_preset_changed(UNUSED struct DjuiBase* caller) {
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    if (sPlayerPalettePresetIndex == 0) { return; }
+
+    unsigned int preset = sPlayerPalettePresetIndex - 1;
+    if (preset >= gPresetPaletteCount) { return; }
+
+    configfile_set_character_palette_preset(configPlayerModel, gPresetPalettes[preset].name);
+    configfile_save(configfile_name());
+
+    djui_panel_player_update_preset_selectionbox();
+}
+
+static void djui_panel_player_palette_reset_character(UNUSED struct DjuiBase* caller) {
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    configfile_reset_character_palette(configPlayerModel);
+    configfile_save(configfile_name());
+    djui_panel_player_update_preset_selectionbox();
+}
+
+static void djui_panel_player_palette_create(struct DjuiBase* caller) {
+    sPlayerPalettePresetSelection = NULL;
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+
+    struct DjuiThreePanel* panel = djui_panel_menu_create(DLANG(PLAYER, PLAYER_TITLE), true);
+    struct DjuiBase* body = djui_three_panel_get_body(panel);
+    {
+        char editingText[64] = { 0 };
+        snprintf(editingText, sizeof(editingText), "Editing Palette for %s", gCharacters[configPlayerModel].name);
+        struct DjuiText* text = djui_text_create(body, editingText);
+        djui_text_set_alignment(text, DJUI_HALIGN_LEFT, DJUI_VALIGN_TOP);
+        djui_base_set_size_type(&text->base, DJUI_SVT_RELATIVE, DJUI_SVT_ABSOLUTE);
+        djui_base_set_size(&text->base, 1.0f, 24);
+
+        char* presetChoices[MAX_PRESET_PALETTES + 1] = { 0 };
+        presetChoices[0] = DLANG(PALETTE, CUSTOM);
+        unsigned int presetChoiceCount = 1;
+        for (int i = 0; i < gPresetPaletteCount && presetChoiceCount < MAX_PRESET_PALETTES + 1; i++) {
+            presetChoices[presetChoiceCount++] = gPresetPalettes[i].name;
+        }
+        sPlayerPalettePresetSelection = djui_selectionbox_create(body, DLANG(PLAYER, PALETTE_PRESET), presetChoices, presetChoiceCount, &sPlayerPalettePresetIndex, djui_panel_player_palette_preset_changed);
+        djui_panel_player_update_preset_selectionbox();
+
+        struct DjuiRect* rect = djui_rect_container_create(body, 32);
+        {
+            struct DjuiButton* button1 = djui_button_create(&rect->base, "Reset", DJUI_BUTTON_STYLE_NORMAL, djui_panel_player_palette_reset_character);
+            djui_base_set_size_type(&button1->base, DJUI_SVT_RELATIVE, DJUI_SVT_ABSOLUTE);
+            djui_base_set_size(&button1->base, 0.97f, 32);
+        }
+
+        djui_button_create(body, DLANG(PLAYER, EDIT_PALETTE), DJUI_BUTTON_STYLE_NORMAL, djui_panel_player_edit_palette_create);
+
+        djui_button_create(body, DLANG(MENU, BACK), DJUI_BUTTON_STYLE_BACK, djui_panel_menu_back);
+    }
+
+    gDjuiInPlayerMenu = true;
+    struct DjuiPanel* p = djui_panel_add(caller, panel, NULL);
+    if (p) {
+        p->on_panel_destroy = djui_panel_player_destroy;
+    }
+}
+
+#if 1
 static unsigned int sPalettePresetIndex = 0;
 static unsigned int sCurrentPlayerPart = PANTS;
 static unsigned int sSliderChannels[3] = { 0 };
@@ -106,12 +199,22 @@ static void djui_panel_player_edit_palette_hex_code_changed(struct DjuiBase* cal
                                                            char_to_hex_digit(input->buffer[2 * i + 1]);
     }
 
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    configPlayerPalettes[configPlayerModel] = configPlayerPalette;
+    configPlayerPaletteCustomEnabled[configPlayerModel] = true;
+    configPlayerPaletteCustom[configPlayerModel] = configPlayerPalette;
+
     djui_panel_player_edit_palette_update_sliders();
     djui_panel_player_edit_palette_update_palette_display();
 }
 
 static void djui_panel_player_edit_palette_slider_changed(UNUSED struct DjuiBase* caller, size_t index) {
     configPlayerPalette.parts[sCurrentPlayerPart][index] = sSliderChannels[index];
+
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    configPlayerPalettes[configPlayerModel] = configPlayerPalette;
+    configPlayerPaletteCustomEnabled[configPlayerModel] = true;
+    configPlayerPaletteCustom[configPlayerModel] = configPlayerPalette;
 
     djui_panel_player_edit_palette_update_hex_code_box();
     djui_panel_player_edit_palette_update_palette_display();
@@ -188,12 +291,18 @@ static void djui_panel_player_edit_palette_delete(UNUSED struct DjuiBase* caller
 static void djui_panel_player_edit_palette_export(UNUSED struct DjuiBase* caller) {
     player_palette_export(sPalettePresetNameTextBox->buffer);
     sReloadPalettePresetSelection = true;
+    player_palettes_reset();
+    player_palettes_read(sys_exe_path_dir(), true);
+    player_palettes_read(fs_get_write_path(PALETTES_DIRECTORY), false);
 }
 
 static void djui_panel_player_active_palette_export(UNUSED struct DjuiBase* caller) {
     player_palette_export(sPalettePresetNameTextBox->buffer);
     sReloadPalettePresetSelection = true;
     djui_panel_menu_back(caller);
+    player_palettes_reset();
+    player_palettes_read(sys_exe_path_dir(), true);
+    player_palettes_read(fs_get_write_path(PALETTES_DIRECTORY), false);
 }
 
 static void (*sSavedDestroy)(struct DjuiBase*);
@@ -205,6 +314,9 @@ static void djui_panel_player_edit_palette_destroy(struct DjuiBase* caller) {
         sPalettePresetIndex = djui_panel_player_edit_palette_get_palette_index(configPlayerPalette);
         djui_selectionbox_update_value(&sPalettePresetSelection->base);
     }
+
+    configfile_sync_player_palette();
+    configfile_save(configfile_name());
 
     if (sReloadPalettePresetSelection) {
         sReloadPalettePresetSelection = false;
@@ -220,6 +332,12 @@ static void djui_panel_player_edit_palette_destroy(struct DjuiBase* caller) {
 
 static void djui_panel_player_edit_palette_create(struct DjuiBase* caller) {
     gDjuiInPlayerMenu = true;
+
+    if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    configPlayerPalette = configPlayerPalettes[configPlayerModel];
+    if (!configPlayerPaletteCustomEnabled[configPlayerModel]) {
+        configPlayerPaletteCustom[configPlayerModel] = configPlayerPalette;
+    }
 
     char* sPartStrings[PLAYER_PART_MAX] = { DLANG(PLAYER, OVERALLS), DLANG(PLAYER, SHIRT), DLANG(PLAYER, GLOVES), DLANG(PLAYER, SHOES), DLANG(PLAYER, HAIR), DLANG(PLAYER, SKIN), DLANG(PLAYER, CAP), DLANG(PLAYER, EMBLEM) };
 
@@ -386,6 +504,7 @@ static void djui_panel_player_prevent_demo(struct DjuiBase* caller) {
 
 static void djui_panel_player_value_changed(UNUSED struct DjuiBase* caller) {
     if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
+    configfile_sync_player_palette();
 
     if (gMarioStates[0].marioObj != NULL) {
         u8 modelIndex = configPlayerModel;
@@ -421,5 +540,5 @@ void djui_panel_character_create(struct DjuiBase* caller) {
 }
 
 void djui_panel_player_create(struct DjuiBase* caller) {
-    djui_panel_character_create(caller);
+    djui_panel_player_palette_create(caller);
 }

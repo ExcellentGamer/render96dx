@@ -78,7 +78,7 @@ struct AllowDjuiPopupOverride sAllowDjuiPopupOverride;
 
 bool djui_is_popup_disabled(void) {
     // return override if there is one, otherwise return the value in the config.
-    return sAllowDjuiPopupOverride.override ? sAllowDjuiPopupOverride.value : configDisablePopups;
+    return sAllowDjuiPopupOverride.override ? sAllowDjuiPopupOverride.value : true;
 }
 
 void djui_set_popup_disabled_override(bool value) {

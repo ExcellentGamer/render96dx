@@ -229,3 +229,16 @@ bool player_palette_delete(const char* palettesPath, char* name, bool appendPale
     }
     return false;
 }
+
+bool player_palette_get_preset(const char* name, struct PlayerPalette* out) {
+    if (name == NULL || name[0] == '\0') { return false; }
+    if (out == NULL) { return false; }
+
+    for (int i = 0; i < gPresetPaletteCount; i++) {
+        if (!strcmp(gPresetPalettes[i].name, name)) {
+            *out = gPresetPalettes[i].palette;
+            return true;
+        }
+    }
+    return false;
+}

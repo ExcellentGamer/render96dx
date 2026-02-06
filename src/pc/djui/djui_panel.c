@@ -219,6 +219,7 @@ void djui_panel_shutdown(void) {
     gInteractableOverridePad = false;
     gDjuiPanelMainCreated = false;
     gDjuiPanelPauseCreated = false;
+    gDjuiInPlayerMenu = false;
     djui_cursor_set_visible(false);
     if (!gDjuiShuttingDown && !gDjuiChangingTheme) {
         configfile_save(configfile_name());

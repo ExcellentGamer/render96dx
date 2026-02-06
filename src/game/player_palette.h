@@ -32,4 +32,6 @@ void player_palettes_read(const char* palettePath, bool appendPalettes);
 void player_palette_export(char* name);
 bool player_palette_delete(const char* palettesPath, char* name, bool appendPalettes);
 
+bool player_palette_get_preset(const char* name, struct PlayerPalette* out);
+
 #endif

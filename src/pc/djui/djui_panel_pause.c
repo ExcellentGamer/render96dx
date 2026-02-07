@@ -12,12 +12,29 @@
 #include "pc/lua/smlua_hooks.h"
 #include "game/object_helpers.h"
 #include "behavior_table.h"
+#include "game/camera.h"
+#include "game/ingame_menu.h"
+#include "game/sound_init.h"
 #include "game/level_update.h"
 #include "data/dynos.c.h"
 
 bool gDjuiPanelPauseCreated = false;
 
 static void djui_panel_pause_quit(struct DjuiBase* caller);
+
+static void djui_panel_pause_exit_to_main_menu(UNUSED struct DjuiBase* caller) {
+    if (gMarioStates[0].action == ACT_PUSHING_DOOR || gMarioStates[0].action == ACT_PULLING_DOOR) { return; }
+
+    extern s16 gPauseScreenMode;
+    raise_background_noise(1);
+    gCameraMovementFlags &= ~CAM_MOVE_PAUSE_SCREEN;
+    gPauseScreenMode = 0;
+    set_menu_mode(-1);
+    set_play_mode(PLAY_MODE_NORMAL);
+
+    djui_panel_shutdown();
+    fade_into_special_warp(SPECIAL_WARP_GODDARD, 0);
+}
 
 static void djui_panel_pause_resume(UNUSED struct DjuiBase* caller) {
     djui_panel_shutdown();
@@ -94,6 +111,8 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
         }
 
         djui_button_create(body, DLANG(PAUSE, RESUME), DJUI_BUTTON_STYLE_NORMAL, djui_panel_pause_resume);
+
+        djui_button_create(body, "Exit to Main Menu", DJUI_BUTTON_STYLE_BACK, djui_panel_pause_exit_to_main_menu);
 
         djui_button_create(body, DLANG(MAIN, QUIT), DJUI_BUTTON_STYLE_BACK, djui_panel_pause_quit);
     }

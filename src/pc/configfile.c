@@ -97,8 +97,8 @@ unsigned int configEnvVolume                      = MAX_VOLUME;
 bool         configFadeoutDistantSounds           = false;
 bool         configMuteFocusLoss                  = false;
 // control binds
-unsigned int configKeyA[MAX_BINDS]                = { 0x0026,     0x1000,     0x1103     };
-unsigned int configKeyB[MAX_BINDS]                = { 0x0033,     0x1001,     0x1101     };
+unsigned int configKeyA[MAX_BINDS]                = { 0x0026,     0x1000,     0x1101     };
+unsigned int configKeyB[MAX_BINDS]                = { 0x0033,     0x1001,     0x1103     };
 unsigned int configKeyX[MAX_BINDS]                = { 0x0017,     0x1002,     VK_INVALID };
 unsigned int configKeyY[MAX_BINDS]                = { 0x0032,     0x1003,     VK_INVALID };
 unsigned int configKeyStart[MAX_BINDS]            = { 0x0039,     0x1006,     VK_INVALID };

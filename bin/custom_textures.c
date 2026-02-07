@@ -31,8 +31,8 @@ ALIGNED8 const Texture texture_selectionbox_forward_icon[] = {
 #include "textures/segment2/custom_selectionbox_forward_icon.rgba16.inc.c"
 };
 
-ALIGNED8 const Texture texture_coopdx_logo[] = {
-#include "textures/segment2/custom_coopdx_logo.rgba32.inc.c"
+ALIGNED8 const Texture texture_render96_logo[] = {
+#include "textures/segment2/custom_render96_logo.rgba32.inc.c"
 };
 
 ALIGNED8 const Texture texture_ping_empty[] = {

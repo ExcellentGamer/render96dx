@@ -23,6 +23,7 @@
 #include "sm64.h"
 #include "menu/ingame_text.h"
 #include "pc/controller/controller_mouse.h"
+#include "pc/djui/djui.h"
 #include "pc/gfx/gfx.h"
 #include "gfx_dimensions.h"
 #include "game/rendering_graph_node.h"
@@ -167,10 +168,14 @@ static unsigned char* textSoundModes[3] = {
 };
 #endif
 
-static unsigned char* textMarioA = INGAME_TEXT_PTR(TEXT_FILE_MARIO_A);
-static unsigned char* textMarioB = INGAME_TEXT_PTR(TEXT_FILE_MARIO_B);
-static unsigned char* textMarioC = INGAME_TEXT_PTR(TEXT_FILE_MARIO_C);
-static unsigned char* textMarioD = INGAME_TEXT_PTR(TEXT_FILE_MARIO_D);
+static unsigned char textFileA[] = { 0x0F, 0x12, 0x15, 0x0E, 0x9E, 0x0A, 0xFF };
+static unsigned char textFileB[] = { 0x0F, 0x12, 0x15, 0x0E, 0x9E, 0x0B, 0xFF };
+static unsigned char textFileC[] = { 0x0F, 0x12, 0x15, 0x0E, 0x9E, 0x0C, 0xFF };
+static unsigned char textFileD[] = { 0x0F, 0x12, 0x15, 0x0E, 0x9E, 0x0D, 0xFF };
+static unsigned char* textMarioA = textFileA;
+static unsigned char* textMarioB = textFileB;
+static unsigned char* textMarioC = textFileC;
+static unsigned char* textMarioD = textFileD;
 
 #ifndef VERSION_EU
 static unsigned char* textNew = INGAME_TEXT_PTR(TEXT_NEW);
@@ -193,6 +198,28 @@ static u32 get_main_menu_save_button_model(s32 fileIndex, s32 fade) {
         case CT_WARIO:   return fade ? MODEL_MAIN_MENU_WARIO_SAVE_BUTTON_FADE   : MODEL_MAIN_MENU_WARIO_SAVE_BUTTON;
         case CT_MARIO:
         default:         return fade ? MODEL_MAIN_MENU_MARIO_SAVE_BUTTON_FADE   : MODEL_MAIN_MENU_MARIO_SAVE_BUTTON;
+    }
+}
+
+static u32 get_save_file_sound_for_character(s32 fileIndex) {
+    if (save_file_exists(fileIndex) != TRUE) {
+#if defined(VERSION_JP)
+        return SOUND_MENU_STAR_SOUND;
+#else
+        return SOUND_MENU_STAR_SOUND_OKEY_DOKEY;
+#endif
+    }
+
+    u8 charIndex = save_file_get_last_character(fileIndex);
+    if (charIndex >= CT_MAX) { charIndex = CT_MARIO; }
+
+    switch (charIndex) {
+        case CT_LUIGI: return SOUND_LUIGI_OKEY_DOKEY;
+        case CT_TOAD:  return SOUND_TOAD_OKEY_DOKEY;
+        case CT_WARIO: return SOUND_WARIO_OKEY_DOKEY;
+        case CT_WALUIGI:
+        case CT_MARIO:
+        default:       return SOUND_MARIO_OKEY_DOKEY;
     }
 }
 
@@ -1361,12 +1388,6 @@ void bhv_menu_button_manager_init(void) {
     sTextBaseAlpha = 0;
 }
 
-#if defined(VERSION_JP)
-    #define SAVE_FILE_SOUND SOUND_MENU_STAR_SOUND
-#else
-    #define SAVE_FILE_SOUND SOUND_MENU_STAR_SOUND_OKEY_DOKEY
-#endif
-
 /**
  * In the main menu, check if a button was clicked to play it's button growing state.
  * Also play a sound and/or render buttons depending of the button ID selected.
@@ -1412,28 +1433,28 @@ void check_main_menu_clicked_buttons(void) {
         // Play sound of the save file clicked
         switch (sSelectedButtonID) {
             case MENU_BUTTON_PLAY_FILE_A:
-                play_sound(SAVE_FILE_SOUND, gGlobalSoundSource);
+                play_sound(get_save_file_sound_for_character(SAVE_FILE_A), gGlobalSoundSource);
 #ifdef VERSION_SH
                 queue_rumble_data(60, 70);
                 func_sh_8024C89C(1);
 #endif
                 break;
             case MENU_BUTTON_PLAY_FILE_B:
-                play_sound(SAVE_FILE_SOUND, gGlobalSoundSource);
+                play_sound(get_save_file_sound_for_character(SAVE_FILE_B), gGlobalSoundSource);
 #ifdef VERSION_SH
                 queue_rumble_data(60, 70);
                 func_sh_8024C89C(1);
 #endif
                 break;
             case MENU_BUTTON_PLAY_FILE_C:
-                play_sound(SAVE_FILE_SOUND, gGlobalSoundSource);
+                play_sound(get_save_file_sound_for_character(SAVE_FILE_C), gGlobalSoundSource);
 #ifdef VERSION_SH
                 queue_rumble_data(60, 70);
                 func_sh_8024C89C(1);
 #endif
                 break;
             case MENU_BUTTON_PLAY_FILE_D:
-                play_sound(SAVE_FILE_SOUND, gGlobalSoundSource);
+                play_sound(get_save_file_sound_for_character(SAVE_FILE_D), gGlobalSoundSource);
 #ifdef VERSION_SH
                 queue_rumble_data(60, 70);
                 func_sh_8024C89C(1);
@@ -1473,7 +1494,6 @@ void check_main_menu_clicked_buttons(void) {
     }
 #endif
 }
-#undef SAVE_FILE_SOUND
 
 /**
  * Menu Buttons Menu Manager Loop Action
@@ -1606,6 +1626,9 @@ void bhv_menu_button_manager_loop(void) {
 void handle_cursor_button_input(void) {
     u16 buttonPressed = gPlayer1Controller->buttonPressed;
     if (sMouseWindowButtonsPressed & L_MOUSE_BUTTON) {
+        buttonPressed |= B_BUTTON;
+    }
+    if (sMouseWindowButtonsPressed & R_MOUSE_BUTTON) {
         buttonPressed |= A_BUTTON;
     }
 
@@ -1660,7 +1683,14 @@ void handle_controller_cursor_input(void) {
         rawStickX = 0;
     }
 
-    if (rawStickX != 0 || rawStickY != 0 || gPlayer1Controller->buttonPressed != 0 || gPlayer1Controller->buttonDown != 0) {
+    bool controllerInputActive = (rawStickX != 0 || rawStickY != 0 ||
+                                 ((gPlayer1Controller->buttonPressed != 0 || gPlayer1Controller->buttonDown != 0) && mouse_window_buttons == 0));
+
+    if (!controllerInputActive && (sMouseWindowButtonsPressed || mouse_window_buttons)) {
+        mouse_has_current_control = true;
+    }
+
+    if (controllerInputActive) {
         mouse_has_current_control = false;
         mouse_prev_window_x = mouse_window_x;
         mouse_prev_window_y = mouse_window_y;
@@ -1673,7 +1703,7 @@ void handle_controller_cursor_input(void) {
     float screenScale = (float)gfx_current_dimensions.height / SCREEN_HEIGHT;
     f32 mousePosX = (((mouse_window_x - (gfx_current_dimensions.width - (screenScale * 320)) / 2) / screenScale) - 160.0f);
     f32 mousePosY = ((mouse_window_y / screenScale - 120.0f) * -1);
-    controller_mouse_set_position(&sCursorPos[0], &sCursorPos[1], mousePosX, mousePosY, sSelectedFileNum == 0, FALSE);
+    controller_mouse_set_position(&sCursorPos[0], &sCursorPos[1], mousePosX, mousePosY, !controllerInputActive, FALSE);
 
     // Stop cursor from going offscreen
     if (sCursorPos[0] > GFX_DIMENSIONS_FROM_RIGHT_EDGE(188.0f)) {

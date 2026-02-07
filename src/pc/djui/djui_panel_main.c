@@ -7,7 +7,7 @@
 #include "pc/pc_main.h"
 #include "pc/update_checker.h"
 
-extern ALIGNED8 u8 texture_coopdx_logo[];
+extern ALIGNED8 u8 texture_render96_logo[];
 
 bool gDjuiPanelMainCreated = false;
 
@@ -28,7 +28,7 @@ void djui_panel_main_create(struct DjuiBase* caller) {
         struct DjuiBase* body = djui_three_panel_get_body(panel);
         {
             if (!configExCoopTheme) {
-                struct DjuiImage* logo = djui_image_create(body, texture_coopdx_logo, 2048, 1024, G_IM_FMT_RGBA, G_IM_SIZ_32b);
+                struct DjuiImage* logo = djui_image_create(body, texture_render96_logo, 2048, 1024, G_IM_FMT_RGBA, G_IM_SIZ_32b);
                 if (configDjuiThemeCenter) {
                     djui_base_set_size(&logo->base, 550, 275);
                 } else {

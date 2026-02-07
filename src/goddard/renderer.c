@@ -28,6 +28,7 @@
 #include "gfx_dimensions.h"
 
 #include "pc/controller/controller_mouse.h"
+#include "pc/djui/djui.h"
 #include "pc/gfx/gfx.h"
 
 #define MAX_GD_DLS 1000
@@ -2462,7 +2463,8 @@ void parse_p1_controller(void) {
         gdctrl->csrY -= gdctrl->stickY * 0.1;
     }
 
-    if (ABS(currInputs->stick_x) >= 6 || ABS(currInputs->stick_y) >= 6 || currInputs->button != 0) {
+    bool controllerInputActive = (ABS(currInputs->stick_x) >= 6 || ABS(currInputs->stick_y) >= 6 || (currInputs->button != 0 && mouse_window_buttons == 0));
+    if (controllerInputActive) {
         mouse_has_current_control = false;
         mouse_prev_window_x = mouse_window_x;
         mouse_prev_window_y = mouse_window_y;
@@ -2471,7 +2473,7 @@ void parse_p1_controller(void) {
     float screenScale = (float)gfx_current_dimensions.height / SCREEN_HEIGHT;
     f32 mousePosX = (f32)((mouse_window_x - (gfx_current_dimensions.width - (screenScale * (float)SCREEN_WIDTH)) / 2) / screenScale);
     f32 mousePosY = (f32)(mouse_window_y / screenScale);
-    controller_mouse_set_position(&gdctrl->csrX, &gdctrl->csrY, mousePosX, mousePosY, (sHandView->flags & VIEW_UPDATE), TRUE);
+    controller_mouse_set_position(&gdctrl->csrX, &gdctrl->csrY, mousePosX, mousePosY, !controllerInputActive, TRUE);
 
     // clamp cursor position within screen view bounds
     if (gdctrl->csrX < GFX_DIMENSIONS_FROM_LEFT_EDGE(16.0f/aspect)) {

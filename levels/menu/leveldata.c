@@ -8,6 +8,22 @@
 
 #include "make_const_nonconst.h"
 
+ALIGNED8 const Texture texture_menu_luigi_save[] = {
+#include "textures/segment2/custom_luigi_save.rgba16.inc.c"
+};
+
+ALIGNED8 const Texture texture_menu_toad_save[] = {
+#include "textures/segment2/custom_toad_save.rgba16.inc.c"
+};
+
+ALIGNED8 const Texture texture_menu_waluigi_save[] = {
+#include "textures/segment2/custom_waluigi_save.rgba16.inc.c"
+};
+
+ALIGNED8 const Texture texture_menu_wario_save[] = {
+#include "textures/segment2/custom_wario_save.rgba16.inc.c"
+};
+
 // 0x07000000 - 0x07000018
 static const Lights1 lights_menu_save_button = gdSPDefLights1(
     0x3f, 0x3f, 0x3f,
@@ -108,6 +124,58 @@ const Gfx dl_menu_mario_save_button_base[] = {
     gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
     gsSPDisplayList(dl_vertex_menu_save_button_borders),
     gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_mario_save),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 64 * 32 - 1, CALC_DXT(64, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_front),
+    gsSPEndDisplayList(),
+};
+
+const Gfx dl_menu_luigi_save_button_base[] = {
+    gsSPDisplayList(dl_tex_block_menu_save_button_base),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_stone),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_borders),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_luigi_save),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 64 * 32 - 1, CALC_DXT(64, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_front),
+    gsSPEndDisplayList(),
+};
+
+const Gfx dl_menu_toad_save_button_base[] = {
+    gsSPDisplayList(dl_tex_block_menu_save_button_base),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_stone),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_borders),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_toad_save),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 64 * 32 - 1, CALC_DXT(64, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_front),
+    gsSPEndDisplayList(),
+};
+
+const Gfx dl_menu_waluigi_save_button_base[] = {
+    gsSPDisplayList(dl_tex_block_menu_save_button_base),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_stone),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_borders),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_waluigi_save),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 64 * 32 - 1, CALC_DXT(64, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_front),
+    gsSPEndDisplayList(),
+};
+
+const Gfx dl_menu_wario_save_button_base[] = {
+    gsSPDisplayList(dl_tex_block_menu_save_button_base),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_stone),
+    gsDPLoadSync(),
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+    gsSPDisplayList(dl_vertex_menu_save_button_borders),
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, texture_menu_wario_save),
     gsDPLoadSync(),
     gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 64 * 32 - 1, CALC_DXT(64, G_IM_SIZ_16b_BYTES)),
     gsSPDisplayList(dl_vertex_menu_save_button_front),

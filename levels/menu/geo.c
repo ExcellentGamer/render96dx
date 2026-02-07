@@ -43,6 +43,118 @@ const GeoLayout geo_menu_mario_save_button_fade[] = {
    GEO_END(),
 };
 
+// 0x0E000200
+const GeoLayout geo_menu_luigi_save_button[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_luigi_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E000230
+const GeoLayout geo_menu_luigi_save_button_fade[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_luigi_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_fade_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E000260
+const GeoLayout geo_menu_toad_save_button[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_toad_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E000290
+const GeoLayout geo_menu_toad_save_button_fade[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_toad_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_fade_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E0002C0
+const GeoLayout geo_menu_waluigi_save_button[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_waluigi_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E0002F0
+const GeoLayout geo_menu_waluigi_save_button_fade[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_waluigi_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_fade_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E000320
+const GeoLayout geo_menu_wario_save_button[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_wario_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
+// 0x0E000350
+const GeoLayout geo_menu_wario_save_button_fade[] = {
+   GEO_NODE_START(),
+   GEO_OPEN_NODE(),
+      GEO_ASM(0, geo_file_select_background_button_scale),
+      GEO_SCALE_XYZ(0x00, 524288, 524288, 524288),
+      GEO_OPEN_NODE(),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_wario_save_button_base),
+         GEO_DISPLAY_LIST(LAYER_OPAQUE, dl_menu_save_button_fade_back),
+      GEO_CLOSE_NODE(),
+   GEO_CLOSE_NODE(),
+   GEO_END(),
+};
+
 // 0x0E000230
 const GeoLayout geo_menu_mario_new_button[] = {
    GEO_NODE_START(),

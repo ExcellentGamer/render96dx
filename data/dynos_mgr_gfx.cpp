@@ -93,7 +93,11 @@ static Gfx *DynOS_Gfx_Duplicate(Gfx *aGfx, bool shouldDuplicate) {
 // Get a writable display list so it can be modified by mods
 // If it's a vanilla display list, duplicate it, so it can be restored later
 Gfx *DynOS_Gfx_GetWritableDisplayList(Gfx *aGfx) {
-    return DynOS_Gfx_Duplicate(aGfx, false);
+    // Always return a writable copy.
+    // Some static/built-in display lists may reside in read-only memory, and the
+    // duplication routine patches pointers (DL/VTX) in-place. If we don't duplicate,
+    // that patching can crash on write.
+    return DynOS_Gfx_Duplicate(aGfx, true);
 }
 
   ///////////////////

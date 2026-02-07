@@ -261,9 +261,19 @@ const char *gfx_get_name(Gfx *gfx) {
 u32 gfx_get_length(Gfx *gfx) {
     if (!gfx) { return 0; }
 
-    u32 length = 0;
-    for (; memcmp(gfx, SENTINEL_GFX, sizeof(Gfx)) != 0; ++length, gfx++);
-    return length;
+    // Prefer a sentinel if present (used by dynamically allocated buffers), but also
+    // safely handle vanilla/static display lists by stopping on EndDL / branch.
+    for (u32 i = 0;; ++i) {
+        if (memcmp(gfx + i, SENTINEL_GFX, sizeof(Gfx)) == 0) { return i; }
+        u32 op = GFX_OP(gfx + i);
+        switch (op) {
+            case G_DL:
+                if (C0(gfx + i, 16, 1) == G_DL_NOPUSH) { return i + 1; }
+                break;
+            case (u8) G_ENDDL:
+                return i + 1;
+        }
+    }
 }
 
 Gfx *gfx_get_command(Gfx *gfx, u32 offset) {

@@ -93,6 +93,22 @@ ALIGNED8 const Texture texture_hud_char_Z[] = {
 #include "textures/segment2/custom_hud_z.rgba16.inc.c"
 };
 
+ALIGNED8 const Texture texture_hud_char_luigi_save[] = {
+#include "textures/segment2/custom_luigi_save.rgba16.inc.c"
+};
+
+ALIGNED8 const Texture texture_hud_char_toad_save[] = {
+#include "textures/segment2/custom_toad_save.rgba16.inc.c"
+};
+
+ALIGNED8 const Texture texture_hud_char_waluigi_save[] = {
+#include "textures/segment2/custom_waluigi_save.rgba16.inc.c"
+};
+
+ALIGNED8 const Texture texture_hud_char_wario_save[] = {
+#include "textures/segment2/custom_wario_save.rgba16.inc.c"
+};
+
 ROM_ASSET_LOAD_TEXTURE(texture_hud_char_apostrophe, "textures/segment2/segment2.04800.rgba16.inc.c", 0x00108a40, 48390, 0x00003e00, 512);
 
 ROM_ASSET_LOAD_TEXTURE(texture_hud_char_double_quote, "textures/segment2/segment2.04A00.rgba16.inc.c", 0x00108a40, 48390, 0x00004000, 512);

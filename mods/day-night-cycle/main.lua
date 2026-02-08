@@ -2,6 +2,38 @@
 -- incompatible: light day-night-cycle
 -- description: Day Night Cycle DX v2.5.1\nBy \\#ec7731\\Agent X\n\n\\#dcdcdc\\This mod adds a fully featured day & night cycle system with night, sunrise, day and sunset to render96dx. It includes an API and hook system for interfacing with several components of the mod externally. This mod was originally made for sm64ex-coop but has been practically rewritten for render96dx.\n\nDays last 24 minutes and with the /time command, you can get/set the time or change your settings.\n\nThere is also now a new menu in the pause menu for Day Night Cycle DX!\n\nSpecial thanks to \\#e06de4\\MaiskX3\\#dcdcdc\\ for the night time music.\nSpecial thanks to \\#00ffff\\AngelicMiracles\\#dcdcdc\\ for the sunset, sunrise and night time skyboxes.\nSpecial thanks to \\#344ee1\\eros71\\#dcdcdc\\ for salvaging\nthe mod files.
 
+if network_is_server == nil then
+    network_is_server = function() return true end
+end
+
+if network_player_connected_count == nil then
+    network_player_connected_count = function() return 1 end
+end
+
+if network_check_singleplayer_pause == nil then
+    network_check_singleplayer_pause = function() return false end
+end
+
+if gNetworkPlayers == nil then
+    gNetworkPlayers = {}
+    gNetworkPlayers[0] = {
+        currLevelNum = gCurrLevelNum,
+        currAreaIndex = gCurrAreaIndex,
+        currActNum = 0,
+    }
+end
+
+if gGlobalSyncTable == nil then
+    gGlobalSyncTable = {}
+end
+
+-- ensure behavior functions are defined
+require("skybox")
+
+-- hook behaviors used by this mod
+local id_bhvDNCSkybox = hook_behavior(nil, OBJ_LIST_LEVEL, false, bhv_dnc_skybox_init, bhv_dnc_skybox_loop)
+local id_bhvDNCNoSkybox = hook_behavior(nil, OBJ_LIST_DEFAULT, false, nil, nil)
+
 -- localize functions to improve performance
 local network_is_server,mod_storage_load,tonumber,math_floor,type,error,table_insert,get_skybox,set_lighting_dir,set_lighting_color,set_vertex_color,set_fog_color,set_fog_intensity,network_check_singleplayer_pause,network_player_connected_count,obj_get_first_with_behavior_id,spawn_non_sync_object,obj_scale,math_lerp,set_lighting_color_ambient,le_set_ambient_color,djui_hud_set_resolution,djui_hud_set_font,hud_is_hidden,hud_get_value,djui_hud_get_screen_width,djui_hud_measure_text,djui_hud_get_screen_height,djui_hud_set_color,play_sound,djui_chat_message_create,string_format,mod_storage_save_number,mod_storage_save_bool,get_date_and_time = network_is_server,mod_storage_load,tonumber,math.floor,type,error,table.insert,get_skybox,set_lighting_dir,set_lighting_color,set_vertex_color,set_fog_color,set_fog_intensity,network_check_singleplayer_pause,network_player_connected_count,obj_get_first_with_behavior_id,spawn_non_sync_object,obj_scale,math.lerp,set_lighting_color_ambient,le_set_ambient_color,djui_hud_set_resolution,djui_hud_set_font,hud_is_hidden,hud_get_value,djui_hud_get_screen_width,djui_hud_measure_text,djui_hud_get_screen_height,djui_hud_set_color,play_sound,djui_chat_message_create,string.format,mod_storage_save_number,mod_storage_save_bool,get_date_and_time
 
@@ -111,7 +143,7 @@ local function update()
     local skybox = get_skybox()
     if skybox >= BACKGROUND_CUSTOM then skybox = BACKGROUND_OCEAN_SKY end
     if not dayNightCycleApi.dddCeiling and in_vanilla_level(LEVEL_DDD) then skybox = BACKGROUND_OCEAN_SKY end
-    if obj_get_first_with_behavior_id(bhvDNCSkybox) == nil and skybox ~= -1 and obj_get_first_with_behavior_id(bhvDNCNoSkybox) == nil then
+    if id_bhvDNCSkybox ~= nil and id_bhvDNCNoSkybox ~= nil and obj_get_first_with_behavior_id(id_bhvDNCSkybox) == nil and skybox ~= -1 and obj_get_first_with_behavior_id(id_bhvDNCNoSkybox) == nil then
         if show_day_night_cycle() and not is_static_skybox(skybox) then
             -- spawn day, sunset and night skyboxes
             for i = SKYBOX_DAY, SKYBOX_NIGHT do
@@ -127,7 +159,7 @@ local function update()
                 if overrideModel ~= nil and type(overrideModel) == "number" then model = overrideModel end
 
                 spawn_non_sync_object(
-                    bhvDNCSkybox,
+                    id_bhvDNCSkybox,
                     model,
                     0, 0, 0,
                     --- @param o Object
@@ -145,7 +177,7 @@ local function update()
 
             -- spawn static skybox
             spawn_non_sync_object(
-                bhvDNCSkybox,
+                id_bhvDNCSkybox,
                 model,
                 0, 0, 0,
                 --- @param o Object

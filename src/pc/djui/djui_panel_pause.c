@@ -7,6 +7,7 @@
 #include "djui_panel_menu.h"
 #include "djui_panel_confirm.h"
 #include "djui_panel_mod_menu.h"
+#include "djui_panel_mods.h"
 #include "pc/pc_main.h"
 #include "pc/configfile.h"
 #include "pc/lua/smlua_hooks.h"
@@ -77,6 +78,8 @@ void djui_panel_pause_create(struct DjuiBase* caller) {
         }
 
         djui_button_create(body, DLANG(PAUSE, OPTIONS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_options_create);
+
+        djui_button_create(body, DLANG(HOST_MODS, MODS), DJUI_BUTTON_STYLE_NORMAL, djui_panel_mods_create);
 
         struct Mod* addedMods[MAX_HOOKED_MOD_MENU_ELEMENTS] = { 0 };
         int modCount = 0;

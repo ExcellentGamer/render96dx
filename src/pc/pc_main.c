@@ -458,6 +458,10 @@ void* main_game_init(UNUSED void* dummy) {
 
     mods_init();
     enable_queued_mods();
+
+    // Activate enabled mods and initialize Lua (loads and executes mod scripts)
+    mods_activate(&gLocalMods);
+    smlua_init();
     LOADING_SCREEN_MUTEX(
         gCurrLoadingSegment.percentage = 0;
         loading_screen_set_segment_text("Starting Game");

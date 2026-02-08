@@ -10,6 +10,12 @@
 #include "djui_panel_pause.h"
 #include "pc/thread.h"
 #include "djui_panel_mods.h"
+#include "sm64.h"
+#include "pc/lua/smlua.h"
+#include "game/camera.h"
+#include "game/level_update.h"
+#include "game/ingame_menu.h"
+#include "game/sound_init.h"
 
 #define DJUI_MOD_PANEL_WIDTH (410.0f + (16 * 2.0f))
 #define MOD_CATEGORY_ALL 0
@@ -204,7 +210,23 @@ static void djui_panel_menu_refresh(UNUSED struct DjuiBase* base) {
 }
 
 static void djui_panel_menu_restart_game(UNUSED struct DjuiBase* base) {
-    network_restart_game();
+    if (gMarioStates[0].action == ACT_PUSHING_DOOR || gMarioStates[0].action == ACT_PULLING_DOOR) { return; }
+
+    configfile_save(configfile_name());
+
+    smlua_shutdown();
+    mods_activate(&gLocalMods);
+    smlua_init();
+
+    extern s16 gPauseScreenMode;
+    raise_background_noise(1);
+    gCameraMovementFlags &= ~CAM_MOVE_PAUSE_SCREEN;
+    gPauseScreenMode = 0;
+    set_menu_mode(-1);
+    set_play_mode(PLAY_MODE_NORMAL);
+
+    djui_panel_shutdown();
+    fade_into_special_warp(SPECIAL_WARP_GODDARD, 0);
 }
 
 void djui_panel_mods_create(struct DjuiBase* caller) {

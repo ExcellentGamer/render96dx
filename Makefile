@@ -1242,8 +1242,12 @@ $(BUILD_DIR)/$(COOPNET_LIBS):
 $(BUILD_DIR)/$(LANG_DIR):
 	@$(CP) -f -r $(LANG_DIR) $(BUILD_DIR)
 
-$(BUILD_DIR)/$(MOD_DIR):
-	$(CP) -f -r $(MOD_DIR) $(BUILD_DIR)
+.PHONY: FORCE
+FORCE:
+
+$(BUILD_DIR)/$(MOD_DIR): FORCE
+	@rm -rf $(BUILD_DIR)/$(MOD_DIR)
+	@cp -f -r $(MOD_DIR) $(BUILD_DIR)
 
 $(BUILD_DIR)/$(PALETTES_DIR):
 	@$(CP) -f -r $(PALETTES_DIR) $(BUILD_DIR)

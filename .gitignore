@@ -80,6 +80,13 @@ sm64config.txt
 !/sound/**/*custom*/**/*.aiff
 !/assets/**/*custom*.bin
 !/assets/**/*custom*/**/*.bin
+/Goddard-ImportExport-Project-master/**/**/**/
+/Goddard-ImportExport-Project-master/*.gitignore
+/Goddard-ImportExport-Project-master/LICENSE
+/Goddard-ImportExport-Project-master/README.md
+/Goddard-ImportExport-Project-master/goddard.zip
+
+.gitignore
 
 # visual studio
 build-windows-visual-studio/.vs

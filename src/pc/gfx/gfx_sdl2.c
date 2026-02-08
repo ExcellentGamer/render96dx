@@ -13,17 +13,37 @@
 #if FOR_WINDOWS
 #define GLEW_STATIC
 #include <GL/glew.h>
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #define GL_GLEXT_PROTOTYPES 1
+#if defined(__has_include) && __has_include(<SDL2/SDL_opengl.h>)
 #include <SDL2/SDL_opengl.h>
 #else
+#include <SDL_opengl.h>
+#endif
+#else
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #define GL_GLEXT_PROTOTYPES 1
 
 #ifdef OSX_BUILD
+#if defined(__has_include) && __has_include(<SDL2/SDL_opengl.h>)
 #include <SDL2/SDL_opengl.h>
 #else
+#include <SDL_opengl.h>
+#endif
+#else
+#if defined(__has_include) && __has_include(<SDL2/SDL_opengles2.h>)
 #include <SDL2/SDL_opengles2.h>
+#else
+#include <SDL_opengles2.h>
+#endif
 #endif
 
 #endif // End of OS-Specific GL defines

@@ -295,7 +295,11 @@ static void sys_fatal_impl(const char *msg) {
 #elif defined(HAVE_SDL2)
 
 // we can just ask SDL for most of this shit if we have it
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 
 const char *sys_user_path(void) {
     static char path[SYS_MAX_PATH] = { 0 };

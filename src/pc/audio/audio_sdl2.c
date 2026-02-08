@@ -1,7 +1,11 @@
 #ifdef AAPI_SDL2
 #include <stdio.h>
 
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 
 #include "audio_api.h"
 

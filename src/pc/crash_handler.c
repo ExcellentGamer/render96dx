@@ -6,7 +6,11 @@ char gLastRemoteBhv[256] = "";
 #if (defined(_WIN32) || defined(__linux__)) && !defined(WAPI_DUMMY)
 
 #ifdef HAVE_SDL2
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #endif
 
 #include <PR/ultratypes.h>

@@ -22,11 +22,23 @@
 #define GL_GLEXT_PROTOTYPES 1
 
 #ifdef WAPI_SDL2
-# include <SDL2/SDL.h>
-# ifdef USE_GLES
-#  include <SDL2/SDL_opengles2.h>
+# if defined(__has_include) && __has_include(<SDL2/SDL.h>)
+#  include <SDL2/SDL.h>
 # else
-#  include <SDL2/SDL_opengl.h>
+#  include <SDL.h>
+# endif
+# ifdef USE_GLES
+#  if defined(__has_include) && __has_include(<SDL2/SDL_opengles2.h>)
+#   include <SDL2/SDL_opengles2.h>
+#  else
+#   include <SDL_opengles2.h>
+#  endif
+# else
+#  if defined(__has_include) && __has_include(<SDL2/SDL_opengl.h>)
+#   include <SDL2/SDL_opengl.h>
+#  else
+#   include <SDL_opengl.h>
+#  endif
 # endif
 #elif defined(WAPI_SDL1)
 # include <SDL/SDL.h>

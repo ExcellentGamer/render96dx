@@ -11,7 +11,11 @@
 #include <limits.h>
 #include <dirent.h>
 #ifdef HAVE_SDL2
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #endif
 #ifdef __cplusplus
 #include <new>

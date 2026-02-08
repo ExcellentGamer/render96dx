@@ -24,8 +24,16 @@
 #define GL_GLEXT_PROTOTYPES 1
 
 #ifdef WAPI_SDL2
-# include <SDL2/SDL.h>
-# include <SDL2/SDL_opengl.h>
+# if defined(__has_include) && __has_include(<SDL2/SDL.h>)
+#  include <SDL2/SDL.h>
+# else
+#  include <SDL.h>
+# endif
+# if defined(__has_include) && __has_include(<SDL2/SDL_opengl.h>)
+#  include <SDL2/SDL_opengl.h>
+# else
+#  include <SDL_opengl.h>
+# endif
 #elif defined(WAPI_SDL1)
 # include <SDL/SDL.h>
 # ifndef GLEW_STATIC

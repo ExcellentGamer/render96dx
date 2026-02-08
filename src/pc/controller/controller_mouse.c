@@ -11,7 +11,11 @@ static bool mouse_relative_prev_cursor_state;
 #elif defined(CAPI_SDL1)
 #include <SDL/SDL.h>
 #elif defined(CAPI_SDL2)
+#if defined(__has_include) && __has_include(<SDL2/SDL.h>)
 #include <SDL2/SDL.h>
+#else
+#include <SDL.h>
+#endif
 #endif
 
 bool mouse_init_ok;

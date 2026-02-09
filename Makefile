@@ -845,13 +845,43 @@ ifneq ($(SDL1_USED)$(SDL2_USED),00)
     OSX_PREFIX := $(shell $(SDLCONFIG) --prefix)
     BACKEND_CFLAGS += -I$(OSX_PREFIX)/include $(shell $(SDLCONFIG) --cflags)
   else
-    BACKEND_CFLAGS += `$(SDLCONFIG) --cflags`
+    SDL_CFLAGS := $(shell $(SDLCONFIG) --cflags 2>/dev/null)
+    ifneq ($(strip $(SDL_CFLAGS)),)
+      BACKEND_CFLAGS += $(SDL_CFLAGS)
+    else
+      SDL_CFLAGS := $(shell pkg-config --cflags sdl2 2>/dev/null)
+      ifneq ($(strip $(SDL_CFLAGS)),)
+        BACKEND_CFLAGS += $(SDL_CFLAGS)
+      else
+        $(warning Unable to detect SDL cflags. Ensure SDL2 is installed and either sdl2-config or pkg-config is available.)
+      endif
+    endif
   endif
 
   ifeq ($(WINDOWS_BUILD),1)
-    BACKEND_LDFLAGS += `$(SDLCONFIG) --static-libs` -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lshlwapi -lwinmm -lversion
+    SDL_LIBS := $(shell $(SDLCONFIG) --static-libs 2>/dev/null)
+    ifneq ($(strip $(SDL_LIBS)),)
+      BACKEND_LDFLAGS += $(SDL_LIBS) -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lshlwapi -lwinmm -lversion
+    else
+      SDL_LIBS := $(shell pkg-config --libs --static sdl2 2>/dev/null)
+      ifneq ($(strip $(SDL_LIBS)),)
+        BACKEND_LDFLAGS += $(SDL_LIBS) -lsetupapi -luser32 -limm32 -lole32 -loleaut32 -lshell32 -lshlwapi -lwinmm -lversion
+      else
+        $(warning Unable to detect SDL libs. Ensure SDL2 is installed and either sdl2-config or pkg-config is available.)
+      endif
+    endif
   else
-    BACKEND_LDFLAGS += `$(SDLCONFIG) --libs`
+    SDL_LIBS := $(shell $(SDLCONFIG) --libs 2>/dev/null)
+    ifneq ($(strip $(SDL_LIBS)),)
+      BACKEND_LDFLAGS += $(SDL_LIBS)
+    else
+      SDL_LIBS := $(shell pkg-config --libs sdl2 2>/dev/null)
+      ifneq ($(strip $(SDL_LIBS)),)
+        BACKEND_LDFLAGS += $(SDL_LIBS)
+      else
+        $(warning Unable to detect SDL libs. Ensure SDL2 is installed and either sdl2-config or pkg-config is available.)
+      endif
+    endif
   endif
 endif
 

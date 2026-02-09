@@ -1,4 +1,5 @@
 #include <deque>
+#include <stdio.h>
 #include "dynos.cpp.h"
 extern "C" {
 #include "engine/graph_node.h"
@@ -7,6 +8,113 @@ extern "C" {
 static std::deque<PackData>& DynosPacks() {
     static std::deque<PackData> sDynosPacks;
     return sDynosPacks;
+}
+
+static SysPath& DynOS_Goddard_ActiveMarioHeadBin() {
+    static SysPath sActive = "";
+    return sActive;
+}
+
+static u8*& DynOS_Goddard_ActiveMarioHeadBinData() {
+    static u8* sData = NULL;
+    return sData;
+}
+
+static s32& DynOS_Goddard_ActiveMarioHeadBinSize() {
+    static s32 sSize = 0;
+    return sSize;
+}
+
+const u8* DynOS_Goddard_GetActiveMarioHeadBinData() {
+    return DynOS_Goddard_ActiveMarioHeadBinData();
+}
+
+s32 DynOS_Goddard_GetActiveMarioHeadBinSize() {
+    return DynOS_Goddard_ActiveMarioHeadBinSize();
+}
+
+const SysPath& DynOS_Goddard_GetActiveMarioHeadBin() {
+    return DynOS_Goddard_ActiveMarioHeadBin();
+}
+
+void DynOS_Goddard_ModShutdown() {
+    DynOS_Goddard_ActiveMarioHeadBin() = "";
+
+    if (DynOS_Goddard_ActiveMarioHeadBinData() != NULL) {
+        free(DynOS_Goddard_ActiveMarioHeadBinData());
+        DynOS_Goddard_ActiveMarioHeadBinData() = NULL;
+    }
+    DynOS_Goddard_ActiveMarioHeadBinSize() = 0;
+}
+
+static void DynOS_Goddard_LoadActiveMarioHeadBinIfNeeded() {
+    const SysPath& _Path = DynOS_Goddard_GetActiveMarioHeadBin();
+    if (_Path.empty()) {
+        DynOS_Goddard_ModShutdown();
+        return;
+    }
+
+    // Already loaded from this path
+    // (We store only one active bin, so path equality is enough.)
+    static SysPath sLoadedPath = "";
+    if (sLoadedPath == _Path && DynOS_Goddard_ActiveMarioHeadBinData() != NULL && DynOS_Goddard_ActiveMarioHeadBinSize() > 0) {
+        return;
+    }
+
+    // Clear previous
+    if (DynOS_Goddard_ActiveMarioHeadBinData() != NULL) {
+        free(DynOS_Goddard_ActiveMarioHeadBinData());
+        DynOS_Goddard_ActiveMarioHeadBinData() = NULL;
+    }
+    DynOS_Goddard_ActiveMarioHeadBinSize() = 0;
+    sLoadedPath = "";
+
+    BinFile* _File = BinFile::OpenR(_Path.c_str());
+    if (_File == NULL) {
+        printf("[DynOS] Goddard: failed to open mario_head.gdbin: %s\n", _Path.c_str());
+        return;
+    }
+
+    s32 _Size = _File->Size();
+    if (_Size <= 0) {
+        BinFile::Close(_File);
+        printf("[DynOS] Goddard: mario_head.gdbin is empty: %s\n", _Path.c_str());
+        return;
+    }
+
+    u8* _Data = (u8*) calloc(_Size, 1);
+    _File->Read<u8>(_Data, _Size);
+    BinFile::Close(_File);
+
+    DynOS_Goddard_ActiveMarioHeadBinData() = _Data;
+    DynOS_Goddard_ActiveMarioHeadBinSize() = _Size;
+    sLoadedPath = _Path;
+
+    printf("[DynOS] Goddard: loaded mario_head.gdbin (%d bytes) from %s\n", _Size, _Path.c_str());
+}
+
+static void DynOS_Goddard_RecomputeActiveMarioHeadBin() {
+    DynOS_Goddard_ActiveMarioHeadBin() = "";
+    for (auto& _Pack : DynosPacks()) {
+        if (!_Pack.mEnabled) { continue; }
+        if (!_Pack.mGoddardMarioHeadBin.empty()) {
+            DynOS_Goddard_ActiveMarioHeadBin() = _Pack.mGoddardMarioHeadBin;
+        }
+    }
+
+    if (DynOS_Goddard_ActiveMarioHeadBin().empty()) {
+        printf("[DynOS] Goddard: no active mario_head.gdbin (no enabled packs provide it)\n");
+    } else {
+        printf("[DynOS] Goddard: active mario_head.gdbin: %s\n", DynOS_Goddard_ActiveMarioHeadBin().c_str());
+    }
+
+    DynOS_Goddard_LoadActiveMarioHeadBinIfNeeded();
+}
+
+const SysPath& DynOS_Pack_GetGoddardMarioHeadBin(PackData* aPackData) {
+    static SysPath sEmpty = "";
+    if (aPackData == NULL) { return sEmpty; }
+    return aPackData->mGoddardMarioHeadBin;
 }
 
 static void ScanPackBins(struct PackData* aPack) {
@@ -35,6 +143,14 @@ static void ScanPackBins(struct PackData* aPack) {
             _TexName[length - 4] = '\0';
             DynOS_Tex_LoadFromBinary(aPack->mPath, _FileName, _TexName.begin(), true);
         }
+    }
+
+    // check for goddard
+    // Pack layout: dynos/packs/<pack>/goddard/mario_head.gdbin
+    SysPath _GoddardBin = fstring("%s/goddard/mario_head.gdbin", aPack->mPath.c_str());
+    if (fs_sys_file_exists(_GoddardBin.c_str())) {
+        aPack->mGoddardMarioHeadBin = _GoddardBin;
+        printf("[DynOS] Goddard: found mario_head.gdbin in pack %s\n", aPack->mPath.c_str());
     }
 }
 
@@ -114,6 +230,8 @@ void DynOS_Pack_SetEnabled(PackData* aPack, bool aEnabled) {
             DynOS_Tex_Deactivate(_Tex);
         }
     }
+
+    DynOS_Goddard_RecomputeActiveMarioHeadBin();
     DynOS_Actor_Override_All();
 }
 
@@ -172,6 +290,7 @@ PackData* DynOS_Pack_Add(const SysPath& aPath) {
         .mDisplayName = "",
         .mGfxData = {},
         .mTextures = {},
+        .mGoddardMarioHeadBin = "",
         .mLoaded = false,
     };
     _DynosPacks.push_back(packData);

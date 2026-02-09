@@ -16,6 +16,12 @@
 #include "shape_helper.h"
 #include "skin.h"
 
+#include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include "data/dynos.c.h"
+
 #ifndef VERSION_EU
 #include <prevent_bss_reordering.h>
 #endif
@@ -28,6 +34,312 @@ struct ObjShape *gShapeRedSpark = NULL;    // @ 801A82EC
 struct ObjShape *gShapeSilverSpark = NULL;    // @ 801A82F0
 struct ObjShape *gShapeRedStar = NULL;     // @ 801A82F4
 struct ObjShape *gShapeSilverStar = NULL;  // @ 801A82F8
+
+static struct {
+    bool initialized;
+
+    // Original (vanilla) pointers so we can restore if pack is disabled
+    s16 (*orig_face_vtx)[3];
+    u16 (*orig_face_tri)[4];
+    u32 orig_face_vtx_count;
+    u32 orig_face_tri_count;
+    s16 (*orig_eye_r_vtx)[3];
+    u16 (*orig_eye_r_tri)[4];
+    u32 orig_eye_r_vtx_count;
+    u32 orig_eye_r_tri_count;
+    s16 (*orig_eye_l_vtx)[3];
+    u16 (*orig_eye_l_tri)[4];
+    u32 orig_eye_l_vtx_count;
+    u32 orig_eye_l_tri_count;
+    s16 (*orig_brow_r_vtx)[3];
+    u16 (*orig_brow_r_tri)[4];
+    u32 orig_brow_r_vtx_count;
+    u32 orig_brow_r_tri_count;
+    s16 (*orig_brow_l_vtx)[3];
+    u16 (*orig_brow_l_tri)[4];
+    u32 orig_brow_l_vtx_count;
+    u32 orig_brow_l_tri_count;
+    s16 (*orig_stache_vtx)[3];
+    u16 (*orig_stache_tri)[4];
+    u32 orig_stache_vtx_count;
+    u32 orig_stache_tri_count;
+
+    // Allocated override arrays
+    s16 (*ov_face_vtx)[3];
+    u16 (*ov_face_tri)[4];
+    u32 ov_face_vtx_count;
+    u32 ov_face_tri_count;
+    s16 (*ov_eye_r_vtx)[3];
+    u16 (*ov_eye_r_tri)[4];
+    u32 ov_eye_r_vtx_count;
+    u32 ov_eye_r_tri_count;
+    s16 (*ov_eye_l_vtx)[3];
+    u16 (*ov_eye_l_tri)[4];
+    u32 ov_eye_l_vtx_count;
+    u32 ov_eye_l_tri_count;
+    s16 (*ov_brow_r_vtx)[3];
+    u16 (*ov_brow_r_tri)[4];
+    u32 ov_brow_r_vtx_count;
+    u32 ov_brow_r_tri_count;
+    s16 (*ov_brow_l_vtx)[3];
+    u16 (*ov_brow_l_tri)[4];
+    u32 ov_brow_l_vtx_count;
+    u32 ov_brow_l_tri_count;
+    s16 (*ov_stache_vtx)[3];
+    u16 (*ov_stache_tri)[4];
+    u32 ov_stache_vtx_count;
+    u32 ov_stache_tri_count;
+
+    const u8* last_data;
+    s32 last_size;
+} sDynOSGoddardOverride;
+
+static u16 gd_read_u16_le(const u8* p) {
+    return (u16) (p[0] | (p[1] << 8));
+}
+
+static s16 gd_read_s16_le(const u8* p) {
+    return (s16) gd_read_u16_le(p);
+}
+
+static u32 gd_read_u32_le(const u8* p) {
+    return (u32) (p[0] | (p[1] << 8) | (p[2] << 16) | (p[3] << 24));
+}
+
+static void gd_dynos_goddard_capture_originals(void) {
+    if (sDynOSGoddardOverride.initialized) {
+        return;
+    }
+
+    sDynOSGoddardOverride.orig_face_vtx = mario_Face_VtxInfo.data;
+    sDynOSGoddardOverride.orig_face_tri = mario_Face_FaceInfo.data;
+    sDynOSGoddardOverride.orig_face_vtx_count = mario_Face_VtxInfo.count;
+    sDynOSGoddardOverride.orig_face_tri_count = mario_Face_FaceInfo.count;
+    sDynOSGoddardOverride.orig_eye_r_vtx = vtx_mario_eye_right.data;
+    sDynOSGoddardOverride.orig_eye_r_tri = faces_mario_eye_right.data;
+    sDynOSGoddardOverride.orig_eye_r_vtx_count = vtx_mario_eye_right.count;
+    sDynOSGoddardOverride.orig_eye_r_tri_count = faces_mario_eye_right.count;
+    sDynOSGoddardOverride.orig_eye_l_vtx = vtx_mario_eye_left.data;
+    sDynOSGoddardOverride.orig_eye_l_tri = faces_mario_eye_left.data;
+    sDynOSGoddardOverride.orig_eye_l_vtx_count = vtx_mario_eye_left.count;
+    sDynOSGoddardOverride.orig_eye_l_tri_count = faces_mario_eye_left.count;
+    sDynOSGoddardOverride.orig_brow_r_vtx = vtx_mario_eyebrow_right.data;
+    sDynOSGoddardOverride.orig_brow_r_tri = faces_mario_eyebrow_right.data;
+    sDynOSGoddardOverride.orig_brow_r_vtx_count = vtx_mario_eyebrow_right.count;
+    sDynOSGoddardOverride.orig_brow_r_tri_count = faces_mario_eyebrow_right.count;
+    sDynOSGoddardOverride.orig_brow_l_vtx = vtx_mario_eyebrow_left.data;
+    sDynOSGoddardOverride.orig_brow_l_tri = faces_mario_eyebrow_left.data;
+    sDynOSGoddardOverride.orig_brow_l_vtx_count = vtx_mario_eyebrow_left.count;
+    sDynOSGoddardOverride.orig_brow_l_tri_count = faces_mario_eyebrow_left.count;
+    sDynOSGoddardOverride.orig_stache_vtx = vtx_mario_mustache.data;
+    sDynOSGoddardOverride.orig_stache_tri = faces_mario_mustache.data;
+    sDynOSGoddardOverride.orig_stache_vtx_count = vtx_mario_mustache.count;
+    sDynOSGoddardOverride.orig_stache_tri_count = faces_mario_mustache.count;
+
+    sDynOSGoddardOverride.initialized = true;
+}
+
+static void gd_dynos_goddard_free_override_arrays(void) {
+    free(sDynOSGoddardOverride.ov_face_vtx);   sDynOSGoddardOverride.ov_face_vtx = NULL;
+    free(sDynOSGoddardOverride.ov_face_tri);   sDynOSGoddardOverride.ov_face_tri = NULL;
+    free(sDynOSGoddardOverride.ov_eye_r_vtx);  sDynOSGoddardOverride.ov_eye_r_vtx = NULL;
+    free(sDynOSGoddardOverride.ov_eye_r_tri);  sDynOSGoddardOverride.ov_eye_r_tri = NULL;
+    free(sDynOSGoddardOverride.ov_eye_l_vtx);  sDynOSGoddardOverride.ov_eye_l_vtx = NULL;
+    free(sDynOSGoddardOverride.ov_eye_l_tri);  sDynOSGoddardOverride.ov_eye_l_tri = NULL;
+    free(sDynOSGoddardOverride.ov_brow_r_vtx); sDynOSGoddardOverride.ov_brow_r_vtx = NULL;
+    free(sDynOSGoddardOverride.ov_brow_r_tri); sDynOSGoddardOverride.ov_brow_r_tri = NULL;
+    free(sDynOSGoddardOverride.ov_brow_l_vtx); sDynOSGoddardOverride.ov_brow_l_vtx = NULL;
+    free(sDynOSGoddardOverride.ov_brow_l_tri); sDynOSGoddardOverride.ov_brow_l_tri = NULL;
+    free(sDynOSGoddardOverride.ov_stache_vtx); sDynOSGoddardOverride.ov_stache_vtx = NULL;
+    free(sDynOSGoddardOverride.ov_stache_tri); sDynOSGoddardOverride.ov_stache_tri = NULL;
+}
+
+static void gd_dynos_goddard_restore_vanilla(void) {
+    gd_dynos_goddard_capture_originals();
+    mario_Face_VtxInfo.data = sDynOSGoddardOverride.orig_face_vtx;
+    mario_Face_FaceInfo.data = sDynOSGoddardOverride.orig_face_tri;
+    mario_Face_VtxInfo.count = sDynOSGoddardOverride.orig_face_vtx_count;
+    mario_Face_FaceInfo.count = sDynOSGoddardOverride.orig_face_tri_count;
+    vtx_mario_eye_right.data = sDynOSGoddardOverride.orig_eye_r_vtx;
+    faces_mario_eye_right.data = sDynOSGoddardOverride.orig_eye_r_tri;
+    vtx_mario_eye_right.count = sDynOSGoddardOverride.orig_eye_r_vtx_count;
+    faces_mario_eye_right.count = sDynOSGoddardOverride.orig_eye_r_tri_count;
+    vtx_mario_eye_left.data = sDynOSGoddardOverride.orig_eye_l_vtx;
+    faces_mario_eye_left.data = sDynOSGoddardOverride.orig_eye_l_tri;
+    vtx_mario_eye_left.count = sDynOSGoddardOverride.orig_eye_l_vtx_count;
+    faces_mario_eye_left.count = sDynOSGoddardOverride.orig_eye_l_tri_count;
+    vtx_mario_eyebrow_right.data = sDynOSGoddardOverride.orig_brow_r_vtx;
+    faces_mario_eyebrow_right.data = sDynOSGoddardOverride.orig_brow_r_tri;
+    vtx_mario_eyebrow_right.count = sDynOSGoddardOverride.orig_brow_r_vtx_count;
+    faces_mario_eyebrow_right.count = sDynOSGoddardOverride.orig_brow_r_tri_count;
+    vtx_mario_eyebrow_left.data = sDynOSGoddardOverride.orig_brow_l_vtx;
+    faces_mario_eyebrow_left.data = sDynOSGoddardOverride.orig_brow_l_tri;
+    vtx_mario_eyebrow_left.count = sDynOSGoddardOverride.orig_brow_l_vtx_count;
+    faces_mario_eyebrow_left.count = sDynOSGoddardOverride.orig_brow_l_tri_count;
+    vtx_mario_mustache.data = sDynOSGoddardOverride.orig_stache_vtx;
+    faces_mario_mustache.data = sDynOSGoddardOverride.orig_stache_tri;
+    vtx_mario_mustache.count = sDynOSGoddardOverride.orig_stache_vtx_count;
+    faces_mario_mustache.count = sDynOSGoddardOverride.orig_stache_tri_count;
+}
+
+static bool gd_dynos_goddard_read_mesh(const u8** io_ptr, const u8* end, s16 (**out_vtx)[3], u32* out_vtx_count, u16 (**out_tri)[4], u32* out_tri_count) {
+    const u8* p = *io_ptr;
+    if (p + 8 > end) {
+        return false;
+    }
+
+    u32 vtx_count = gd_read_u32_le(p + 0);
+    u32 tri_count = gd_read_u32_le(p + 4);
+    p += 8;
+
+    if (vtx_count == 0 || tri_count == 0) {
+        return false;
+    }
+
+    if (vtx_count > 65535 || tri_count > 65535) {
+        return false;
+    }
+
+    if (vtx_count > (SIZE_MAX / (sizeof(s16) * 3))) {
+        return false;
+    }
+    if (tri_count > (SIZE_MAX / (sizeof(u16) * 4))) {
+        return false;
+    }
+
+    size_t vtx_bytes = (size_t) vtx_count * sizeof(s16) * 3;
+    size_t tri_bytes = (size_t) tri_count * sizeof(u16) * 4;
+    if (p + vtx_bytes + tri_bytes > end) {
+        return false;
+    }
+
+    s16 (*vtx)[3] = (s16 (*)[3]) malloc(vtx_bytes);
+    u16 (*tri)[4] = (u16 (*)[4]) malloc(tri_bytes);
+    if (!vtx || !tri) {
+        free(vtx);
+        free(tri);
+        return false;
+    }
+
+    u32 i = 0;
+    u32 j = 0;
+    for (i = 0; i < vtx_count; i++) {
+        for (j = 0; j < 3; j++) {
+            vtx[i][j] = gd_read_s16_le(p);
+            p += 2;
+        }
+    }
+
+    for (i = 0; i < tri_count; i++) {
+        for (j = 0; j < 4; j++) {
+            tri[i][j] = gd_read_u16_le(p);
+            p += 2;
+        }
+    }
+
+    // Validate triangle vertex indices so we never crash later.
+    for (i = 0; i < tri_count; i++) {
+        if (tri[i][1] >= vtx_count || tri[i][2] >= vtx_count || tri[i][3] >= vtx_count) {
+            free(vtx);
+            free(tri);
+            return false;
+        }
+    }
+
+    *out_vtx = vtx;
+    *out_tri = tri;
+    *out_vtx_count = vtx_count;
+    *out_tri_count = tri_count;
+    *io_ptr = p;
+    return true;
+}
+
+static void gd_dynos_goddard_apply_override_if_present(void) {
+    gd_dynos_goddard_capture_originals();
+
+    const u8* data = dynos_get_active_goddard_mario_head_bin_data();
+    s32 size = dynos_get_active_goddard_mario_head_bin_size();
+    if (!data || size < 12) {
+        gd_dynos_goddard_free_override_arrays();
+        gd_dynos_goddard_restore_vanilla();
+        sDynOSGoddardOverride.last_data = NULL;
+        sDynOSGoddardOverride.last_size = 0;
+        return;
+    }
+
+    if (sDynOSGoddardOverride.last_data == data && sDynOSGoddardOverride.last_size == size && sDynOSGoddardOverride.ov_face_vtx != NULL) {
+        // already applied
+        return;
+    }
+
+    // New data; clear previous override arrays and re-parse
+    gd_dynos_goddard_free_override_arrays();
+    gd_dynos_goddard_restore_vanilla();
+
+    if (memcmp(data, "GDB1", 4) != 0) {
+        return;
+    }
+    u32 version = gd_read_u32_le(data + 4);
+    if (version != 1) {
+        return;
+    }
+
+    const u8* p = data + 12;
+    const u8* end = data + size;
+
+    if (!gd_dynos_goddard_read_mesh(&p, end, &sDynOSGoddardOverride.ov_face_vtx, &sDynOSGoddardOverride.ov_face_vtx_count, &sDynOSGoddardOverride.ov_face_tri, &sDynOSGoddardOverride.ov_face_tri_count)) goto failed;
+    if (!gd_dynos_goddard_read_mesh(&p, end, &sDynOSGoddardOverride.ov_eye_r_vtx, &sDynOSGoddardOverride.ov_eye_r_vtx_count, &sDynOSGoddardOverride.ov_eye_r_tri, &sDynOSGoddardOverride.ov_eye_r_tri_count)) goto failed;
+    if (!gd_dynos_goddard_read_mesh(&p, end, &sDynOSGoddardOverride.ov_eye_l_vtx, &sDynOSGoddardOverride.ov_eye_l_vtx_count, &sDynOSGoddardOverride.ov_eye_l_tri, &sDynOSGoddardOverride.ov_eye_l_tri_count)) goto failed;
+    if (!gd_dynos_goddard_read_mesh(&p, end, &sDynOSGoddardOverride.ov_brow_r_vtx, &sDynOSGoddardOverride.ov_brow_r_vtx_count, &sDynOSGoddardOverride.ov_brow_r_tri, &sDynOSGoddardOverride.ov_brow_r_tri_count)) goto failed;
+    if (!gd_dynos_goddard_read_mesh(&p, end, &sDynOSGoddardOverride.ov_brow_l_vtx, &sDynOSGoddardOverride.ov_brow_l_vtx_count, &sDynOSGoddardOverride.ov_brow_l_tri, &sDynOSGoddardOverride.ov_brow_l_tri_count)) goto failed;
+    if (!gd_dynos_goddard_read_mesh(&p, end, &sDynOSGoddardOverride.ov_stache_vtx, &sDynOSGoddardOverride.ov_stache_vtx_count, &sDynOSGoddardOverride.ov_stache_tri, &sDynOSGoddardOverride.ov_stache_tri_count)) goto failed;
+
+    // IMPORTANT: Goddard's pipeline has other per-vertex data (skin/weights/joints etc.)
+    // that is still coming from the vanilla dynlists. If vertex counts differ, indices
+    // no longer line up and the game can crash. Until we also override those structures,
+    // require a 1:1 vertex count match for each mesh part.
+    if ((u32) sDynOSGoddardOverride.orig_face_vtx_count   != sDynOSGoddardOverride.ov_face_vtx_count)   goto failed;
+    if ((u32) sDynOSGoddardOverride.orig_eye_r_vtx_count  != sDynOSGoddardOverride.ov_eye_r_vtx_count)  goto failed;
+    if ((u32) sDynOSGoddardOverride.orig_eye_l_vtx_count  != sDynOSGoddardOverride.ov_eye_l_vtx_count)  goto failed;
+    if ((u32) sDynOSGoddardOverride.orig_brow_r_vtx_count != sDynOSGoddardOverride.ov_brow_r_vtx_count) goto failed;
+    if ((u32) sDynOSGoddardOverride.orig_brow_l_vtx_count != sDynOSGoddardOverride.ov_brow_l_vtx_count) goto failed;
+    if ((u32) sDynOSGoddardOverride.orig_stache_vtx_count != sDynOSGoddardOverride.ov_stache_vtx_count) goto failed;
+
+    mario_Face_VtxInfo.data = sDynOSGoddardOverride.ov_face_vtx;
+    mario_Face_FaceInfo.data = sDynOSGoddardOverride.ov_face_tri;
+    mario_Face_VtxInfo.count = sDynOSGoddardOverride.ov_face_vtx_count;
+    mario_Face_FaceInfo.count = sDynOSGoddardOverride.ov_face_tri_count;
+    vtx_mario_eye_right.data = sDynOSGoddardOverride.ov_eye_r_vtx;
+    faces_mario_eye_right.data = sDynOSGoddardOverride.ov_eye_r_tri;
+    vtx_mario_eye_right.count = sDynOSGoddardOverride.ov_eye_r_vtx_count;
+    faces_mario_eye_right.count = sDynOSGoddardOverride.ov_eye_r_tri_count;
+    vtx_mario_eye_left.data = sDynOSGoddardOverride.ov_eye_l_vtx;
+    faces_mario_eye_left.data = sDynOSGoddardOverride.ov_eye_l_tri;
+    vtx_mario_eye_left.count = sDynOSGoddardOverride.ov_eye_l_vtx_count;
+    faces_mario_eye_left.count = sDynOSGoddardOverride.ov_eye_l_tri_count;
+    vtx_mario_eyebrow_right.data = sDynOSGoddardOverride.ov_brow_r_vtx;
+    faces_mario_eyebrow_right.data = sDynOSGoddardOverride.ov_brow_r_tri;
+    vtx_mario_eyebrow_right.count = sDynOSGoddardOverride.ov_brow_r_vtx_count;
+    faces_mario_eyebrow_right.count = sDynOSGoddardOverride.ov_brow_r_tri_count;
+    vtx_mario_eyebrow_left.data = sDynOSGoddardOverride.ov_brow_l_vtx;
+    faces_mario_eyebrow_left.data = sDynOSGoddardOverride.ov_brow_l_tri;
+    vtx_mario_eyebrow_left.count = sDynOSGoddardOverride.ov_brow_l_vtx_count;
+    faces_mario_eyebrow_left.count = sDynOSGoddardOverride.ov_brow_l_tri_count;
+    vtx_mario_mustache.data = sDynOSGoddardOverride.ov_stache_vtx;
+    faces_mario_mustache.data = sDynOSGoddardOverride.ov_stache_tri;
+    vtx_mario_mustache.count = sDynOSGoddardOverride.ov_stache_vtx_count;
+    faces_mario_mustache.count = sDynOSGoddardOverride.ov_stache_tri_count;
+
+    sDynOSGoddardOverride.last_data = data;
+    sDynOSGoddardOverride.last_size = size;
+    return;
+
+failed:
+    gd_dynos_goddard_free_override_arrays();
+    gd_dynos_goddard_restore_vanilla();
+    sDynOSGoddardOverride.last_data = NULL;
+    sDynOSGoddardOverride.last_size = 0;
+}
 
 // Not sure what this data is, but it looks like stub animation data
 
@@ -1324,6 +1636,8 @@ s32 load_mario_head(void (*aniFn)(struct ObjAnimator *)) {
     animator = (struct ObjAnimator *) d_makeobj(D_ANIMATOR, AsDynName(DYNOBJ_MARIO_MAIN_ANIMATOR));
     animator->controlFunc = aniFn;
     d_use_integer_names(FALSE);
+    // Apply DynOS Goddard geometry override (if enabled)
+    gd_dynos_goddard_apply_override_if_present();
     // FIXME: make segment address work once seg4 is disassembled
     gMarioFaceGrp = (struct ObjGroup *) load_dynlist(dynlist_mario_master);
     stop_memtracker("mario face");

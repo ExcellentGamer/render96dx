@@ -45,6 +45,7 @@ void DynOS_Mod_Update() {
         DynOS_Bhv_ModShutdown();
         DynOS_MovtexQC_ModShutdown();
         DynOS_Tex_ModShutdown();
+        DynOS_Goddard_ModShutdown();
         DynOS_Gfx_ModShutdown();
     }
 }
@@ -63,6 +64,7 @@ void DynOS_Restart_Reset() {
         DynOS_Bhv_ModShutdown();
         DynOS_MovtexQC_ModShutdown();
         DynOS_Tex_ModShutdown();
+        DynOS_Goddard_ModShutdown();
         DynOS_Gfx_ModShutdown();
     }
 }

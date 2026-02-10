@@ -13,14 +13,9 @@ void piranha_plant_act_idle(void) {
     cur_obj_become_intangible();
     cur_obj_init_animation_with_sound(8);
 
-#if BUGFIX_PIRANHA_PLANT_STATE_RESET
-    /**
-     * This call is necessary because a Piranha Plant may enter this state
-     * with a scale below 1, which would cause it to appear shrunken. See
-     * documentation for, and calls to, piranha_plant_reset_when_far().
-     */
-    cur_obj_scale(1);
-#endif
+    if (configBugfixPiranhaPlantStateReset) {
+        cur_obj_scale(1);
+    }
 
     struct Object* player = nearest_player_to_object(o);
     s32 distanceToPlayer = player ? dist_between_objects(o, player) : 10000;
@@ -77,16 +72,13 @@ void piranha_plant_act_sleeping(void) {
     cur_obj_set_hitbox_radius_and_height(250.0f, 200.0f);
     cur_obj_set_hurtbox_radius_and_height(150.0f, 100.0f);
 
-#if BUGFIX_PIRANHA_PLANT_SLEEP_DAMAGE
-    /**
-     * Make Piranha Plants harmless, but tangible, while they sleep.
-     */
-    o->oDamageOrCoinValue = 0;
-#elif defined(VERSION_EU)
-    /**
-     * Make Piranha Plants harmful when sleeping - but do it explicitly.
-     */
-    o->oDamageOrCoinValue = 3;
+    if (configBugfixPiranhaPlantSleepDamage) {
+        o->oDamageOrCoinValue = 0;
+    }
+#ifdef VERSION_EU
+    else {
+        o->oDamageOrCoinValue = 3;
+    }
 #endif
 
     struct Object* player = nearest_player_to_object(o);
@@ -112,13 +104,13 @@ void piranha_plant_act_sleeping(void) {
  * to the biting state.
  */
 void piranha_plant_act_woken_up(void) {
-#if BUGFIX_PIRANHA_PLANT_SLEEP_DAMAGE || defined(VERSION_EU)
-    /**
-     * Make Piranha Plants damage the player while awake. This call is only
-     * necessary in the US version because it is set to 3 by default and is
-     * never changed in the JP version.
-     */
+
+#ifdef VERSION_EU
     o->oDamageOrCoinValue = 3;
+#else
+    if (configBugfixPiranhaPlantSleepDamage) {
+        o->oDamageOrCoinValue = 3;
+    }
 #endif
 
     if (o->oTimer == 0)
@@ -131,28 +123,11 @@ void piranha_plant_act_woken_up(void) {
     }
 }
 
-#if BUGFIX_PIRANHA_PLANT_STATE_RESET
-/**
- * If the Piranha Plant is far from the player, move it to the idle state.
- *
- * This fixes an issue where a player where could unload a Piranha Plant
- * during another state, then re-enter its activation radius to resume it from
- * that state.
- *
- * For example, if one exits the Piranha Plant's activation radius while it is
- * dying:
- *   - In the JP version, it will continue its animation where it left off,
- *     leading to a potentially confusing player experience if the player had
- *     been away for a long time.
- *   - In the US version, it will respawn intact when you re-enter its
- *     activation radius. One could then kill it again to receive its blue coin.
- */
 void piranha_plant_reset_when_far(void) {
-    if (o->activeFlags & ACTIVE_FLAG_FAR_AWAY) {
+    if (configBugfixPiranhaPlantStateReset && (o->activeFlags & ACTIVE_FLAG_FAR_AWAY)) {
         o->oAction = PIRANHA_PLANT_ACT_IDLE;
     }
 }
-#endif
 
 /**
  * Make the Piranha Plant play a falling-over animation and move to the dying
@@ -165,9 +140,7 @@ void piranha_plant_attacked(void) {
     if (cur_obj_check_if_near_animation_end()) {
         o->oAction = PIRANHA_PLANT_ACT_SHRINK_AND_DIE;
     }
-#if BUGFIX_PIRANHA_PLANT_STATE_RESET
-    piranha_plant_reset_when_far(); // see this function's comment
-#endif
+    piranha_plant_reset_when_far();
 }
 
 /**
@@ -197,9 +170,7 @@ void piranha_plant_act_shrink_and_die(void) {
 
     cur_obj_scale(o->oPiranhaPlantScale);
 
-#if BUGFIX_PIRANHA_PLANT_STATE_RESET
-    piranha_plant_reset_when_far(); // see this function's comment
-#endif
+    piranha_plant_reset_when_far();
 }
 
 /**

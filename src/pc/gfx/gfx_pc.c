@@ -1071,20 +1071,24 @@ static void OPTIMIZE_O3 gfx_sp_tri1(uint8_t vtx1_idx, uint8_t vtx2_idx, uint8_t 
 
     if (rdp.viewport_or_scissor_changed) {
         static uint32_t x_adjust_4by3_prev;
+        static uint32_t y_adjust_aspect_prev;
         if (memcmp(&rdp.viewport, &rendering_state.viewport, sizeof(rdp.viewport)) != 0
-            || x_adjust_4by3_prev != gfx_current_dimensions.x_adjust_4by3) {
+            || x_adjust_4by3_prev != gfx_current_dimensions.x_adjust_4by3
+            || y_adjust_aspect_prev != gfx_current_dimensions.y_adjust_aspect) {
             gfx_flush();
-            gfx_rapi->set_viewport(rdp.viewport.x + gfx_current_dimensions.x_adjust_4by3, rdp.viewport.y, rdp.viewport.width, rdp.viewport.height);
+            gfx_rapi->set_viewport(rdp.viewport.x + gfx_current_dimensions.x_adjust_4by3, rdp.viewport.y + gfx_current_dimensions.y_adjust_aspect, rdp.viewport.width, rdp.viewport.height);
             rendering_state.viewport = rdp.viewport;
         }
         if (memcmp(&rdp.scissor, &rendering_state.scissor, sizeof(rdp.scissor)) != 0
-            || x_adjust_4by3_prev != gfx_current_dimensions.x_adjust_4by3) {
+            || x_adjust_4by3_prev != gfx_current_dimensions.x_adjust_4by3
+            || y_adjust_aspect_prev != gfx_current_dimensions.y_adjust_aspect) {
             gfx_flush();
-            gfx_rapi->set_scissor(rdp.scissor.x + gfx_current_dimensions.x_adjust_4by3, rdp.scissor.y, rdp.scissor.width, rdp.scissor.height);
+            gfx_rapi->set_scissor(rdp.scissor.x + gfx_current_dimensions.x_adjust_4by3, rdp.scissor.y + gfx_current_dimensions.y_adjust_aspect, rdp.scissor.width, rdp.scissor.height);
             rendering_state.scissor = rdp.scissor;
         }
         rdp.viewport_or_scissor_changed = false;
         x_adjust_4by3_prev = gfx_current_dimensions.x_adjust_4by3;
+        y_adjust_aspect_prev = gfx_current_dimensions.y_adjust_aspect;
     }
 
     struct CombineMode* cm = &rdp.combine_mode;
@@ -1973,8 +1977,18 @@ static void gfx_sp_reset(void) {
 
 void gfx_get_dimensions(uint32_t *width, uint32_t *height) {
     gfx_wapi->get_dimensions(width, height);
-    if (configForce4By3) {
-        *width = gfx_current_dimensions.aspect_ratio * *height;
+    if (configForce4By3 && !configForce21By9) {
+        const float targetAspect = (4.0f / 3.0f);
+        if ((targetAspect * *height) < *width) {
+            *width = targetAspect * *height;
+        }
+    } else if (configForce21By9 && !configForce4By3) {
+        const float targetAspect = (21.0f / 9.0f);
+        if ((targetAspect * *height) < *width) {
+            *width = targetAspect * *height;
+        } else if ((targetAspect * *height) > *width) {
+            *height = (uint32_t)(*width / targetAspect);
+        }
     }
 }
 
@@ -2005,11 +2019,32 @@ void gfx_start_frame(void) {
         // Avoid division by zero
         gfx_current_dimensions.height = 1;
     }
-    if (configForce4By3
-        && ((4.0f / 3.0f) * gfx_current_dimensions.height) < gfx_current_dimensions.width) {
-        gfx_current_dimensions.x_adjust_4by3 = (gfx_current_dimensions.width - (4.0f / 3.0f) * gfx_current_dimensions.height) / 2;
-        gfx_current_dimensions.width = (4.0f / 3.0f) * gfx_current_dimensions.height;
-    } else { gfx_current_dimensions.x_adjust_4by3 = 0; }
+
+    uint32_t windowWidth = gfx_current_dimensions.width;
+    uint32_t windowHeight = gfx_current_dimensions.height;
+
+    gfx_current_dimensions.x_adjust_4by3 = 0;
+    gfx_current_dimensions.y_adjust_aspect = 0;
+
+    if (configForce4By3 && !configForce21By9) {
+        const float targetAspect = (4.0f / 3.0f);
+        if ((targetAspect * windowHeight) < windowWidth) {
+            gfx_current_dimensions.x_adjust_4by3 = (windowWidth - (targetAspect * windowHeight)) / 2;
+            gfx_current_dimensions.width = targetAspect * windowHeight;
+            gfx_current_dimensions.height = windowHeight;
+        }
+    } else if (configForce21By9 && !configForce4By3) {
+        const float targetAspect = (21.0f / 9.0f);
+        if ((targetAspect * windowHeight) < windowWidth) {
+            gfx_current_dimensions.x_adjust_4by3 = (windowWidth - (targetAspect * windowHeight)) / 2;
+            gfx_current_dimensions.width = targetAspect * windowHeight;
+            gfx_current_dimensions.height = windowHeight;
+        } else if ((targetAspect * windowHeight) > windowWidth) {
+            gfx_current_dimensions.width = windowWidth;
+            gfx_current_dimensions.height = (uint32_t)(windowWidth / targetAspect);
+            gfx_current_dimensions.y_adjust_aspect = (windowHeight - gfx_current_dimensions.height) / 2;
+        }
+    }
     gfx_current_dimensions.aspect_ratio = ((float)gfx_current_dimensions.width / (float)gfx_current_dimensions.height);
     gfx_current_dimensions.x_adjust_ratio = (4.0f / 3.0f) / gfx_current_dimensions.aspect_ratio;
 }

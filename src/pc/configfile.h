@@ -144,7 +144,17 @@ extern bool         configMenuRandom;
 extern bool         configMenuDemos;
 extern char         configLanguage[MAX_CONFIG_STRING];
 extern bool         configForce4By3;
+extern bool         configForce21By9;
 extern unsigned int configPvpType;
+// QoL settings
+extern bool         configQolSkipStarDance;
+// Bugfix QoL settings
+extern bool         configBugfixMaxLives;
+extern bool         configBugfixKingBobOmbFadeMusic;
+extern bool         configBugfixKoopaRaceMusic;
+extern bool         configBugfixPiranhaPlantStateReset;
+extern bool         configBugfixPiranhaPlantSleepDamage;
+extern bool         configBugfixStarBowserKey;
 // DJUI settings
 extern unsigned int configDjuiTheme;
 extern bool         configDjuiThemeCenter;

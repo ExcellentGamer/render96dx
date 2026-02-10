@@ -1046,14 +1046,12 @@ void handle_special_dialog_text(s32 dialogID) { // dialog ID tables, in order
     // Red Switch, Green Switch, Blue Switch, 100 coins star, Bowser Red Coin Star
     enum DialogId dialogStarSound[] = { DIALOG_010, DIALOG_011, DIALOG_012, DIALOG_013, DIALOG_014 };
     // King Bob-omb (Start), Whomp (Defeated), King Bob-omb (Defeated, missing in JP), Eyerock (Defeated), Wiggler (Defeated)
-#if BUGFIX_KING_BOB_OMB_FADE_MUSIC
-    enum DialogId dialogBossStop[] = { DIALOG_017, DIALOG_115, DIALOG_116, DIALOG_118, DIALOG_152 };
-#else
-    //! @bug JP misses King Bob-omb defeated dialog "116", meaning that the boss music will still
-    //! play after King Bob-omb is defeated until BOB loads it's music after the star cutscene
-    enum DialogId dialogBossStop[] = { DIALOG_017, DIALOG_115, DIALOG_118, DIALOG_152 };
-#endif
     s16 i;
+
+    enum DialogId dialogBossStopFixed[] = { DIALOG_017, DIALOG_115, DIALOG_116, DIALOG_118, DIALOG_152 };
+    enum DialogId dialogBossStopVanilla[] = { DIALOG_017, DIALOG_115, DIALOG_118, DIALOG_152 };
+    enum DialogId* dialogBossStop = configBugfixKingBobOmbFadeMusic ? dialogBossStopFixed : dialogBossStopVanilla;
+    s16 dialogBossStopCount = configBugfixKingBobOmbFadeMusic ? (s16)ARRAY_COUNT(dialogBossStopFixed) : (s16)ARRAY_COUNT(dialogBossStopVanilla);
 
     for (i = 0; i < (s16) ARRAY_COUNT(dialogBossStart); i++) {
         if (dialogBossStart[i] == dialogID) {
@@ -1077,7 +1075,7 @@ void handle_special_dialog_text(s32 dialogID) { // dialog ID tables, in order
         }
     }
 
-    for (i = 0; i < (s16) ARRAY_COUNT(dialogBossStop); i++) {
+    for (i = 0; i < dialogBossStopCount; i++) {
         if (dialogBossStop[i] == dialogID) {
             seq_player_fade_out(SEQ_PLAYER_LEVEL, 1);
             return;

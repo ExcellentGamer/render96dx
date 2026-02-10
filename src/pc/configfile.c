@@ -184,6 +184,7 @@ bool         configMenuRandom                     = false;
 bool         configMenuDemos                      = false;
 char         configLanguage[MAX_CONFIG_STRING]    = "";
 bool         configForce4By3                      = false;
+bool         configForce21By9                     = false;
 unsigned int configPvpType                        = PLAYER_PVP_CLASSIC;
 // DJUI settings
 unsigned int configDjuiTheme                      = DJUI_THEME_DARK;
@@ -202,6 +203,17 @@ bool         configSkipPackGeneration             = false;
 
 // secrets
 bool configExCoopTheme = false;
+
+// QoL settings
+bool configQolSkipStarDance = false;
+
+// Bugfix QoL settings
+bool configBugfixMaxLives = true;
+bool configBugfixKingBobOmbFadeMusic = true;
+bool configBugfixKoopaRaceMusic = true;
+bool configBugfixPiranhaPlantStateReset = true;
+bool configBugfixPiranhaPlantSleepDamage = true;
+bool configBugfixStarBowserKey = true;
 
 static char* configfile_get_character_preset_name(enum CharacterType c) {
     switch (c) {
@@ -437,12 +449,22 @@ static const struct ConfigOption options[] = {
     // {.name = "coop_menu_demos",                .type = CONFIG_TYPE_BOOL,   .boolValue   = &configMenuDemos},
     {.name = "language",                       .type = CONFIG_TYPE_STRING, .stringValue = (char*)&configLanguage, .maxStringLength = MAX_CONFIG_STRING},
     {.name = "force_4by3",                     .type = CONFIG_TYPE_BOOL,   .boolValue   = &configForce4By3},
+    {.name = "force_21by9",                    .type = CONFIG_TYPE_BOOL,   .boolValue   = &configForce21By9},
     // DJUI settings
     {.name = "djui_theme",                     .type = CONFIG_TYPE_UINT,   .uintValue   = &configDjuiTheme},
     {.name = "djui_theme_center",              .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDjuiThemeCenter},
     {.name = "djui_theme_gradients",           .type = CONFIG_TYPE_BOOL,   .boolValue   = &configDjuiThemeGradients},
     {.name = "djui_theme_font",                .type = CONFIG_TYPE_UINT,   .uintValue   = &configDjuiThemeFont},
     {.name = "djui_scale",                     .type = CONFIG_TYPE_UINT,   .uintValue   = &configDjuiScale},
+    // QoL settings
+    {.name = "qol_skip_star_dance",            .type = CONFIG_TYPE_BOOL,   .boolValue   = &configQolSkipStarDance},
+    // Bugfix QoL settings
+    {.name = "bugfix_max_lives",               .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBugfixMaxLives},
+    {.name = "bugfix_king_bob_omb_fade_music", .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBugfixKingBobOmbFadeMusic},
+    {.name = "bugfix_koopa_race_music",        .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBugfixKoopaRaceMusic},
+    {.name = "bugfix_piranha_plant_state_reset", .type = CONFIG_TYPE_BOOL, .boolValue  = &configBugfixPiranhaPlantStateReset},
+    {.name = "bugfix_piranha_plant_sleep_damage", .type = CONFIG_TYPE_BOOL, .boolValue = &configBugfixPiranhaPlantSleepDamage},
+    {.name = "bugfix_star_bowser_key",         .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBugfixStarBowserKey},
     // other
     {.name = "rules_version",                  .type = CONFIG_TYPE_UINT,   .uintValue   = &configRulesVersion},
     {.name = "compress_on_startup",            .type = CONFIG_TYPE_BOOL,   .boolValue   = &configCompressOnStartup},

@@ -13,9 +13,31 @@ static struct DjuiSelectionbox* sInterpolationSelectionBox = NULL;
 static struct DjuiText* sRestartText = NULL;
 static u32 sMsaaSelection = 0;
 static u32 sMsaaOriginal = MSAA_ORIGINAL_UNSET;
+static struct DjuiCheckbox* sForce4By3Checkbox = NULL;
+static struct DjuiCheckbox* sForce21By9Checkbox = NULL;
 
 static void djui_panel_display_apply(UNUSED struct DjuiBase* caller) {
     configWindow.settings_changed = true;
+}
+
+static void djui_panel_display_force_4by3_change(struct DjuiBase* caller) {
+    if (configForce4By3) {
+        configForce21By9 = false;
+    }
+    if (sForce21By9Checkbox != NULL) {
+        djui_base_set_enabled(&sForce21By9Checkbox->base, !configForce4By3);
+    }
+    djui_panel_display_apply(caller);
+}
+
+static void djui_panel_display_force_21by9_change(struct DjuiBase* caller) {
+    if (configForce21By9) {
+        configForce4By3 = false;
+    }
+    if (sForce4By3Checkbox != NULL) {
+        djui_base_set_enabled(&sForce4By3Checkbox->base, !configForce21By9);
+    }
+    djui_panel_display_apply(caller);
 }
 
 static void djui_panel_display_framerate_mode_change(UNUSED struct DjuiBase* caller) {
@@ -61,7 +83,10 @@ void djui_panel_display_create(struct DjuiBase* caller) {
 
     {
         djui_checkbox_create(body, DLANG(DISPLAY, FULLSCREEN), &configWindow.fullscreen, djui_panel_display_apply);
-        djui_checkbox_create(body, DLANG(DISPLAY, FORCE_4BY3), &configForce4By3, djui_panel_display_apply);
+        sForce4By3Checkbox = djui_checkbox_create(body, DLANG(DISPLAY, FORCE_4BY3), &configForce4By3, djui_panel_display_force_4by3_change);
+        sForce21By9Checkbox = djui_checkbox_create(body, "Force 21:9", &configForce21By9, djui_panel_display_force_21by9_change);
+        djui_base_set_enabled(&sForce4By3Checkbox->base, !configForce21By9);
+        djui_base_set_enabled(&sForce21By9Checkbox->base, !configForce4By3);
         djui_checkbox_create(body, DLANG(DISPLAY, SHOW_FPS), &configShowFPS, NULL);
         djui_checkbox_create(body, DLANG(DISPLAY, VSYNC), &configWindow.vsync, djui_panel_display_apply);
 

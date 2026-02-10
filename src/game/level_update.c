@@ -712,34 +712,32 @@ s16 music_changed_through_warp(s16 arg) {
     if (!warpNode) { return FALSE; }
     s16 levelNum = warpNode->node.destLevel & 0x7F;
 
-#if BUGFIX_KOOPA_RACE_MUSIC
+    if (configBugfixKoopaRaceMusic) {
+        s16 destArea = warpNode->node.destArea;
+        s16 val4 = TRUE;
+        u16 sp2C;
 
-    s16 destArea = warpNode->node.destArea;
-    s16 val4 = TRUE;
-    u16 sp2C;
+        if (levelNum == LEVEL_BOB && levelNum == gCurrLevelNum && destArea == gCurrAreaIndex) {
+            sp2C = get_current_background_music();
+            if (sp2C == SEQUENCE_ARGS(4, gLevelValues.wingCapSequence) ||
+                sp2C == SEQUENCE_ARGS(4, gLevelValues.vanishCapSequence) ||
+                sp2C == SEQUENCE_ARGS(4, gLevelValues.metalCapSequence) ||
+                sp2C == SEQUENCE_ARGS(4, gLevelValues.shellSequence)) {
+                val4 = 0;
+            }
+        } else {
+            u16 val8 = gAreas[destArea].musicParam;
+            u16 val6 = gAreas[destArea].musicParam2;
 
-    if (levelNum == LEVEL_BOB && levelNum == gCurrLevelNum && destArea == gCurrAreaIndex) {
-        sp2C = get_current_background_music();
-        if (sp2C == SEQUENCE_ARGS(4, gLevelValues.wingCapSequence) ||
-            sp2C == SEQUENCE_ARGS(4, gLevelValues.vanishCapSequence) ||
-            sp2C == SEQUENCE_ARGS(4, gLevelValues.metalCapSequence) ||
-            sp2C == SEQUENCE_ARGS(4, gLevelValues.shellSequence)) {
-            val4 = 0;
+            val4 = levelNum == gCurrLevelNum && val8 == gCurrentArea->musicParam
+                   && val6 == gCurrentArea->musicParam2;
+
+            if (get_current_background_music() != val6) {
+                val4 = FALSE;
+            }
         }
-    } else {
-        u16 val8 = gAreas[destArea].musicParam;
-        u16 val6 = gAreas[destArea].musicParam2;
-
-        val4 = levelNum == gCurrLevelNum && val8 == gCurrentArea->musicParam
-               && val6 == gCurrentArea->musicParam2;
-
-        if (get_current_background_music() != val6) {
-            val4 = FALSE;
-        }
+        return val4;
     }
-    return val4;
-
-#else
 
     u16 val8 = gAreas[warpNode->node.destArea].musicParam;
     u16 val6 = gAreas[warpNode->node.destArea].musicParam2;
@@ -751,8 +749,6 @@ s16 music_changed_through_warp(s16 arg) {
         val4 = FALSE;
     }
     return val4;
-
-#endif
 }
 
 /**
@@ -1173,19 +1169,19 @@ void update_hud_values(void) {
             gMarioState->numLives = gLevelValues.maxLives;
         }
 
-#if BUGFIX_MAX_LIVES
-        if (gMarioState->numCoins > gLevelValues.maxCoins) {
-            gMarioState->numCoins = gLevelValues.maxCoins;
-        }
+        if (configBugfixMaxLives) {
+            if (gMarioState->numCoins > gLevelValues.maxCoins) {
+                gMarioState->numCoins = gLevelValues.maxCoins;
+            }
 
-        if (gHudDisplay.coins > gLevelValues.maxCoins) {
-            gHudDisplay.coins = gLevelValues.maxCoins;
+            if (gHudDisplay.coins > gLevelValues.maxCoins) {
+                gHudDisplay.coins = gLevelValues.maxCoins;
+            }
+        } else {
+            if (gMarioState->numCoins > gLevelValues.maxCoins) {
+                gMarioState->numLives = (s8) gLevelValues.maxCoins;
+            }
         }
-#else
-        if (gMarioState->numCoins > gLevelValues.maxCoins) {
-            gMarioState->numLives = (s8) gLevelValues.maxCoins;
-        }
-#endif
 
         gHudDisplay.stars = gMarioState->numStars;
         gHudDisplay.lives = gMarioState->numLives;

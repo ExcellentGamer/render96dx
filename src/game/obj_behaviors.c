@@ -33,6 +33,8 @@
 #include "spawn_sound.h"
 #include "hardcoded.h"
 #include "engine/surface_load.h"
+
+#include "pc/configfile.h"
 #include "pc/network/network.h"
 #include "pc/network/network_player.h"
 #include "pc/lua/smlua.h"

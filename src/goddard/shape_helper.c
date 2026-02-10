@@ -200,12 +200,9 @@ static bool gd_dynos_goddard_read_mesh(const u8** io_ptr, const u8* end, s16 (**
         return false;
     }
 
-    if (vtx_count > (SIZE_MAX / (sizeof(s16) * 3))) {
-        return false;
-    }
-    if (tri_count > (SIZE_MAX / (sizeof(u16) * 4))) {
-        return false;
-    }
+    /* vtx_count and tri_count are already clamped to 65535 above, so
+     * these SIZE_MAX checks are redundant and trigger false-positive
+     * compiler warnings on some platforms. Remove them. */
 
     size_t vtx_bytes = (size_t) vtx_count * sizeof(s16) * 3;
     size_t tri_bytes = (size_t) tri_count * sizeof(u16) * 4;

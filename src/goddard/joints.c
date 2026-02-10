@@ -18,6 +18,7 @@
 #include "sfx.h"
 #include "skin.h"
 #include "skin_movement.h"
+#include <stdio.h>
 
 // data
 static s32 D_801A82D0 = 0;

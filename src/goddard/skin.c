@@ -15,6 +15,7 @@
 #include "renderer.h"
 #include "skin.h"
 #include "skin_movement.h"
+#include <stdio.h>
 
 // bss
 struct ObjNet *gGdSkinNet; // @ 801BAAF0

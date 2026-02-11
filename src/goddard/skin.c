@@ -60,8 +60,8 @@ void reset_net(struct ObjNet *net) {
     net->torque.x = net->torque.y = net->torque.z = 0.0f;
 
     compute_net_bounding_box(net);
-    gd_print_vec("net scale: ", &net->scale);
-    gd_print_bounding_box("net box: ", &net->boundingBox);
+    //gd_print_vec("net scale: ", &net->scale);
+    //gd_print_bounding_box("net box: ", &net->boundingBox);
 
     gGdSkinNet = net;
     D_801BAAF4 = 0;

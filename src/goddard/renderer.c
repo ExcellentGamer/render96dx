@@ -3748,7 +3748,7 @@ void func_801A71CC(struct ObjNet *net) {
         net->unk21C = make_group(0);
     }
 
-    gd_print_bounding_box("making zones for net=", &net->boundingBox);
+    //gd_print_bounding_box("making zones for net=", &net->boundingBox);
 
     sp64.x = (ABS(net->boundingBox.minX) + ABS(net->boundingBox.maxX)) / 16.0f;
     sp64.z = (ABS(net->boundingBox.minZ) + ABS(net->boundingBox.maxZ)) / 16.0f;
@@ -3808,10 +3808,10 @@ void func_801A71CC(struct ObjNet *net) {
     for (link3 = net->unk1CC->firstMember; link3 != NULL; link3 = link3->next) {
         planeL3 = (struct ObjPlane *) link3->obj;
 
-        if (!planeL3->unk18) {
+        /*if (!planeL3->unk18) {
             gd_print_bounding_box("plane=", &planeL3->boundingBox);
             fatal_printf("plane not in any zones\n");
-        }
+        }*/
     }
 }
 

@@ -72,7 +72,7 @@ static void djui_panel_player_palette_create(struct DjuiBase* caller) {
     sPlayerPalettePresetSelection = NULL;
     if (configPlayerModel >= CT_MAX) { configPlayerModel = CT_MARIO; }
 
-    struct DjuiThreePanel* panel = djui_panel_menu_create(DLANG(PLAYER, PLAYER_TITLE), true);
+    struct DjuiThreePanel* panel = djui_panel_menu_create(DLANG(PLAYER, PLAYER), true);
     struct DjuiBase* body = djui_three_panel_get_body(panel);
     {
         char editingText[64] = { 0 };

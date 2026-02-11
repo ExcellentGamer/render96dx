@@ -1157,11 +1157,11 @@ create_shape_gddl(struct ObjShape *s) {
     shape->dlNums[0] = shapedl;
     shape->dlNums[1] = shapedl;
 
-    if (shape->name[0] != '\0') {
+    /*if (shape->name[0] != '\0') {
         printf("Generated '%s' (%d) display list ok.(%d)\n", shape->name, shapedl, enddl);
     } else {
         printf("Generated 'UNKNOWN' (%d) display list ok.(%d)\n", shapedl, enddl);
-    }
+    }*/
 }
 
 /**

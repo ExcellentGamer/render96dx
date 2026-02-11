@@ -51,7 +51,7 @@ void compute_net_bounding_box(struct ObjNet *net) {
 void reset_net(struct ObjNet *net) {
     struct ObjGroup *grp;
 
-    printf("reset_net %d\n", net->id);
+    //printf("reset_net %d\n", net->id);
 
     net->worldPos.x = net->initPos.x;
     net->worldPos.y = net->initPos.y;

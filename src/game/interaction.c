@@ -848,7 +848,8 @@ u32 interact_star_or_key(struct MarioState *m, UNUSED u32 interactType, struct O
     u32 starGrabAction = ACT_STAR_DANCE_EXIT;
     u32 noExit = (o->oInteractionSubtype & INT_SUBTYPE_NO_EXIT) != 0;
     u32 grandStar = (o->oInteractionSubtype & INT_SUBTYPE_GRAND_STAR) != 0;
-    gLastCollectedStarOrKey = o->behavior == smlua_override_behavior(bhvBowserKey);
+    bool isBowserKey = o->behavior == smlua_override_behavior(bhvBowserKey);
+    gLastCollectedStarOrKey = isBowserKey;
 
     if (m->health >= 0x100) {
 
@@ -904,7 +905,7 @@ u32 interact_star_or_key(struct MarioState *m, UNUSED u32 interactType, struct O
             gMarioStates[i].numStars = numStars;
         }
 
-        if (!noExit && configStayInLevelAfterStar == 0) {
+        if (!noExit && (configStayInLevelAfterStar == 0 || isBowserKey)) {
             drop_queued_background_music();
             fadeout_level_music(126);
         }
@@ -919,7 +920,7 @@ u32 interact_star_or_key(struct MarioState *m, UNUSED u32 interactType, struct O
         }
         save_file_do_save(gCurrSaveFileNum - 1, TRUE);
 
-        if (!noExit && configStayInLevelAfterStar == 2) {
+        if (!noExit && !isBowserKey && configStayInLevelAfterStar == 2) {
             set_fov_function(CAM_FOV_DEFAULT);
             soft_reset_camera(m->area->camera);
             cutscene_exit_painting_end(m->area->camera);
@@ -933,7 +934,7 @@ u32 interact_star_or_key(struct MarioState *m, UNUSED u32 interactType, struct O
         }
 
         u32 actionArg = noExit + 2 * grandStar;
-        if (!noExit && !grandStar && configStayInLevelAfterStar == 1) {
+        if (!noExit && !grandStar && !isBowserKey && configStayInLevelAfterStar == 1) {
             actionArg |= 1;
         }
 

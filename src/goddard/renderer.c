@@ -2892,7 +2892,6 @@ void *load_texture_from_file(const char *file, s32 fmt, s32 size, u32 arg3, u32 
     u16 *txHalf;           // 2C
     u8 buf[3];             // 28
     u8 alpha;              // 27
-    s32 dl;                // 20
 
     txFile = gd_fopen(file, "r");
     if (txFile == NULL) {
@@ -2910,11 +2909,11 @@ void *load_texture_from_file(const char *file, s32 fmt, s32 size, u32 arg3, u32 
         *txHalf = ((buf[2] >> 3) << 11) | ((buf[1] >> 3) << 6) | ((buf[0] >> 3) << 1) | (alpha >> 7);
         txHalf++;
     }
-    gd_printf("Loaded texture '%s' (%d bytes)\n", file, txSize);
+    //gd_printf("Loaded texture '%s' (%d bytes)\n", file, txSize);
     gd_fclose(txFile);
-    dl = gd_gentexture(texture, fmt, size, arg3, arg4);
-    gd_printf("Generated '%s' (%d) display list ok.\n", file, dl);
-
+    gd_gentexture(texture, fmt, size, arg3, arg4);
+    //gd_printf("Generated '%s' (%d) display list ok.\n", file, dl);
+ 
     return texture;
 }
 
@@ -3742,7 +3741,7 @@ void func_801A71CC(struct ObjNet *net) {
     UNUSED u32 pad50;
     struct ObjPlane *planeL2; // 4c
     UNUSED u32 pad48;
-    struct ObjPlane *planeL3; // 44
+    UNUSED struct ObjPlane *planeL3; // 44
 
     if (net->unk21C == NULL) {
         net->unk21C = make_group(0);

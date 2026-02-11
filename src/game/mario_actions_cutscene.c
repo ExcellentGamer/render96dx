@@ -751,7 +751,7 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
 
             case 42:
                 play_character_sound(m, CHAR_SOUND_HERE_WE_GO);
-                if (configStayInLevelAfterStar) {
+                if (configStayInLevelAfterStar && gLastCollectedStarOrKey == 0) {
                     gHudDisplay.starGet = 1;
                     if (!sTimerRunning) {
                         level_control_timer(TIMER_CONTROL_HIDE);
@@ -761,7 +761,7 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
 
             case 80:
                 if ((m->actionArg & 1) == 0) {
-                    if (configStayInLevelAfterStar == 0) {
+                    if (configStayInLevelAfterStar == 0 || gLastCollectedStarOrKey == 1) {
                         level_trigger_warp(m, WARP_OP_STAR_EXIT);
                     } else {
                         m->actionState = 2;

@@ -904,7 +904,7 @@ u32 interact_star_or_key(struct MarioState *m, UNUSED u32 interactType, struct O
             gMarioStates[i].numStars = numStars;
         }
 
-        if (!noExit) {
+        if (!noExit && configStayInLevelAfterStar == 0) {
             drop_queued_background_music();
             fadeout_level_music(126);
         }
@@ -919,7 +919,25 @@ u32 interact_star_or_key(struct MarioState *m, UNUSED u32 interactType, struct O
         }
         save_file_do_save(gCurrSaveFileNum - 1, TRUE);
 
-        return set_mario_action(m, starGrabAction, noExit + 2 * grandStar);
+        if (!noExit && configStayInLevelAfterStar == 2) {
+            set_fov_function(CAM_FOV_DEFAULT);
+            soft_reset_camera(m->area->camera);
+            cutscene_exit_painting_end(m->area->camera);
+            if (m->action & (ACT_FLAG_SWIMMING | ACT_FLAG_METAL_WATER)) {
+                return set_mario_action(m, ACT_WATER_IDLE, 0);
+            }
+            if (m->action & ACT_FLAG_AIR) {
+                return set_mario_action(m, ACT_FREEFALL, 0);
+            }
+            return set_mario_action(m, ACT_IDLE, 0);
+        }
+
+        u32 actionArg = noExit + 2 * grandStar;
+        if (!noExit && !grandStar && configStayInLevelAfterStar == 1) {
+            actionArg |= 1;
+        }
+
+        return set_mario_action(m, starGrabAction, actionArg);
     }
 
     return FALSE;

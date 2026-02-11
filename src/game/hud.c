@@ -18,6 +18,8 @@
 #include "print.h"
 #include "hardcoded.h"
 #include "bettercamera.h"
+#include "level_info.h"
+#include "segment7.h"
 #include "pc/configfile.h"
 #include "pc/network/network.h"
 #include "pc/utils/misc.h"
@@ -26,6 +28,7 @@
 #include "data/dynos_mgr_builtin_externs.h"
 
 extern bool gDjuiInMainMenu;
+extern u8 gRenderingInterpolated;
 u8 gOverrideHideHud;
 
 /* @file hud.c
@@ -76,6 +79,71 @@ static f32 sPowerMeterPrevY;
 static Gfx *sPowerMeterDisplayListPos = NULL;
 static Mtx *sPowerMeterMtx = NULL;
 
+static float sStarGetAlpha = 0.0f;
+static float sStarGetBounce = 0.0f;
+static float sStarGetSpeed = 0.0f;
+static Gfx* sStarGetDisplayListPos = NULL;
+static u32 sStarGetPrevGlobalTimer = 0;
+
+static void print_hud_lut_string_to_displaylist(s8 hudLUT, s16 x, s16 y, const u8 *str, Gfx* dl) {
+    s32 strPos = 0;
+    void **hudLUT1 = segmented_to_virtual(menu_hud_lut); // Japanese Menu HUD Color font
+    void **hudLUT2 = segmented_to_virtual(main_hud_lut); // 0-9 A-Z HUD Color Font
+    u32 curX = x;
+    u32 curY = y;
+
+    u32 xStride;
+    if (hudLUT == HUD_LUT_JPMENU) {
+        xStride = 16;
+    } else {
+#ifdef VERSION_JP
+        xStride = 14;
+#else
+        xStride = 12;
+#endif
+    }
+
+    while (str[strPos] != GLOBAR_CHAR_TERMINATOR) {
+#ifndef VERSION_JP
+        switch (str[strPos]) {
+#ifdef VERSION_EU
+            case GLOBAL_CHAR_SPACE:
+                curX += xStride / 2;
+                break;
+            case HUD_CHAR_A_UMLAUT:
+            case HUD_CHAR_O_UMLAUT:
+            case HUD_CHAR_U_UMLAUT:
+                curX += xStride;
+                break;
+#else
+            case GLOBAL_CHAR_SPACE:
+                curX += 8;
+                break;
+#endif
+            default:
+#endif
+                gDPPipeSync(dl++);
+
+                if (hudLUT == HUD_LUT_JPMENU) {
+                    gDPSetTextureImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, hudLUT1[str[strPos]]);
+                }
+
+                if (hudLUT == HUD_LUT_GLOBAL) {
+                    gDPSetTextureImage(dl++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, hudLUT2[str[strPos]]);
+                }
+
+                gSPDisplayList(dl++, dl_rgba16_load_tex_block);
+                gSPTextureRectangle(dl++, curX << 2, curY << 2, (curX + 16) << 2,
+                                    (curY + 16) << 2, G_TX_RENDERTILE, 0, 0, 1 << 10, 1 << 10);
+
+                curX += xStride;
+#ifndef VERSION_JP
+        }
+#endif
+        strPos++;
+    }
+}
+
 void patch_hud_before(void) {
     if (sPowerMeterDisplayListPos != NULL) {
         sPowerMeterPrevY = sPowerMeterHUD.y;
@@ -92,6 +160,105 @@ void patch_hud_interpolated(f32 delta) {
         guTranslate(mtx, (f32) sPowerMeterHUD.x, interpY, 0);
         gSPMatrix(sPowerMeterDisplayListPos, VIRTUAL_TO_PHYSICAL(mtx),
               G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_PUSH);
+    }
+}
+
+void hide_you_got_a_star(void) {
+    gHudDisplay.starGet = 0;
+    sStarGetSpeed = 0.0f;
+    sStarGetAlpha = 0.0f;
+    sStarGetBounce = 0.0f;
+    sStarGetDisplayListPos = NULL;
+    sStarGetPrevGlobalTimer = 0;
+}
+
+void render_you_got_a_star(UNUSED u32 secondFrame) {
+    if (!gHudDisplay.starGet) {
+        return;
+    }
+
+    static u8 sYouGotAStarStr64[64] = { 0 };
+    if (sYouGotAStarStr64[0] == 0) {
+        convert_string_ascii_to_sm64(sYouGotAStarStr64, "YOU GOT A STAR", false);
+    }
+
+    // Only advance the animation once per game tick.
+    // Uncapped FPS draws additional interpolation frames, and render_you_got_a_star(1)
+    // patches the already-recorded display list.
+    if (secondFrame == 0) {
+        if (sStarGetPrevGlobalTimer != gGlobalTimer) {
+            sStarGetPrevGlobalTimer = gGlobalTimer;
+
+            if (sStarGetAlpha == 0.0f) {
+                sStarGetSpeed = -4.0f;
+            }
+
+            sStarGetSpeed += 0.50f;
+            sStarGetBounce = MIN(sStarGetBounce + (sStarGetSpeed * 2.0f), 0.0f);
+
+            if (sStarGetSpeed > 31.0f) {
+                sStarGetAlpha -= 0.125f;
+                if (sStarGetAlpha <= 0.0f) {
+                    hide_you_got_a_star();
+                    return;
+                }
+            } else if (sStarGetAlpha < 1.0f) {
+                sStarGetAlpha += 0.125f;
+            }
+        }
+    }
+
+    // Matrix-based black box, matching SM64Plus style
+    Mtx *matrix = (Mtx *) alloc_display_list(sizeof(Mtx));
+    if (matrix) {
+        f32 left = (f32)GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(0);
+        f32 right = (f32)GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(0);
+        f32 width = right - left;
+        create_dl_translation_matrix(MENU_MTX_PUSH, left, 88.0f - (1.0f - sStarGetAlpha) * 32.0f, 0);
+        guScale(matrix, width / 130.0f, 64.0f * sStarGetAlpha / 80.0f, 1.f);
+    }
+
+    // Interpolation patch pass: rewrite the existing display list contents.
+    if (secondFrame == 1) {
+        if (sStarGetDisplayListPos != NULL) {
+            gDPSetEnvColor(sStarGetDisplayListPos++, 255, 255, 255, (u8)(255.0f * sStarGetAlpha));
+            print_hud_lut_string_to_displaylist(HUD_LUT_GLOBAL, SCREEN_WIDTH / 2 - 78, 159 + (s16)sStarGetBounce, sYouGotAStarStr64, sStarGetDisplayListPos);
+            sStarGetDisplayListPos = NULL;
+        }
+        return;
+    }
+
+    // Normal render pass
+    if (matrix) {
+        gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(matrix), G_MTX_MODELVIEW | G_MTX_MUL | G_MTX_NOPUSH);
+        gDPSetEnvColor(gDisplayListHead++, 0, 0, 0, (u8)(255.0f * sStarGetAlpha / 2.0f));
+        gSPDisplayList(gDisplayListHead++, dl_draw_text_bg_box);
+        gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
+    }
+
+    // You got a star!
+    gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
+    sStarGetDisplayListPos = gDisplayListHead;
+    gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, (u8)(255.0f * sStarGetAlpha));
+    print_hud_lut_string(HUD_LUT_GLOBAL, SCREEN_WIDTH / 2 - 78, 159 + (s16)sStarGetBounce, sYouGotAStarStr64);
+    gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
+    gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
+
+    // Course and act name
+    const u8* courseName = NULL;
+    const u8* starName = NULL;
+    if (COURSE_IS_VALID_COURSE(gCurrCourseNum) && COURSE_IS_MAIN_COURSE(gCurrCourseNum) && gLastCompletedStarNum != 7) {
+        courseName = get_level_name_sm64(gCurrCourseNum, gCurrLevelNum, gCurrAreaIndex, 1);
+        starName = get_star_name_sm64(gCurrCourseNum, gLastCompletedStarNum, 1);
+    }
+
+    if (courseName && starName) {
+        gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
+        gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, (u8)(255.0f * sStarGetAlpha));
+        print_generic_string(get_str_x_pos_from_center(SCREEN_WIDTH / 2, (u8*)starName, 1.0f), 28, starName);
+        print_generic_string(get_str_x_pos_from_center(SCREEN_WIDTH / 2, (u8*)&courseName[3], 1.0f), 44, &courseName[3]);
+        gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
+        gSPDisplayList(gDisplayListHead++, dl_ia_text_end);
     }
 }
 
@@ -666,6 +833,10 @@ void render_hud(void) {
 
         if (hudDisplayFlags & HUD_DISPLAY_FLAG_TIMER && showHud) {
             render_hud_timer();
+        }
+
+        if (showHud && configStayInLevelAfterStar && gCurrDemoInput == NULL) {
+            render_you_got_a_star(0);
         }
     }
 }

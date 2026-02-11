@@ -204,9 +204,6 @@ bool         configSkipPackGeneration             = false;
 // secrets
 bool configExCoopTheme = false;
 
-// QoL settings
-bool configQolSkipStarDance = false;
-
 // Bugfix QoL settings
 bool configBugfixMaxLives = true;
 bool configBugfixKingBobOmbFadeMusic = true;
@@ -457,7 +454,7 @@ static const struct ConfigOption options[] = {
     {.name = "djui_theme_font",                .type = CONFIG_TYPE_UINT,   .uintValue   = &configDjuiThemeFont},
     {.name = "djui_scale",                     .type = CONFIG_TYPE_UINT,   .uintValue   = &configDjuiScale},
     // QoL settings
-    {.name = "qol_skip_star_dance",            .type = CONFIG_TYPE_BOOL,   .boolValue   = &configQolSkipStarDance},
+    {.name = "stay_in_level_after_star",       .type = CONFIG_TYPE_UINT,   .uintValue   = &configStayInLevelAfterStar},
     // Bugfix QoL settings
     {.name = "bugfix_max_lives",               .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBugfixMaxLives},
     {.name = "bugfix_king_bob_omb_fade_music", .type = CONFIG_TYPE_BOOL,   .boolValue   = &configBugfixKingBobOmbFadeMusic},

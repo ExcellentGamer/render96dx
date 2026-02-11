@@ -13,12 +13,15 @@
 #include "engine/surface_collision.h"
 #include "game_init.h"
 #include "gfx_dimensions.h"
+#include "hud.h"
 #include "ingame_menu.h"
 #include "interaction.h"
 #include "level_table.h"
 #include "level_update.h"
 #include "mario.h"
+#include "mario_actions_cutscene.h"
 #include "mario_actions_moving.h"
+#include "mario_misc.h"
 #include "mario_step.h"
 #include "moving_texture.h"
 #include "object_helpers.h"
@@ -744,25 +747,35 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
                     }
                 }
 
-                if (configQolSkipStarDance) {
-                    m->actionTimer = 79;
-                }
                 break;
 
             case 42:
                 play_character_sound(m, CHAR_SOUND_HERE_WE_GO);
+                if (configStayInLevelAfterStar) {
+                    gHudDisplay.starGet = 1;
+                    if (!sTimerRunning) {
+                        level_control_timer(TIMER_CONTROL_HIDE);
+                    }
+                }
                 break;
 
             case 80:
                 if ((m->actionArg & 1) == 0) {
-                    level_trigger_warp(m, WARP_OP_STAR_EXIT);
+                    if (configStayInLevelAfterStar == 0) {
+                        level_trigger_warp(m, WARP_OP_STAR_EXIT);
+                    } else {
+                        m->actionState = 2;
+                    }
                 } else if (m->playerIndex == 0) {
                     if (gBehaviorValues.ShowStarDialog) {
-                        enable_time_stop_if_alone();
-                        create_dialog_box_with_response((gLastCompletedStarNum == 7)
-                            ? gBehaviorValues.dialogs.HundredCoinsDialog
-                            : gBehaviorValues.dialogs.CollectedStarDialog);
-                        m->actionState = 1;
+                        if (gLastCompletedStarNum == 7) {
+                            enable_time_stop_if_alone();
+                            create_dialog_box_with_response(gBehaviorValues.dialogs.HundredCoinsDialog);
+                            m->actionState = 1;
+                        } else {
+                            save_file_do_save(gCurrSaveFileNum - 1, FALSE);
+                            m->actionState = 2;
+                        }
                     } else {
                         m->actionState = 2;
                     }
@@ -781,6 +794,9 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
     } else if (m->actionState == 2 && is_anim_at_end(m)) {
         disable_time_stop();
         enable_background_sound();
+        if (configStayInLevelAfterStar) {
+            hide_you_got_a_star();
+        }
         s32 dialogID = get_star_collection_dialog(m);
         if (dialogID != 0) {
             // look up for dialog
@@ -791,6 +807,10 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
         if (configStayInLevelAfterStar) {
             if (m->statusForCamera) { m->statusForCamera->action = m->action; }
             soft_reset_camera(m->area->camera);
+            set_fov_function(CAM_FOV_DEFAULT);
+            if (isInWater) {
+                cutscene_exit_painting_end(m->area->camera);
+            }
         }
     }
 }

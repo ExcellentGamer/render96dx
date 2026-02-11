@@ -770,7 +770,7 @@ struct ObjGroup *make_group(s32 count, ...) {
     newGroup->memberCount = 0;
     newGroup->firstMember = newGroup->lastMember = NULL;
 
-    printf("Made group no.%d\n", newGroup->id);
+    //printf("Made group no.%d\n", newGroup->id);
 
     oldGroupListHead = gGdGroupList;
     gGdGroupList = newGroup;
@@ -801,7 +801,7 @@ struct ObjGroup *make_group(s32 count, ...) {
     va_end(args);
 
     curLink = newGroup->firstMember;
-    printf("Made group no.%d from: ", newGroup->id);
+    //printf("Made group no.%d from: ", newGroup->id);
     while (curLink != NULL) {
         curObj = curLink->obj;
         format_object_id(idStrBuf, curObj);
@@ -833,13 +833,13 @@ void addto_group(struct ObjGroup *group, struct GdObj *obj) {
     group->memberTypes |= obj->type;
     group->memberCount++;
 
-    printf("Added ");
+    //printf("Added ");
     format_object_id(strbuf, obj);
-    printf("%s", strbuf);
-    printf(" to ");
+    //printf("%s", strbuf);
+    //printf(" to ");
     format_object_id(strbuf, &group->header);
-    printf("%s", strbuf);
-    printf("\n");
+    //printf("%s", strbuf);
+    //printf("\n");
 
     imout();
 }

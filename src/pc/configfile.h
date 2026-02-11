@@ -147,7 +147,6 @@ extern bool         configForce4By3;
 extern bool         configForce21By9;
 extern unsigned int configPvpType;
 // QoL settings
-extern bool         configQolSkipStarDance;
 // Bugfix QoL settings
 extern bool         configBugfixMaxLives;
 extern bool         configBugfixKingBobOmbFadeMusic;

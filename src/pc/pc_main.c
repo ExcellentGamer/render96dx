@@ -57,6 +57,7 @@
 
 #include "gfx_dimensions.h"
 #include "game/segment2.h"
+#include "game/hud.h"
 
 #include "engine/math_util.h"
 
@@ -182,6 +183,9 @@ static inline void patch_interpolations(f32 delta) {
     patch_title_screen_interpolated(delta);
     patch_dialog_interpolated(delta);
     patch_hud_interpolated(delta);
+    if (configStayInLevelAfterStar) {
+        render_you_got_a_star(1);
+    }
     patch_paintings_interpolated(delta);
     patch_bubble_particles_interpolated(delta);
     patch_snow_particles_interpolated(delta);

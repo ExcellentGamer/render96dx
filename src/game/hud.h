@@ -31,6 +31,9 @@ void render_hud_icon(Vtx *vtx, const Texture *texture, u32 fmt, u32 siz, s32 tex
 
 s16 get_hud_camera_status(void);
 void set_hud_camera_status(s16 status);
+
+void hide_you_got_a_star(void);
+void render_you_got_a_star(u32 secondFrame);
 void render_hud(void);
 
 #endif // HUD_H

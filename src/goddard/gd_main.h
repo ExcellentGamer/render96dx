@@ -10,7 +10,6 @@
 // "#define printf(...) /* nothing */" wasn't an option.)
 // This macro is separate from the gd_printf function; one probably
 // forwarded to the other, but it is hard to tell in which direction.
-#if 0
 #ifdef __GNUC__
 #define printf(...)                                       \
     _Pragma ("GCC diagnostic push")                       \
